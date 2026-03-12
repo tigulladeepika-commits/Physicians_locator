@@ -16,13 +16,14 @@
   --teal:#0C7A7A;--teal2:#0FA8A8;--tg:rgba(12,122,122,.10);--tb:rgba(12,122,122,.22);
   --coral:#D95F4B;--gold:#C4993A;
   --s1:0 2px 8px rgba(20,20,32,.06);--s2:0 8px 28px rgba(20,20,32,.10);--s3:0 20px 60px rgba(20,20,32,.14);
-  --r:10px;--tr:0.22s cubic-bezier(.4,0,.2,1);
+  --r:10px;--tr:0.2s cubic-bezier(.4,0,.2,1);
   --f:'Plus Jakarta Sans',system-ui,sans-serif;
   --fd:'Cormorant Garamond',Georgia,serif;
   --fm:'DM Mono',monospace;
 }
 html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--ink);font-size:15px;line-height:1.6;overflow-x:hidden}
 
+/* HEADER */
 .hdr{background:var(--w);border-bottom:1px solid var(--cream3);padding:0 clamp(1rem,4vw,2.5rem);height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;box-shadow:var(--s1)}
 .logo{display:flex;align-items:center;gap:11px;text-decoration:none}
 .logo-mark{width:36px;height:36px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden}
@@ -35,117 +36,130 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
 .hdr-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2.2s ease infinite}
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
 
-.app-body{display:grid;grid-template-columns:400px 1fr;min-height:calc(100vh - 64px)}
-.sidebar{background:var(--w);border-right:1px solid var(--cream2);display:flex;flex-direction:column;height:calc(100vh - 64px);position:sticky;top:64px;overflow:hidden}
-
-.hero{background:var(--ink);padding:1.5rem 1.75rem 1.25rem;position:relative;overflow:hidden;flex-shrink:0}
-.hero::before{content:'';position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(12,122,122,.35),transparent 70%);pointer-events:none}
-.hero::after{content:'';position:absolute;left:10px;bottom:-20px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(196,153,58,.2),transparent 70%);pointer-events:none}
-.hero-eye{font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--teal2);margin-bottom:6px;position:relative;z-index:1}
-.hero-title{font-family:var(--fd);font-size:1.65rem;font-weight:600;color:var(--w);line-height:1.15;letter-spacing:-.02em;position:relative;z-index:1}
-.hero-title em{font-style:italic;color:var(--teal2)}
-.hero-desc{font-size:.78rem;color:rgba(255,255,255,.5);line-height:1.5;position:relative;z-index:1;margin-top:6px}
-.hero-stats{display:flex;gap:1.25rem;margin-top:1rem;position:relative;z-index:1}
-.stat{display:flex;flex-direction:column;gap:1px}
-.stat-n{font-family:var(--fd);font-size:1.2rem;font-weight:700;color:var(--w);line-height:1}
-.stat-n span{color:var(--teal2)}
-.stat-l{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);font-weight:500}
-
-.sf{padding:1.25rem 1.75rem;border-bottom:1px solid var(--cream2);flex-shrink:0}
+/* ═══ PHASE 1: SEARCH-ONLY LAYOUT ═══ */
+.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 64px);padding:2rem 1rem}
+.search-card{background:var(--w);border-radius:20px;box-shadow:var(--s3);padding:2.5rem 2.25rem;width:100%;max-width:580px;border:1px solid var(--cream2)}
+.sc-eye{font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:.5rem}
+.sc-title{font-family:var(--fd);font-size:2rem;font-weight:700;color:var(--ink);line-height:1.15;letter-spacing:-.02em;margin-bottom:.35rem}
+.sc-title em{font-style:italic;color:var(--teal)}
+.sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
 .field{margin-bottom:.9rem;position:relative}
 .field:last-child{margin-bottom:0}
 .lbl{display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
 .lbl .req{color:var(--coral)}
-.inp{width:100%;padding:10px 13px;font-family:var(--f);font-size:.875rem;color:var(--ink);background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);outline:none;transition:var(--tr);appearance:none}
+.inp{width:100%;padding:11px 14px;font-family:var(--f);font-size:.9rem;color:var(--ink);background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);outline:none;transition:border-color .15s,box-shadow .15s;appearance:none}
 .inp::placeholder{color:var(--ink3)}
 .inp:focus{background:var(--w);border-color:var(--teal);box-shadow:0 0 0 3px var(--tg)}
-.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 
-.tag-box{min-height:44px;padding:5px 9px;background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:var(--tr)}
+/* TAG INPUT */
+.tag-box{min-height:46px;padding:5px 9px;background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .15s,box-shadow .15s}
 .tag-box:focus-within{background:var(--w);border-color:var(--teal);box-shadow:0 0 0 3px var(--tg)}
-.chip{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:var(--w);font-size:.72rem;font-weight:600;padding:3px 8px 3px 10px;border-radius:100px;white-space:nowrap;max-width:200px;animation:chipPop .18s ease}
-@keyframes chipPop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:var(--w);font-size:.72rem;font-weight:600;padding:3px 8px 3px 10px;border-radius:100px;white-space:nowrap;max-width:220px;animation:chipPop .15s ease}
+@keyframes chipPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 .chip span{overflow:hidden;text-overflow:ellipsis}
-.chip-x{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:.9rem;padding:0;line-height:1;display:flex;align-items:center;transition:color .15s;flex-shrink:0}
+.chip-x{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:.9rem;padding:0;line-height:1;display:flex;align-items:center;flex-shrink:0;transition:color .1s}
 .chip-x:hover{color:var(--w)}
-.chip-input{border:none;outline:none;font-family:var(--f);font-size:.85rem;color:var(--ink);background:transparent;min-width:100px;flex:1}
+.chip-input{border:none;outline:none;font-family:var(--f);font-size:.875rem;color:var(--ink);background:transparent;min-width:110px;flex:1;padding:2px 4px}
 .chip-input::placeholder{color:var(--ink3)}
 .fhint{font-size:.67rem;color:var(--ink3);margin-top:4px;font-style:italic}
 
-.ac-list,.tax-list{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--w);border:1.5px solid var(--tb);border-radius:var(--r);box-shadow:var(--s3);z-index:500;max-height:220px;overflow-y:auto;display:none}
+/* DROPDOWNS — fast, no debounce delay feel */
+.ac-list,.tax-list{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--w);border:1.5px solid var(--tb);border-radius:var(--r);box-shadow:var(--s3);z-index:600;max-height:240px;overflow-y:auto;display:none;scrollbar-width:thin;scrollbar-color:var(--cream3) transparent}
 .ac-list.open,.tax-list.open{display:block}
-.ac-item{padding:9px 14px;font-size:.83rem;color:var(--ink2);cursor:pointer;border-bottom:1px solid var(--cream);display:flex;align-items:flex-start;gap:9px;transition:background .12s}
+.ac-item{padding:9px 14px;font-size:.85rem;color:var(--ink2);cursor:pointer;border-bottom:1px solid var(--cream);display:flex;align-items:flex-start;gap:9px;transition:background .08s}
 .ac-item:last-child{border-bottom:none}
-.ac-item:hover,.ac-item.sel{background:var(--tg)}
+.ac-item:hover,.ac-item.sel{background:var(--tg);color:var(--ink)}
 .ac-ico{color:var(--teal);margin-top:2px;flex-shrink:0}
 .ac-main{font-weight:600;line-height:1.3;color:var(--ink)}
 .ac-sub{font-size:.72rem;color:var(--ink3);margin-top:1px}
-.tax-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--cream);transition:background .12s}
+.tax-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--cream);transition:background .08s}
 .tax-item:last-child{border-bottom:none}
 .tax-item:hover,.tax-item.active{background:var(--tg)}
-.tax-n{font-size:.83rem;font-weight:600;color:var(--ink)}
+.tax-n{font-size:.85rem;font-weight:600;color:var(--ink)}
 .tax-c{font-size:.7rem;color:var(--ink3);margin-top:1px}
 .tax-st{font-size:.67rem;color:var(--ink3);margin-top:4px;transition:opacity .5s}
+.ac-loading{padding:10px 14px;font-size:.8rem;color:var(--ink3);display:flex;align-items:center;gap:8px}
+.ac-loading-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:ldot .6s ease infinite}
+.ac-loading-dot:nth-child(2){animation-delay:.15s}
+.ac-loading-dot:nth-child(3){animation-delay:.3s}
+@keyframes ldot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 
-.btn-s{width:100%;padding:11px 16px;background:var(--ink);color:var(--w);border:none;border-radius:var(--r);font-family:var(--f);font-size:.88rem;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:var(--tr);margin-top:.5rem;position:relative;overflow:hidden}
-.btn-s::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);transform:translateX(-100%);transition:transform .5s ease}
-.btn-s:hover::after{transform:translateX(100%)}
+/* SEARCH BTN */
+.btn-s{width:100%;padding:12px 16px;background:var(--ink);color:var(--w);border:none;border-radius:var(--r);font-family:var(--f);font-size:.9rem;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s,transform .15s,box-shadow .15s;margin-top:.75rem;position:relative;overflow:hidden}
 .btn-s:hover{background:var(--teal);transform:translateY(-1px);box-shadow:var(--s2)}
 .btn-s:disabled{background:var(--cream3);cursor:not-allowed;transform:none;box-shadow:none;color:var(--ink3)}
-.btn-s svg{width:16px;height:16px}
+.btn-s svg{width:16px;height:16px;flex-shrink:0}
 
-.rp{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--cream3) transparent}
-.rp::-webkit-scrollbar{width:5px}
-.rp::-webkit-scrollbar-thumb{background:var(--cream3);border-radius:3px}
-.rh{padding:10px 1.75rem;background:var(--cream);border-bottom:1px solid var(--cream2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;position:sticky;top:0;z-index:10}
-.rc{font-size:.72rem;font-weight:700;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase}
-.rc strong{color:var(--teal);font-size:.88rem}
-.fcs{display:flex;flex-wrap:wrap;gap:4px}
-.fc{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 9px;border-radius:100px;letter-spacing:.04em}
+/* ═══ PHASE 2: RESULTS LAYOUT ═══ */
+.phase-results{display:none;flex-direction:column;min-height:calc(100vh - 64px)}
 
-.dc{padding:1rem 1.75rem;border-bottom:1px solid var(--cream2);cursor:pointer;transition:background var(--tr);position:relative}
-.dc:hover{background:#F5F8FF}
+/* RESULTS TOP BAR */
+.res-topbar{background:var(--w);border-bottom:1px solid var(--cream2);padding:.85rem clamp(1rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;position:sticky;top:64px;z-index:100;box-shadow:var(--s1)}
+.res-count{font-size:.8rem;font-weight:700;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.res-count strong{color:var(--teal);font-size:.95rem}
+.res-fchips{display:flex;flex-wrap:wrap;gap:5px}
+.res-fc{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 9px;border-radius:100px}
+.btn-new-search{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);font-family:var(--f);font-size:.78rem;font-weight:700;color:var(--ink2);cursor:pointer;transition:var(--tr)}
+.btn-new-search:hover{border-color:var(--teal);color:var(--teal);background:var(--tg)}
+.btn-new-search svg{width:13px;height:13px}
+
+/* RESULTS + MAP SPLIT */
+.res-body{display:grid;grid-template-columns:440px 1fr;flex:1}
+.res-list-col{overflow-y:auto;height:calc(100vh - 64px - 56px);scrollbar-width:thin;scrollbar-color:var(--cream3) transparent;background:var(--w);border-right:1px solid var(--cream2)}
+.res-list-col::-webkit-scrollbar{width:5px}
+.res-list-col::-webkit-scrollbar-thumb{background:var(--cream3);border-radius:3px}
+
+/* PHYSICIAN CARD — collapsed */
+.dc{border-bottom:1px solid var(--cream2);cursor:pointer;transition:background .12s;position:relative;overflow:hidden}
+.dc:hover{background:#F7F9FF}
 .dc.active{background:var(--tg);border-left:3px solid var(--teal)}
-.dci{display:flex;gap:12px;align-items:flex-start}
-.dav{width:40px;height:40px;border-radius:10px;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:1rem;font-weight:700;color:var(--w);flex-shrink:0;position:relative;overflow:hidden}
+.dc-head{padding:.95rem 1.5rem;display:flex;align-items:center;gap:12px}
+.dav{width:42px;height:42px;border-radius:10px;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--w);flex-shrink:0;position:relative;overflow:hidden}
 .dav::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(12,122,122,.5),transparent)}
-.di{flex:1;min-width:0}
-.dn2{position:absolute;top:1rem;right:1.75rem;background:var(--ink);color:var(--w);font-size:.65rem;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.dn{font-weight:700;font-size:.88rem;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:28px;line-height:1.3}
-.ds{font-size:.74rem;color:var(--teal);font-weight:600;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.da{font-size:.75rem;color:var(--ink3);line-height:1.4}
-.dm{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;align-items:center}
-.db{font-size:.66rem;font-weight:600;background:var(--cream);color:var(--ink3);border:1px solid var(--cream3);padding:2px 8px;border-radius:100px}
-.db.dist{background:var(--tg);color:var(--teal);border-color:var(--tb)}
-.dar{display:flex;gap:6px;margin-top:9px}
-.dbt{flex:1;padding:6px 10px;border-radius:7px;font-size:.72rem;font-weight:700;cursor:pointer;border:none;transition:var(--tr);display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:.03em}
+.dc-main{flex:1;min-width:0}
+.dc-name{font-weight:700;font-size:.9rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.dc-spec{font-size:.74rem;color:var(--teal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.dc-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.dc-dist{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 8px;border-radius:100px}
+.dc-num{width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--w);font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+.dc-chevron{width:16px;height:16px;color:var(--ink3);transition:transform .22s ease;flex-shrink:0;margin-left:4px}
+.dc.expanded .dc-chevron{transform:rotate(180deg)}
+
+/* EXPANDED DETAILS */
+.dc-body{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--cream)}
+.dc.expanded .dc-body{max-height:400px}
+.dc-body-inner{padding:.85rem 1.5rem 1rem 1.5rem;border-top:1px solid var(--cream2)}
+.dc-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:.55rem;font-size:.8rem;color:var(--ink2)}
+.dc-row svg{width:13px;height:13px;color:var(--ink3);flex-shrink:0;margin-top:2px}
+.dc-npi{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:.67rem;color:var(--ink3);background:var(--cream2);padding:3px 9px;border-radius:5px;border:1px solid var(--cream3);margin-bottom:.75rem}
+.dc-actions{display:flex;gap:7px}
+.dbt{flex:1;padding:7px 10px;border-radius:7px;font-size:.74rem;font-weight:700;cursor:pointer;border:none;transition:background .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:.03em}
 .dbt-p{background:var(--ink);color:var(--w)}
 .dbt-p:hover{background:var(--teal)}
-.dbt-s{background:var(--cream);color:var(--ink2);border:1px solid var(--cream3)}
-.dbt-s:hover{background:var(--cream2)}
+.dbt-s{background:var(--cream2);color:var(--ink2);border:1px solid var(--cream3)}
+.dbt-s:hover{background:var(--cream3)}
 .dbt svg{width:12px;height:12px}
-.more-btn{display:block;width:calc(100% - 3.5rem);margin:.9rem 1.75rem;padding:10px;background:var(--w);border:2px dashed var(--cream3);border-radius:var(--r);color:var(--teal);font-family:var(--f);font-size:.82rem;font-weight:700;cursor:pointer;transition:var(--tr);text-align:center;letter-spacing:.03em}
-.more-btn:hover{border-color:var(--teal);background:var(--tg)}
 
-.es{text-align:center;padding:3rem 2rem;color:var(--ink3)}
-.es-ring{width:72px;height:72px;border-radius:50%;background:var(--cream2);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:var(--teal);opacity:.6}
-.es h3{font-family:var(--fd);font-size:1.05rem;font-weight:600;color:var(--ink2);margin-bottom:.4rem;letter-spacing:-.01em}
-.es p{font-size:.82rem;color:var(--ink3);line-height:1.5}
+/* LOAD MORE */
+.load-more-wrap{padding:1rem 1.5rem}
+.btn-load-more{width:100%;padding:11px;background:var(--w);border:2px dashed var(--cream3);border-radius:var(--r);color:var(--teal);font-family:var(--f);font-size:.84rem;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s;text-align:center;letter-spacing:.03em}
+.btn-load-more:hover{border-color:var(--teal);background:var(--tg)}
+.btn-load-more:disabled{opacity:.5;cursor:not-allowed}
 
-.mw{position:relative}
-#map{width:100%;height:calc(100vh - 64px);position:sticky;top:64px}
-.mo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--w);border-radius:14px;box-shadow:var(--s3);padding:1.5rem 2rem;text-align:center;max-width:260px;z-index:400;display:none;border:1px solid var(--cream2)}
-.mo.show{display:block}
-.mo-ico{width:48px;height:48px;background:var(--tg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;color:var(--teal)}
-.mo p{font-size:.82rem;color:var(--ink3);line-height:1.5}
+/* MAP */
+.res-map-col{position:relative}
+#map{width:100%;height:calc(100vh - 64px - 56px);position:sticky;top:calc(64px + 56px)}
 
-.sw{position:fixed;inset:0;background:rgba(250,248,244,.75);display:none;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(3px)}
+/* SPINNER */
+.sw{position:fixed;inset:0;background:rgba(250,248,244,.78);display:none;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(3px)}
 .sw.show{display:flex}
 .sb{background:var(--w);border-radius:16px;padding:2rem 2.5rem;box-shadow:var(--s3);text-align:center;border:1px solid var(--cream2)}
 .sp{width:44px;height:44px;border:3px solid var(--cream3);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .75rem}
 @keyframes spin{to{transform:rotate(360deg)}}
-.sb p{font-size:.8rem;color:var(--ink3);font-weight:500}
+.sb p{font-size:.82rem;color:var(--ink3);font-weight:500}
 
+/* PINS */
 .map-pin{position:relative;width:30px;height:40px;cursor:pointer}
 .map-pin svg{width:30px;height:40px;overflow:visible;transition:transform .15s}
 .map-pin:hover svg{transform:scale(1.2) translateY(-3px)}
@@ -153,48 +167,59 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
 .map-pin.active-pin svg path{fill:var(--gold)}
 .map-pin.active-pin svg{filter:drop-shadow(0 4px 8px rgba(196,153,58,.5));transform:scale(1.25) translateY(-3px)}
 
+/* MODAL */
 .mbg{position:fixed;inset:0;background:rgba(13,27,53,.55);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem}
 .mbg.open{display:flex}
-.modal{background:var(--w);border-radius:20px;box-shadow:var(--s3);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;padding:2.25rem;position:relative;animation:mi .28s cubic-bezier(.34,1.56,.64,1)}
-@keyframes mi{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:none}}
+.modal{background:var(--w);border-radius:20px;box-shadow:var(--s3);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;padding:2.25rem;position:relative;animation:mIn .25s cubic-bezier(.34,1.56,.64,1)}
+@keyframes mIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:none}}
 .mcb{position:absolute;top:1.25rem;right:1.25rem;background:var(--cream);border:1px solid var(--cream3);width:30px;height:30px;border-radius:50%;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink3);transition:var(--tr)}
 .mcb:hover{background:var(--cream2);color:var(--ink)}
 .mey{font-family:var(--fm);font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);margin-bottom:5px}
 .mtitle{font-family:var(--fd);font-size:1.6rem;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:.4rem;line-height:1.2}
 .msub{font-size:.83rem;color:var(--ink3);line-height:1.55;margin-bottom:1.5rem}
 .msub strong{color:var(--teal)}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
-.ff{margin-bottom:.85rem}
-.fl{display:block;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
-.fl .req{color:var(--coral)}
-.fi{width:100%;padding:10px 13px;font-family:var(--f);font-size:.875rem;color:var(--ink);background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);outline:none;transition:var(--tr)}
-.fi:focus{background:var(--w);border-color:var(--teal);box-shadow:0 0 0 3px var(--tg)}
-.fi::placeholder{color:var(--ink3)}
-.fe{font-size:.75rem;color:var(--coral);margin-top:4px;display:none}
-.bts{width:100%;padding:12px;background:var(--ink);color:var(--w);border:none;border-radius:var(--r);font-family:var(--f);font-size:.88rem;font-weight:700;cursor:pointer;transition:var(--tr);margin-top:.25rem;letter-spacing:.04em}
-.bts:hover{background:var(--teal);transform:translateY(-1px);box-shadow:var(--s2)}
-.bts:disabled{background:var(--cream3);cursor:not-allowed;transform:none;color:var(--ink3)}
-.fp{font-size:.68rem;color:var(--ink3);text-align:center;margin-top:.75rem;line-height:1.5}
-
-.ss{text-align:center;padding:.5rem 0;display:none}
-.sr{width:64px;height:64px;background:linear-gradient(135deg,var(--teal),var(--teal2));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+.mfr{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.mff{margin-bottom:.85rem}
+.mfl{display:block;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
+.mfl .req{color:var(--coral)}
+.mfi{width:100%;padding:10px 13px;font-family:var(--f);font-size:.875rem;color:var(--ink);background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);outline:none;transition:var(--tr)}
+.mfi:focus{background:var(--w);border-color:var(--teal);box-shadow:0 0 0 3px var(--tg)}
+.mfi::placeholder{color:var(--ink3)}
+.mfe{font-size:.75rem;color:var(--coral);margin-top:4px;display:none}
+.mbts{width:100%;padding:12px;background:var(--ink);color:var(--w);border:none;border-radius:var(--r);font-family:var(--f);font-size:.88rem;font-weight:700;cursor:pointer;transition:var(--tr);margin-top:.25rem;letter-spacing:.04em}
+.mbts:hover{background:var(--teal);transform:translateY(-1px);box-shadow:var(--s2)}
+.mbts:disabled{background:var(--cream3);cursor:not-allowed;transform:none;color:var(--ink3)}
+.mfp{font-size:.68rem;color:var(--ink3);text-align:center;margin-top:.75rem;line-height:1.5}
+.mss{text-align:center;padding:.5rem 0;display:none}
+.msr{width:64px;height:64px;background:linear-gradient(135deg,var(--teal),var(--teal2));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
 @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
-.sr svg{width:28px;height:28px;color:var(--w)}
-.st2{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:var(--ink);margin-bottom:.5rem;letter-spacing:-.02em}
-.sm{font-size:.85rem;color:var(--ink3);line-height:1.6}
+.msr svg{width:28px;height:28px;color:var(--w)}
+.mst{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:var(--ink);margin-bottom:.5rem;letter-spacing:-.02em}
+.msm{font-size:.85rem;color:var(--ink3);line-height:1.6}
 
+/* TOAST */
 .toast{position:fixed;bottom:1.75rem;right:1.75rem;background:var(--ink);color:var(--w);padding:11px 18px;border-radius:var(--r);font-size:.83rem;font-weight:500;box-shadow:var(--s3);z-index:3000;transform:translateY(80px);opacity:0;transition:all .3s ease;max-width:300px;display:flex;align-items:center;gap:9px}
 .toast.show{transform:none;opacity:1}
 .toast.error{background:var(--coral)}
 .toast.success{background:var(--teal)}
 
-@media(max-width:900px){.app-body{grid-template-columns:1fr}.sidebar{height:auto;position:static}#map{height:400px;position:static}}
+@media(max-width:900px){
+  .res-body{grid-template-columns:1fr}
+  .res-list-col{height:auto;max-height:60vh}
+  #map{height:400px;position:static}
+}
+@media(max-width:520px){
+  .search-card{padding:1.75rem 1.25rem}
+  .sc-title{font-size:1.6rem}
+  .inp-row{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header class="hdr">
-  <a href="#" class="logo">
+  <a href="#" class="logo" onclick="resetToSearch();return false;">
     <div class="logo-mark"></div>
     <div>
       <div class="logo-name">Aquar<em>ient</em></div>
@@ -204,89 +229,92 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
   <div class="hdr-badge"><div class="hdr-dot"></div>NPPES Registry</div>
 </header>
 
-<div class="app-body">
-  <aside class="sidebar">
-    <div class="hero">
-      <div class="hero-eye">US Physician Directory</div>
-      <h1 class="hero-title">Find a <em>specialist</em><br>near you</h1>
-      <p class="hero-desc">Search 6M+ licensed providers by location &amp; specialty</p>
-      <div class="hero-stats">
-        <div class="stat"><div class="stat-n">6M<span>+</span></div><div class="stat-l">Providers</div></div>
-        <div class="stat"><div class="stat-n">900<span>+</span></div><div class="stat-l">Specialties</div></div>
-        <div class="stat"><div class="stat-n">50</div><div class="stat-l">States</div></div>
+<!-- ═══ PHASE 1: SEARCH ═══ -->
+<div class="phase-search" id="phase-search">
+  <div class="search-card">
+    <div class="sc-eye">US Physician Directory</div>
+    <h1 class="sc-title">Find a <em>specialist</em> near you</h1>
+    <p class="sc-desc">Search 6M+ licensed providers across all 50 states using the official NPPES registry.</p>
+
+    <!-- Address -->
+    <div class="field" id="addr-group">
+      <div class="lbl">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        Address / Location <span class="req">*</span>
+      </div>
+      <input type="text" id="address-input" class="inp" placeholder="Enter city, ZIP, or street address..." autocomplete="off"/>
+      <div class="ac-list" id="autocomplete-list"></div>
+    </div>
+
+    <!-- Radius + Code -->
+    <div class="inp-row">
+      <div class="field">
+        <div class="lbl">Search Radius</div>
+        <select id="radius-input" class="inp">
+          <option value="5">5 miles</option>
+          <option value="10" selected>10 miles</option>
+          <option value="25">25 miles</option>
+          <option value="50">50 miles</option>
+          <option value="100">100 miles</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="lbl">Taxonomy Code</div>
+        <input type="text" id="taxonomy-code" class="inp" placeholder="e.g. 207Q00000X"/>
       </div>
     </div>
 
-    <div class="sf">
-      <div class="field" id="addr-group">
-        <div class="lbl">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-          Address / Location <span class="req">*</span>
-        </div>
-        <input type="text" id="address-input" class="inp" placeholder="Enter city, ZIP, or address..." autocomplete="off"/>
-        <div class="ac-list" id="autocomplete-list"></div>
+    <!-- Specialty multi-tag -->
+    <div class="field" id="tax-field">
+      <div class="lbl">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Description / Specialty
       </div>
-      <div class="inp-row">
-        <div class="field">
-          <div class="lbl">Radius</div>
-          <select id="radius-input" class="inp">
-            <option value="5">5 miles</option>
-            <option value="10" selected>10 miles</option>
-            <option value="25">25 miles</option>
-            <option value="50">50 miles</option>
-            <option value="100">100 miles</option>
-          </select>
-        </div>
-        <div class="field">
-          <div class="lbl">Tax. Code</div>
-          <input type="text" id="taxonomy-code" class="inp" placeholder="207Q00000X"/>
-        </div>
+      <div class="tag-box" id="tax-tags-box" onclick="document.getElementById('taxonomy-desc').focus()">
+        <input type="text" class="chip-input" id="taxonomy-desc" placeholder="Type to search specialties..." autocomplete="off"/>
       </div>
-      <div class="field" id="tax-field">
-        <div class="lbl">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          Description / Specialty
-        </div>
-        <div class="tag-box" id="tax-tags-box" onclick="document.getElementById('taxonomy-desc').focus()">
-          <input type="text" class="chip-input" id="taxonomy-desc" placeholder="Type to search specialties..." autocomplete="off"/>
-        </div>
-        <div class="tax-list" id="tax-ac-list"></div>
-        <div class="fhint">Press Enter or select to add &middot; multiple allowed</div>
-        <div class="tax-st" id="tax-status">Loading specialties...</div>
-      </div>
-      <button class="btn-s" id="search-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Search Physicians
-      </button>
+      <div class="tax-list" id="tax-ac-list"></div>
+      <div class="fhint">Press Enter or select to add &middot; multiple allowed</div>
+      <div class="tax-st" id="tax-status">Loading specialties...</div>
     </div>
 
-    <div class="rp" id="results-panel">
-      <div class="es" id="empty-state">
-        <div class="es-ring">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-        </div>
-        <h3>Find Physicians Near You</h3>
-        <p>Enter a US location and search criteria<br>to discover providers on the map.</p>
-      </div>
-      <div id="results-list" style="display:none"></div>
-    </div>
-  </aside>
+    <button class="btn-s" id="search-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search Physicians
+    </button>
+  </div>
+</div>
 
-  <div class="mw">
-    <div id="map"></div>
-    <div class="mo show" id="map-msg">
-      <div class="mo-ico">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-      </div>
-      <p>Enter a location and click <strong>Search</strong> to see physicians on the map.</p>
+<!-- ═══ PHASE 2: RESULTS + MAP ═══ -->
+<div class="phase-results" id="phase-results">
+
+  <!-- Top bar -->
+  <div class="res-topbar">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <div class="res-count">Showing <strong id="res-showing">0</strong> of <strong id="res-total">0</strong> providers</div>
+      <div class="res-fchips" id="res-fchips"></div>
+    </div>
+    <button class="btn-new-search" onclick="resetToSearch()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      New Search
+    </button>
+  </div>
+
+  <!-- Body: list + map -->
+  <div class="res-body">
+    <div class="res-list-col" id="results-list"></div>
+    <div class="res-map-col">
+      <div id="map"></div>
     </div>
   </div>
 </div>
 
+<!-- SPINNER -->
 <div class="sw" id="spinner">
   <div class="sb"><div class="sp"></div><p>Searching providers...</p></div>
 </div>
 
+<!-- MODAL -->
 <div class="mbg" id="lead-modal">
   <div class="modal">
     <button class="mcb" id="modal-close">&#x2715;</button>
@@ -295,375 +323,555 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
       <h2 class="mtitle">View All Results</h2>
       <div class="msub">We found <strong id="modal-total">many</strong> physicians matching your search. Leave your details and an Aquarient specialist will send you the complete list.</div>
       <form id="lead-form" novalidate>
-        <div class="fr">
-          <div class="ff"><label class="fl">First Name <span class="req">*</span></label><input type="text" class="fi" name="first_name" placeholder="Jane" required/></div>
-          <div class="ff"><label class="fl">Last Name <span class="req">*</span></label><input type="text" class="fi" name="last_name" placeholder="Smith" required/></div>
+        <div class="mfr">
+          <div class="mff"><label class="mfl">First Name <span class="req">*</span></label><input type="text" class="mfi" name="first_name" placeholder="Jane" required/></div>
+          <div class="mff"><label class="mfl">Last Name <span class="req">*</span></label><input type="text" class="mfi" name="last_name" placeholder="Smith" required/></div>
         </div>
-        <div class="ff"><label class="fl">Work Email <span class="req">*</span></label><input type="email" class="fi" name="email" placeholder="jane@company.com" required/></div>
-        <div class="fr">
-          <div class="ff"><label class="fl">Phone</label><input type="tel" class="fi" name="phone" placeholder="(555) 000-0000"/></div>
-          <div class="ff"><label class="fl">Title / Role</label><input type="text" class="fi" name="title" placeholder="Director"/></div>
+        <div class="mff"><label class="mfl">Work Email <span class="req">*</span></label><input type="email" class="mfi" name="email" placeholder="jane@company.com" required/></div>
+        <div class="mfr">
+          <div class="mff"><label class="mfl">Phone</label><input type="tel" class="mfi" name="phone" placeholder="(555) 000-0000"/></div>
+          <div class="mff"><label class="mfl">Title / Role</label><input type="text" class="mfi" name="title" placeholder="Director"/></div>
         </div>
-        <div class="ff"><label class="fl">Organization</label><input type="text" class="fi" name="company" placeholder="Company Name"/></div>
-        <div id="lead-error" class="fe"></div>
-        <button type="submit" class="bts" id="lead-submit">Request Full Access &#x2192;</button>
-        <p class="fp">By submitting, you agree to be contacted by Aquarient. We respect your privacy.</p>
+        <div class="mff"><label class="mfl">Organization</label><input type="text" class="mfi" name="company" placeholder="Company Name"/></div>
+        <div id="lead-error" class="mfe"></div>
+        <button type="submit" class="mbts" id="lead-submit">Request Full Access &#x2192;</button>
+        <p class="mfp">By submitting, you agree to be contacted by Aquarient. We respect your privacy.</p>
       </form>
     </div>
-    <div id="modal-success-content" class="ss">
-      <div class="sr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
-      <h3 class="st2">Request Received!</h3>
-      <p class="sm">Thank you! An Aquarient representative will contact you shortly with the complete physician directory.</p>
+    <div id="modal-success-content" class="mss">
+      <div class="msr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h3 class="mst">Request Received!</h3>
+      <p class="msm">Thank you! An Aquarient representative will contact you shortly with the complete physician directory.</p>
     </div>
   </div>
 </div>
 
+<!-- TOAST -->
 <div class="toast" id="toast">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
   <span id="toast-msg"></span>
 </div>
 
 <script>
-const MAPQUEST_KEY=window.ENV&&window.ENV.MAPQUEST_KEY?window.ENV.MAPQUEST_KEY:"";
-const BACKEND_URL=window.ENV&&window.ENV.BACKEND_URL?window.ENV.BACKEND_URL:"";
-const MAX_DISPLAY=10;
-if(!MAPQUEST_KEY)console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
-if(!BACKEND_URL)console.warn("[PhysicianLocator] BACKEND_URL not set");
+/* ═══ CONFIG ═══ */
+var MAPQUEST_KEY = (window.ENV && window.ENV.MAPQUEST_KEY) ? window.ENV.MAPQUEST_KEY : "";
+var BACKEND_URL  = (window.ENV && window.ENV.BACKEND_URL)  ? window.ENV.BACKEND_URL  : "";
+var MAX_PAGE     = 10;
 
-let map,markers=[],allPhysicians=[],totalFound=0;
-let selectedLat=null,selectedLng=null,selectedCity="",selectedState="";
-let acTimer=null,taxTimer=null,currentSearch={},taxTags=[];
+if (!MAPQUEST_KEY) console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
+if (!BACKEND_URL)  console.warn("[PhysicianLocator] BACKEND_URL not set");
 
-window.addEventListener("DOMContentLoaded",function(){
-  L.mapquest.key=MAPQUEST_KEY;
-  map=L.mapquest.map("map",{center:[39.8283,-98.5795],layers:L.mapquest.tileLayer("map"),zoom:4,maxZoom:20,zoomControl:true});
-  map.eachLayer(function(l){if(l.options&&l.options.maxZoom!==undefined)l.options.maxZoom=20;});
-  initAC();initTax();initSearch();initModal();checkTaxSt();
+/* ═══ STATE ═══ */
+var map = null, markers = [];
+var allPhysicians = [], totalFound = 0, currentPage = 0;
+var selectedLat = null, selectedLng = null, selectedCity = "", selectedState = "";
+var acTimer = null, taxTimer = null;
+var currentSearch = {}, taxTags = [];
+var mapInited = false;
+
+/* ═══ INIT ═══ */
+window.addEventListener("DOMContentLoaded", function() {
+  initAC();
+  initTax();
+  document.getElementById("search-btn").addEventListener("click", doSearch);
+  document.getElementById("address-input").addEventListener("keydown", function(e){ if(e.key==="Enter") doSearch(); });
+  document.getElementById("modal-close").addEventListener("click", closeModal);
+  document.getElementById("lead-modal").addEventListener("click", function(e){ if(e.target===document.getElementById("lead-modal")) closeModal(); });
+  document.getElementById("lead-form").addEventListener("submit", submitLead);
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeModal(); });
+  checkTaxSt();
 });
 
-function initAC(){
-  var inp=document.getElementById("address-input"),list=document.getElementById("autocomplete-list"),idx=-1;
-  inp.addEventListener("input",function(){
-    selectedLat=selectedLng=null;selectedCity=selectedState="";
+/* ═══ MAP INIT (lazy) ═══ */
+function initMap() {
+  if (mapInited) return;
+  mapInited = true;
+  L.mapquest.key = MAPQUEST_KEY;
+  map = L.mapquest.map("map", {
+    center: [39.8283, -98.5795],
+    layers: L.mapquest.tileLayer("map"),
+    zoom: 4, maxZoom: 20, zoomControl: true
+  });
+  map.eachLayer(function(l){ if(l.options && l.options.maxZoom !== undefined) l.options.maxZoom = 20; });
+}
+
+/* ═══ PHASE SWITCHING ═══ */
+function showResults() {
+  document.getElementById("phase-search").style.display  = "none";
+  document.getElementById("phase-results").style.display = "flex";
+  initMap();
+  setTimeout(function(){ if(map) map.invalidateSize(); }, 100);
+}
+function resetToSearch() {
+  document.getElementById("phase-results").style.display = "none";
+  document.getElementById("phase-search").style.display  = "flex";
+  allPhysicians = []; totalFound = 0; currentPage = 0;
+  selectedLat = selectedLng = null; selectedCity = selectedState = "";
+  document.getElementById("results-list").innerHTML = "";
+  if (map) { markers.forEach(function(m){ if(m) map.removeLayer(m); }); markers = []; }
+}
+
+/* ═══ ADDRESS AUTOCOMPLETE ═══ */
+function initAC() {
+  var inp  = document.getElementById("address-input");
+  var list = document.getElementById("autocomplete-list");
+  var idx  = -1, lastQ = "";
+
+  inp.addEventListener("input", function() {
+    selectedLat = selectedLng = null; selectedCity = selectedState = "";
     clearTimeout(acTimer);
-    var v=inp.value.trim();if(v.length<3){closeAC();return;}
-    acTimer=setTimeout(function(){fetchAC(v);},280);
+    var v = inp.value.trim();
+    if (v.length < 2) { closeAC(); return; }
+    if (v === lastQ) return;
+    showACLoading(list);
+    acTimer = setTimeout(function(){ lastQ = v; fetchAC(v); }, 150);
   });
-  inp.addEventListener("keydown",function(e){
-    var items=list.querySelectorAll(".ac-item");
-    if(e.key==="ArrowDown"){idx=Math.min(idx+1,items.length-1);hiAC(items,idx);e.preventDefault();}
-    else if(e.key==="ArrowUp"){idx=Math.max(idx-1,0);hiAC(items,idx);e.preventDefault();}
-    else if(e.key==="Enter"){if(idx>=0&&items[idx])items[idx].click();else closeAC();}
-    else if(e.key==="Escape")closeAC();
+
+  inp.addEventListener("keydown", function(e) {
+    var items = list.querySelectorAll(".ac-item");
+    if (e.key === "ArrowDown") { idx = Math.min(idx+1, items.length-1); hiAC(items,idx); e.preventDefault(); }
+    else if (e.key === "ArrowUp") { idx = Math.max(idx-1, 0); hiAC(items,idx); e.preventDefault(); }
+    else if (e.key === "Enter") { if(idx>=0 && items[idx]) items[idx].click(); else closeAC(); }
+    else if (e.key === "Escape") closeAC();
   });
-  document.addEventListener("click",function(e){if(!document.getElementById("addr-group").contains(e.target))closeAC();});
-  function hiAC(items,i){items.forEach(function(it,j){it.classList.toggle("sel",j===i);});if(items[i])items[i].scrollIntoView({block:"nearest"});}
-  function fetchAC(text){
-    fetch(BACKEND_URL+"/api/autocomplete?text="+encodeURIComponent(text)+"&limit=6")
-      .then(function(r){return r.json();})
-      .then(function(data){renderAC(data.features||[]);})
-      .catch(function(){closeAC();});
+
+  document.addEventListener("click", function(e) {
+    if (!document.getElementById("addr-group").contains(e.target)) closeAC();
+  });
+
+  function hiAC(items,i) {
+    items.forEach(function(it,j){ it.classList.toggle("sel",j===i); });
+    if (items[i]) items[i].scrollIntoView({block:"nearest"});
   }
-  function renderAC(features){
-    if(!features.length){closeAC();return;}
-    idx=-1;list.innerHTML="";
-    features.forEach(function(f){
-      var p=f.properties||{},c=f.geometry&&f.geometry.coordinates?f.geometry.coordinates:[];
-      var fmt=p.formatted||"";if(!fmt)return;
-      var parts=fmt.split(",").map(function(s){return s.trim();}).filter(Boolean);
-      var main=parts.slice(0,2).join(", "),sub=parts.slice(2).join(", ");
-      var item=document.createElement("div");item.className="ac-item";
-      item.innerHTML='<span class="ac-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg></span><div><div class="ac-main">'+esc(main)+'</div>'+(sub?'<div class="ac-sub">'+esc(sub)+"</div>":"")+'</div>';
-      item.addEventListener("click",function(){
-        inp.value=fmt;selectedLat=c[1];selectedLng=c[0];
-        selectedCity=p.city||p.county||"";selectedState=p.state_code||"";
+  function fetchAC(text) {
+    var url = BACKEND_URL + "/api/autocomplete?text=" + encodeURIComponent(text) + "&limit=7";
+    fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(data){ renderAC(data.features||[]); })
+      .catch(function(){ closeAC(); });
+  }
+  function renderAC(features) {
+    if (!features.length) { closeAC(); return; }
+    idx = -1; list.innerHTML = "";
+    features.forEach(function(f) {
+      var p   = f.properties || {};
+      var c   = (f.geometry && f.geometry.coordinates) ? f.geometry.coordinates : [];
+      var fmt = p.formatted || ""; if (!fmt) return;
+      var parts = fmt.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+      var main  = parts.slice(0,2).join(", "), sub = parts.slice(2).join(", ");
+      var item  = document.createElement("div"); item.className = "ac-item";
+      item.innerHTML = '<span class="ac-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg></span>'
+        + '<div><div class="ac-main">' + esc(main) + '</div>' + (sub ? '<div class="ac-sub">'+esc(sub)+'</div>' : '') + '</div>';
+      item.addEventListener("click", function() {
+        inp.value = fmt; selectedLat = c[1]; selectedLng = c[0];
+        selectedCity = p.city || p.county || ""; selectedState = p.state_code || "";
         closeAC();
       });
       list.appendChild(item);
     });
     list.classList.add("open");
   }
-  function closeAC(){list.classList.remove("open");list.innerHTML="";}
+  function closeAC() { list.classList.remove("open"); list.innerHTML = ""; idx = -1; }
 }
 
-function initTax(){
-  var inp=document.getElementById("taxonomy-desc"),list=document.getElementById("tax-ac-list"),box=document.getElementById("tax-tags-box");
-  box.addEventListener("click",function(){inp.focus();});
-  inp.addEventListener("input",function(){
+function showACLoading(list) {
+  list.innerHTML = '<div class="ac-loading"><div class="ac-loading-dot"></div><div class="ac-loading-dot"></div><div class="ac-loading-dot"></div></div>';
+  list.classList.add("open");
+}
+
+/* ═══ TAXONOMY AUTOCOMPLETE ═══ */
+function initTax() {
+  var inp  = document.getElementById("taxonomy-desc");
+  var list = document.getElementById("tax-ac-list");
+  var box  = document.getElementById("tax-tags-box");
+  var lastQ = "";
+
+  box.addEventListener("click", function(){ inp.focus(); });
+
+  inp.addEventListener("input", function() {
     clearTimeout(taxTimer);
-    var v=inp.value.trim();if(v.length<2){closeTL();return;}
-    taxTimer=setTimeout(function(){fetchTL(v);},180);
+    var v = inp.value.trim();
+    if (v.length < 2) { closeTL(); return; }
+    if (v === lastQ) return;
+    showACLoading(list);
+    taxTimer = setTimeout(function(){ lastQ = v; fetchTL(v); }, 150);
   });
-  inp.addEventListener("keydown",function(e){
-    var active=list.querySelector(".tax-item.active");
-    if(e.key==="ArrowDown"){e.preventDefault();var n=active?active.nextElementSibling:list.querySelector(".tax-item");if(n){if(active)active.classList.remove("active");n.classList.add("active");}}
-    else if(e.key==="ArrowUp"){e.preventDefault();var pr=active?active.previousElementSibling:null;if(pr){active.classList.remove("active");pr.classList.add("active");}}
-    else if(e.key==="Enter"){e.preventDefault();e.stopPropagation();if(active){active.click();}else{var r=inp.value.trim();if(r.length>=2)addTag({display:r,classification:""});}}
-    else if(e.key==="Backspace"&&inp.value===""&&taxTags.length){removeTag(taxTags.length-1);}
-    else if(e.key==="Escape"){closeTL();}
+
+  inp.addEventListener("keydown", function(e) {
+    var active = list.querySelector(".tax-item.active");
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      var n = active ? active.nextElementSibling : list.querySelector(".tax-item");
+      if (n) { if(active) active.classList.remove("active"); n.classList.add("active"); n.scrollIntoView({block:"nearest"}); }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      var pr = active ? active.previousElementSibling : null;
+      if (pr) { active.classList.remove("active"); pr.classList.add("active"); pr.scrollIntoView({block:"nearest"}); }
+    } else if (e.key === "Enter") {
+      e.preventDefault(); e.stopPropagation();
+      if (active) { active.click(); }
+      else { var r = inp.value.trim(); if (r.length >= 2) addTag({display:r,classification:""}); }
+    } else if (e.key === "Backspace" && inp.value === "" && taxTags.length) {
+      removeTag(taxTags.length-1);
+    } else if (e.key === "Escape") { closeTL(); }
   });
-  document.addEventListener("click",function(e){if(!document.getElementById("tax-field").contains(e.target))closeTL();});
-  function fetchTL(q){
-    fetch(BACKEND_URL+"/api/taxonomy-search?q="+encodeURIComponent(q))
-      .then(function(r){return r.json();})
-      .then(function(data){renderTL(data.results||[]);})
-      .catch(function(){closeTL();});
+
+  document.addEventListener("click", function(e) {
+    if (!document.getElementById("tax-field").contains(e.target)) closeTL();
+  });
+
+  function fetchTL(q) {
+    fetch(BACKEND_URL + "/api/taxonomy-search?q=" + encodeURIComponent(q))
+      .then(function(r){ return r.json(); })
+      .then(function(data){ renderTL(data.results||[]); })
+      .catch(function(){ closeTL(); });
   }
-  function renderTL(results){
-    var already={};taxTags.forEach(function(t){already[t.display.toLowerCase()]=1;});
-    var filtered=results.filter(function(r){return !already[r.display.toLowerCase()];});
-    if(!filtered.length){closeTL();return;}
-    list.innerHTML="";
-    filtered.forEach(function(r){
-      var item=document.createElement("div");item.className="tax-item";
-      item.innerHTML='<div class="tax-n">'+esc(r.display)+'</div><div class="tax-c">'+esc(r.classification)+"</div>";
-      item.addEventListener("mouseenter",function(){list.querySelectorAll(".tax-item").forEach(function(i){i.classList.remove("active");});item.classList.add("active");});
-      item.addEventListener("click",function(e){e.stopPropagation();addTag(r);closeTL();});
+  function renderTL(results) {
+    var already = {};
+    taxTags.forEach(function(t){ already[t.display.toLowerCase()] = 1; });
+    var filtered = results.filter(function(r){ return !already[r.display.toLowerCase()]; });
+    if (!filtered.length) { closeTL(); return; }
+    list.innerHTML = "";
+    filtered.forEach(function(r) {
+      var item = document.createElement("div"); item.className = "tax-item";
+      item.innerHTML = '<div class="tax-n">' + esc(r.display) + '</div><div class="tax-c">' + esc(r.classification) + '</div>';
+      item.addEventListener("mouseenter", function() {
+        list.querySelectorAll(".tax-item").forEach(function(i){ i.classList.remove("active"); });
+        item.classList.add("active");
+      });
+      item.addEventListener("click", function(e){ e.stopPropagation(); addTag(r); closeTL(); lastQ = ""; });
       list.appendChild(item);
     });
     list.classList.add("open");
   }
-  function closeTL(){list.classList.remove("open");list.innerHTML="";}
+  function closeTL() { list.classList.remove("open"); list.innerHTML = ""; }
 }
 
-function addTag(r){
-  for(var i=0;i<taxTags.length;i++){if(taxTags[i].display.toLowerCase()===r.display.toLowerCase())return;}
-  taxTags.push(r);renderTags();
-  document.getElementById("taxonomy-desc").value="";
+function addTag(r) {
+  for (var i=0; i<taxTags.length; i++) { if (taxTags[i].display.toLowerCase()===r.display.toLowerCase()) return; }
+  taxTags.push(r); renderTags();
+  document.getElementById("taxonomy-desc").value = "";
   document.getElementById("taxonomy-desc").focus();
 }
-function removeTag(idx){taxTags.splice(idx,1);renderTags();document.getElementById("taxonomy-desc").focus();}
-function renderTags(){
-  var box=document.getElementById("tax-tags-box"),inp=document.getElementById("taxonomy-desc");
-  box.querySelectorAll(".chip").forEach(function(el){el.remove();});
-  taxTags.forEach(function(tag,i){
-    var chip=document.createElement("span");chip.className="chip";
-    chip.innerHTML='<span title="'+esc(tag.display)+'">'+esc(tag.display)+'</span><button class="chip-x" type="button">&#x2715;</button>';
-    chip.querySelector(".chip-x").addEventListener("click",function(e){e.stopPropagation();removeTag(i);});
-    box.insertBefore(chip,inp);
+function removeTag(idx) { taxTags.splice(idx,1); renderTags(); document.getElementById("taxonomy-desc").focus(); }
+function renderTags() {
+  var box = document.getElementById("tax-tags-box");
+  var inp = document.getElementById("taxonomy-desc");
+  box.querySelectorAll(".chip").forEach(function(el){ el.remove(); });
+  taxTags.forEach(function(tag,i) {
+    var chip = document.createElement("span"); chip.className = "chip";
+    chip.innerHTML = '<span title="'+esc(tag.display)+'">'+esc(tag.display)+'</span><button class="chip-x" type="button">&#x2715;</button>';
+    chip.querySelector(".chip-x").addEventListener("click", function(e){ e.stopPropagation(); removeTag(i); });
+    box.insertBefore(chip, inp);
   });
-  inp.placeholder=taxTags.length?"Add more...":"Type to search specialties...";
+  inp.placeholder = taxTags.length ? "Add more..." : "Type to search specialties...";
 }
 
-function checkTaxSt(){
-  fetch(BACKEND_URL+"/api/taxonomy-status")
-    .then(function(r){return r.json();})
-    .then(function(data){
-      var el=document.getElementById("tax-status");
-      if(data.loaded){el.textContent=data.count+" specialties · "+data.source;setTimeout(function(){el.style.opacity="0";},3000);}
+function checkTaxSt() {
+  fetch(BACKEND_URL + "/api/taxonomy-status")
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      var el = document.getElementById("tax-status");
+      if (data.loaded) {
+        el.textContent = data.count + " specialties \u00b7 " + data.source;
+        setTimeout(function(){ el.style.opacity="0"; }, 3000);
+      }
     }).catch(function(){});
 }
 
-function initSearch(){
-  document.getElementById("search-btn").addEventListener("click",doSearch);
-  document.getElementById("address-input").addEventListener("keydown",function(e){if(e.key==="Enter")doSearch();});
-}
+/* ═══ SEARCH ═══ */
+function doSearch() {
+  var address  = document.getElementById("address-input").value.trim();
+  var radius   = document.getElementById("radius-input").value;
+  var taxCode  = document.getElementById("taxonomy-code").value.trim();
+  var partial  = document.getElementById("taxonomy-desc").value.trim();
+  var descs    = taxTags.map(function(t){ return t.display; });
+  if (partial.length >= 2 && descs.indexOf(partial) === -1) descs.push(partial);
 
-function doSearch(){
-  var address=document.getElementById("address-input").value.trim();
-  var radius=document.getElementById("radius-input").value;
-  var taxCode=document.getElementById("taxonomy-code").value.trim();
-  var partial=document.getElementById("taxonomy-desc").value.trim();
-  var descriptions=taxTags.map(function(t){return t.display;});
-  if(partial.length>=2&&descriptions.indexOf(partial)===-1)descriptions.push(partial);
-  if(!address){showToast("Please enter a US address or location.","error");return;}
-  if(!taxCode&&descriptions.length===0){showToast("Please enter a taxonomy code or at least one specialty.","error");return;}
+  if (!address) { showToast("Please enter a US address or location.", "error"); return; }
+  if (!taxCode && descs.length === 0) { showToast("Please enter a taxonomy code or at least one specialty.", "error"); return; }
+
+  currentPage = 0;
+  currentSearch = { address:address, radius:radius, taxonomy_code:taxCode, descriptions:descs };
   setLoading(true);
-  var doFetch=function(){
-    var params=new URLSearchParams({lat:selectedLat,lng:selectedLng,radius:radius,taxonomy_code:taxCode,descriptions:JSON.stringify(descriptions),city:selectedCity,state:selectedState});
-    fetch(BACKEND_URL+"/api/search?"+params)
-      .then(function(r){return r.json();})
-      .then(function(data){
-        if(data.error){showToast(data.error,"error");setLoading(false);return;}
-        allPhysicians=data.physicians||[];totalFound=data.total||allPhysicians.length;
-        currentSearch={address:address,radius:radius,taxonomy_code:taxCode,descriptions:descriptions};
-        renderResults();plotMarkers();
-        document.getElementById("map-msg").classList.remove("show");
-        if(!allPhysicians.length)showToast("No physicians found. Try a larger radius or different specialty.");
+
+  var runSearch = function() {
+    var params = new URLSearchParams({
+      lat: selectedLat, lng: selectedLng, radius: radius,
+      taxonomy_code: taxCode,
+      descriptions: JSON.stringify(descs),
+      city: selectedCity, state: selectedState
+    });
+    fetch(BACKEND_URL + "/api/search?" + params)
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (data.error) { showToast(data.error, "error"); setLoading(false); return; }
+        allPhysicians  = data.physicians || [];
+        totalFound     = data.total || allPhysicians.length;
+        showResults();
+        renderTopBar();
+        renderCards();
+        plotMarkers();
         setLoading(false);
       })
-      .catch(function(err){showToast("Search failed. Please try again.","error");console.error(err);setLoading(false);});
+      .catch(function(err) {
+        showToast("Search failed. Please try again.", "error");
+        console.error(err); setLoading(false);
+      });
   };
-  if(!selectedLat||!selectedLng){
-    fetch(BACKEND_URL+"/api/geocode?address="+encodeURIComponent(address))
-      .then(function(r){return r.json();})
-      .then(function(gd){
-        if(gd.error){showToast("Could not find that US address. Please be more specific.","error");setLoading(false);return;}
-        selectedLat=gd.lat;selectedLng=gd.lng;selectedCity=gd.city||"";selectedState=gd.state||"";
-        if(gd.formatted)document.getElementById("address-input").value=gd.formatted;
-        doFetch();
+
+  if (!selectedLat || !selectedLng) {
+    fetch(BACKEND_URL + "/api/geocode?address=" + encodeURIComponent(address))
+      .then(function(r){ return r.json(); })
+      .then(function(gd) {
+        if (gd.error) { showToast("Could not find that US address. Please be more specific.", "error"); setLoading(false); return; }
+        selectedLat = gd.lat; selectedLng = gd.lng;
+        selectedCity = gd.city || ""; selectedState = gd.state || "";
+        if (gd.formatted) document.getElementById("address-input").value = gd.formatted;
+        runSearch();
       })
-      .catch(function(){showToast("Geocoding failed. Please try again.","error");setLoading(false);});
-  }else{doFetch();}
+      .catch(function(){ showToast("Geocoding failed.", "error"); setLoading(false); });
+  } else { runSearch(); }
 }
 
-function renderResults(){
-  var list=document.getElementById("results-list"),empty=document.getElementById("empty-state");
-  empty.style.display="none";list.style.display="block";list.innerHTML="";
-  var hdr=document.createElement("div");hdr.className="rh";
-  var showing=Math.min(allPhysicians.length,MAX_DISPLAY);
-  var fh="";
-  if(currentSearch.taxonomy_code){fh='<div class="fcs"><span class="fc">'+esc(currentSearch.taxonomy_code)+"</span></div>";}
-  else if(currentSearch.descriptions&&currentSearch.descriptions.length){
-    fh='<div class="fcs">'+currentSearch.descriptions.map(function(d){return '<span class="fc">'+esc(d)+"</span>";}).join("")+"</div>";
-  }
-  hdr.innerHTML='<div class="rc">Showing <strong>'+showing+"</strong> of <strong>"+totalFound.toLocaleString()+"</strong></div>"+fh;
-  list.appendChild(hdr);
-  if(!allPhysicians.length){
-    var el=document.createElement("div");el.className="es";
-    el.innerHTML='<div class="es-ring"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><h3>No Results Found</h3><p>Try a larger radius or different specialty.</p>';
-    list.appendChild(el);return;
-  }
-  allPhysicians.forEach(function(p,i){
-    var card=document.createElement("div");card.className="dc";card.dataset.index=i;
-    var name=p.name||"?";
-    var words=name.split(" ").slice(0,2);
-    var ini=words.map(function(w){return w[0]||"";}).join("").toUpperCase();
-    var db=p.distance_miles!=null?'<span class="db dist">&#128205; '+p.distance_miles+' mi</span>':"";
-    var nb=p.npi?'<span class="db">NPI '+esc(p.npi)+"</span>":"";
-    var at=(p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean);
-    var sp=at.length>1?at.slice(0,2).join(" · "):(p.taxonomy_desc||"Provider");
-    var phoneHtml=p.phone?"<br>&#128222; "+esc(p.phone):"";
-    card.innerHTML=
-      '<div class="dn2">'+( i+1)+'</div>'+
-      '<div class="dci">'+
-        '<div class="dav">'+ini+"</div>"+
-        '<div class="di">'+
-          '<div class="dn">'+esc(p.name)+'</div>'+
-          '<div class="ds">'+esc(sp)+'</div>'+
-          '<div class="da">'+esc(p.address||"Address not available")+phoneHtml+"</div>"+
-          '<div class="dm">'+db+nb+"</div>"+
-          '<div class="dar">'+
-            '<button class="dbt dbt-p" onclick="openLeadModal();event.stopPropagation()">'+
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.72 17z"/></svg>'+
-              " Contact</button>"+
-            '<button class="dbt dbt-s" onclick="focusMap('+i+');event.stopPropagation()">'+
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>'+
-              " View Map</button>"+
-          "</div>"+
-        "</div>"+
-      "</div>";
-    card.addEventListener("click",function(){selectDoc(i,card);});
-    list.appendChild(card);
+/* ═══ TOPBAR ═══ */
+function renderTopBar() {
+  var shown = Math.min(allPhysicians.length, (currentPage+1)*MAX_PAGE);
+  document.getElementById("res-showing").textContent = shown;
+  document.getElementById("res-total").textContent   = totalFound.toLocaleString();
+  var chips = document.getElementById("res-fchips");
+  chips.innerHTML = "";
+  var labels = currentSearch.taxonomy_code ? [currentSearch.taxonomy_code] : (currentSearch.descriptions||[]);
+  labels.forEach(function(d) {
+    var s = document.createElement("span"); s.className = "res-fc"; s.textContent = d;
+    chips.appendChild(s);
   });
-  if(totalFound>MAX_DISPLAY){
-    var btn=document.createElement("button");btn.className="more-btn";
-    btn.textContent="+ View all "+totalFound.toLocaleString()+" results";
-    btn.addEventListener("click",openLeadModal);
-    list.appendChild(btn);
+}
+
+/* ═══ CARDS ═══ */
+function renderCards() {
+  var col   = document.getElementById("results-list");
+  col.innerHTML = "";
+  var end = Math.min(allPhysicians.length, MAX_PAGE);
+  currentPage = 0;
+
+  for (var i=0; i<end; i++) appendCard(col, allPhysicians[i], i);
+  appendLoadMore(col);
+}
+
+function appendCard(col, p, i) {
+  var name     = p.name || "Unknown Provider";
+  var words    = name.split(" ").slice(0,2);
+  var ini      = words.map(function(w){ return w[0]||""; }).join("").toUpperCase();
+  var at       = (p.all_taxonomies||[]).map(function(t){ return t.desc; }).filter(Boolean);
+  var spec     = at.length>1 ? at.slice(0,2).join(" \u00b7 ") : (p.taxonomy_desc||"Provider");
+  var distHtml = p.distance_miles!=null ? '<span class="dc-dist">&#128205; '+p.distance_miles+' mi</span>' : "";
+
+  var card = document.createElement("div");
+  card.className = "dc";
+  card.dataset.index = i;
+
+  card.innerHTML =
+    '<div class="dc-head">'
+    + '<div class="dav">'+ini+'</div>'
+    + '<div class="dc-main">'
+    +   '<div class="dc-name">'+esc(name)+'</div>'
+    +   '<div class="dc-spec">'+esc(spec)+'</div>'
+    + '</div>'
+    + '<div class="dc-right">'
+    +   '<div class="dc-num">'+(i+1)+'</div>'
+    +   distHtml
+    + '</div>'
+    + '<svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'
+    + '</div>'
+    + '<div class="dc-body">'
+    +   '<div class="dc-body-inner">'
+    +     (p.address ? '<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg><span>'+esc(p.address)+'</span></div>' : '')
+    +     (p.phone ? '<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg><span>'+esc(p.phone)+'</span></div>' : '')
+    +     (at.length>2 ? '<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>'+esc(at.join(", "))+'</span></div>' : '')
+    +     (p.npi ? '<div class="dc-npi">NPI &nbsp;'+esc(p.npi)+'</div>' : '')
+    +     '<div class="dc-actions">'
+    +       '<button class="dbt dbt-p" onclick="openLeadModal();event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg> Contact</button>'
+    +       '<button class="dbt dbt-s" onclick="focusMap('+i+');event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> View Map</button>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>';
+
+  card.addEventListener("click", function(e) {
+    if (e.target.closest("button")) return;
+    var wasExpanded = card.classList.contains("expanded");
+    document.querySelectorAll(".dc.expanded").forEach(function(c){ c.classList.remove("expanded","active"); });
+    if (!wasExpanded) {
+      card.classList.add("expanded","active");
+      var idx = parseInt(card.dataset.index);
+      var ph  = allPhysicians[idx];
+      if (ph && ph.lat && ph.lng && markers[idx]) {
+        map.setView([ph.lat, ph.lng], 16);
+        markers[idx].openPopup();
+      }
+    }
+  });
+
+  col.appendChild(card);
+}
+
+function appendLoadMore(col) {
+  var existing = col.querySelector(".load-more-wrap");
+  if (existing) existing.remove();
+  var shown = (currentPage+1) * MAX_PAGE;
+  if (shown >= allPhysicians.length && allPhysicians.length >= totalFound) return;
+
+  var wrap = document.createElement("div"); wrap.className = "load-more-wrap";
+  var btn  = document.createElement("button"); btn.className = "btn-load-more";
+
+  var remaining = totalFound - shown;
+  btn.textContent = remaining > 0
+    ? "Load more (" + remaining.toLocaleString() + " more results)"
+    : "View all " + totalFound.toLocaleString() + " results";
+
+  btn.addEventListener("click", function() {
+    if (shown >= allPhysicians.length) {
+      openLeadModal(); return;
+    }
+    currentPage++;
+    var newEnd = Math.min(allPhysicians.length, (currentPage+1)*MAX_PAGE);
+    for (var i=shown; i<newEnd; i++) appendCard(col, allPhysicians[i], i);
+    appendLoadMore(col);
+    document.getElementById("res-showing").textContent = newEnd;
+    col.removeChild(wrap);
+  });
+
+  wrap.appendChild(btn); col.appendChild(wrap);
+}
+
+/* ═══ MAP MARKERS ═══ */
+function mkPin(num) {
+  return '<div class="map-pin" id="mpin-'+(num-1)+'">'
+    +'<svg viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">'
+    +'<defs><filter id="ps'+num+'" x="-30%" y="-10%" width="160%" height="160%">'
+    +'<feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#0D1B35" flood-opacity=".4"/>'
+    +'</filter></defs>'
+    +'<path d="M15 2C7.82 2 2 7.82 2 15C2 22.5 15 38 15 38C15 38 28 22.5 28 15C28 7.82 22.18 2 15 2Z" fill="#0C7A7A" stroke="white" stroke-width="2" filter="url(#ps'+num+')"/>'
+    +'</svg>'
+    +'<div class="pn">'+num+'</div></div>';
+}
+function mkCtr() {
+  return '<div class="map-pin" style="width:36px;height:48px">'
+    +'<svg viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:48px">'
+    +'<defs><filter id="cps" x="-30%" y="-10%" width="160%" height="160%">'
+    +'<feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#141420" flood-opacity=".5"/>'
+    +'</filter></defs>'
+    +'<path d="M18 2C9.16 2 2 9.16 2 18C2 27 18 46 18 46C18 46 34 27 34 18C34 9.16 26.84 2 18 2Z" fill="#141420" stroke="#0FA8A8" stroke-width="2.5" filter="url(#cps)"/>'
+    +'<text x="18" y="22" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-size="13" font-weight="800" fill="white">&#10022;</text>'
+    +'</svg></div>';
+}
+
+function plotMarkers() {
+  markers.forEach(function(m){ if(m) map.removeLayer(m); }); markers = [];
+  var bounds = [];
+  if (selectedLat && selectedLng) {
+    var ci = L.divIcon({html:mkCtr(), className:"", iconSize:[36,48], iconAnchor:[18,46]});
+    L.marker([selectedLat, selectedLng], {icon:ci}).addTo(map).bindPopup("<b>&#128205; Search Center</b>");
+    bounds.push([selectedLat, selectedLng]);
   }
-}
-
-function selectDoc(idx,card){
-  document.querySelectorAll(".dc").forEach(function(c){c.classList.remove("active");});
-  card.classList.add("active");
-  var p=allPhysicians[idx];
-  if(p.lat&&p.lng&&markers[idx]){map.setView([p.lat,p.lng],17);markers[idx].openPopup();}
-}
-function focusMap(idx){
-  var p=allPhysicians[idx];
-  if(p&&p.lat&&p.lng&&markers[idx]){map.setView([p.lat,p.lng],17);markers[idx].openPopup();}
-}
-
-function mkPin(num){
-  return '<div class="map-pin" id="mpin-'+( num-1)+'"><svg viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg"><defs><filter id="ps'+num+'" x="-30%" y="-10%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#0D1B35" flood-opacity=".4"/></filter></defs><path d="M15 2C7.82 2 2 7.82 2 15C2 22.5 15 38 15 38C15 38 28 22.5 28 15C28 7.82 22.18 2 15 2Z" fill="#0C7A7A" stroke="white" stroke-width="2" filter="url(#ps'+num+')"/></svg><div class="pn">'+num+"</div></div>";
-}
-function mkCtr(){
-  return '<div class="map-pin" style="width:36px;height:48px"><svg viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:48px"><defs><filter id="cps" x="-30%" y="-10%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#141420" flood-opacity=".5"/></filter></defs><path d="M18 2C9.16 2 2 9.16 2 18C2 27 18 46 18 46C18 46 34 27 34 18C34 9.16 26.84 2 18 2Z" fill="#141420" stroke="#0FA8A8" stroke-width="2.5" filter="url(#cps)"/><text x="18" y="22" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-size="13" font-weight="800" fill="white">&#10022;</text></svg></div>';
-}
-
-function plotMarkers(){
-  markers.forEach(function(m){if(m)map.removeLayer(m);});markers=[];
-  var wc=allPhysicians.filter(function(p){return p.lat&&p.lng;});
-  if(!wc.length){if(selectedLat&&selectedLng)map.setView([selectedLat,selectedLng],10);return;}
-  var bounds=[];
-  if(selectedLat&&selectedLng){
-    var ci=L.divIcon({html:mkCtr(),className:"",iconSize:[36,48],iconAnchor:[18,46]});
-    L.marker([selectedLat,selectedLng],{icon:ci}).addTo(map).bindPopup("<b>&#128205; Search Center</b>");
-    bounds.push([selectedLat,selectedLng]);
-  }
-  allPhysicians.forEach(function(p,i){
-    if(!p.lat||!p.lng){markers.push(null);return;}
-    var icon=L.divIcon({html:mkPin(i+1),className:"",iconSize:[30,40],iconAnchor:[15,40]});
-    var th=(p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean).join("<br>")||p.taxonomy_desc||"";
-    var popup='<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:210px;max-width:280px;padding:2px">'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'+
-        '<div style="background:#0C7A7A;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0">'+( i+1)+'</div>'+
-        '<div style="font-weight:700;font-size:.9rem;color:#141420;line-height:1.2">'+esc(p.name)+'</div>'+
-      '</div>'+
-      (th?'<div style="font-size:.75rem;color:#0C7A7A;margin-bottom:5px;line-height:1.4">'+th+"</div>":"")+
-      '<div style="font-size:.75rem;color:#7A7A96;line-height:1.4">'+esc(p.address||"")+'</div>'+
-      (p.phone?'<div style="font-size:.75rem;margin-top:5px;color:#141420">&#128222; '+esc(p.phone)+"</div>":"")+
-      (p.distance_miles!=null?'<div style="font-size:.7rem;color:#0C7A7A;margin-top:5px;font-weight:700">&#128205; '+p.distance_miles+" mi away</div>":"")+
-      (p.npi?'<div style="font-size:.68rem;color:#7A7A96;margin-top:5px;border-top:1px solid #eee;padding-top:5px">NPI: '+esc(p.npi)+"</div>":"")+
-    "</div>";
-    var marker=L.marker([p.lat,p.lng],{icon:icon}).addTo(map).bindPopup(popup,{maxWidth:300});
-    marker.on("click",function(){
-      document.querySelectorAll(".dc").forEach(function(c){c.classList.remove("active");});
-      var cards=document.querySelectorAll(".dc");
-      if(cards[i]){cards[i].classList.add("active");cards[i].scrollIntoView({behavior:"smooth",block:"nearest"});}
+  allPhysicians.forEach(function(p, i) {
+    if (!p.lat || !p.lng) { markers.push(null); return; }
+    var icon = L.divIcon({html:mkPin(i+1), className:"", iconSize:[30,40], iconAnchor:[15,40]});
+    var at   = (p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean).join("<br>") || p.taxonomy_desc || "";
+    var popup = '<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:200px;max-width:270px;padding:2px">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+      +'<div style="background:#0C7A7A;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0">'+(i+1)+'</div>'
+      +'<div style="font-weight:700;font-size:.88rem;color:#141420;line-height:1.2">'+esc(p.name)+'</div>'
+      +'</div>'
+      +(at ? '<div style="font-size:.74rem;color:#0C7A7A;margin-bottom:4px;line-height:1.4">'+at+'</div>' : '')
+      +'<div style="font-size:.74rem;color:#7A7A96;line-height:1.4">'+esc(p.address||"")+'</div>'
+      +(p.phone ? '<div style="font-size:.74rem;margin-top:4px;color:#141420">&#128222; '+esc(p.phone)+'</div>' : '')
+      +(p.distance_miles!=null ? '<div style="font-size:.7rem;color:#0C7A7A;margin-top:4px;font-weight:700">&#128205; '+p.distance_miles+' mi away</div>' : '')
+      +(p.npi ? '<div style="font-size:.67rem;color:#7A7A96;margin-top:4px;border-top:1px solid #eee;padding-top:4px">NPI: '+esc(p.npi)+'</div>' : '')
+      +'</div>';
+    var marker = L.marker([p.lat, p.lng], {icon:icon}).addTo(map).bindPopup(popup, {maxWidth:280});
+    marker.on("click", function() {
+      document.querySelectorAll(".dc").forEach(function(c){ c.classList.remove("expanded","active"); });
+      var cards = document.querySelectorAll(".dc");
+      if (cards[i]) {
+        cards[i].classList.add("expanded","active");
+        cards[i].scrollIntoView({behavior:"smooth", block:"nearest"});
+      }
       document.querySelectorAll(".map-pin").forEach(function(el){
         el.classList.remove("active-pin");
-        if(el.querySelector("path"))el.querySelector("path").setAttribute("fill","#0C7A7A");
+        if(el.querySelector("path")) el.querySelector("path").setAttribute("fill","#0C7A7A");
       });
-      var pinEl=document.getElementById("mpin-"+i);
-      if(pinEl)pinEl.classList.add("active-pin");
+      var pe = document.getElementById("mpin-"+i);
+      if (pe) pe.classList.add("active-pin");
     });
-    markers.push(marker);bounds.push([p.lat,p.lng]);
+    markers.push(marker);
+    bounds.push([p.lat, p.lng]);
   });
-  if(bounds.length>1)map.fitBounds(bounds,{padding:[60,60],maxZoom:16});
-  else if(bounds.length===1)map.setView(bounds[0],15);
+  if (bounds.length > 1) map.fitBounds(bounds, {padding:[60,60], maxZoom:15});
+  else if (bounds.length === 1) map.setView(bounds[0], 14);
 }
 
-function initModal(){
-  document.getElementById("modal-close").addEventListener("click",closeModal);
-  document.getElementById("lead-modal").addEventListener("click",function(e){if(e.target===document.getElementById("lead-modal"))closeModal();});
-  document.getElementById("lead-form").addEventListener("submit",submitLead);
+function focusMap(idx) {
+  var p = allPhysicians[idx];
+  if (p && p.lat && p.lng && markers[idx]) {
+    map.setView([p.lat, p.lng], 16);
+    markers[idx].openPopup();
+  }
 }
-function openLeadModal(){
-  document.getElementById("modal-total").textContent=totalFound.toLocaleString();
-  document.getElementById("modal-form-content").style.display="block";
-  document.getElementById("modal-success-content").style.display="none";
+
+/* ═══ MODAL ═══ */
+function openLeadModal() {
+  document.getElementById("modal-total").textContent = totalFound.toLocaleString();
+  document.getElementById("modal-form-content").style.display = "block";
+  document.getElementById("modal-success-content").style.display = "none";
   document.getElementById("lead-modal").classList.add("open");
 }
-function closeModal(){document.getElementById("lead-modal").classList.remove("open");}
-function submitLead(e){
+function closeModal() { document.getElementById("lead-modal").classList.remove("open"); }
+
+function submitLead(e) {
   e.preventDefault();
-  var form=document.getElementById("lead-form"),errDiv=document.getElementById("lead-error"),btn=document.getElementById("lead-submit");
-  var payload={
-    first_name:form.first_name.value.trim(),last_name:form.last_name.value.trim(),
-    email:form.email.value.trim(),
-    phone:form.phone?form.phone.value.trim():"",
-    title:form.title?form.title.value.trim():"",
-    company:form.company?form.company.value.trim():"",
-    search_context:Object.assign({},currentSearch,{total_results:totalFound,timestamp:new Date().toISOString()})
+  var form = document.getElementById("lead-form");
+  var errDiv = document.getElementById("lead-error");
+  var btn = document.getElementById("lead-submit");
+  var payload = {
+    first_name: form.first_name.value.trim(), last_name: form.last_name.value.trim(),
+    email: form.email.value.trim(),
+    phone: form.phone ? form.phone.value.trim() : "",
+    title: form.title ? form.title.value.trim() : "",
+    company: form.company ? form.company.value.trim() : "",
+    search_context: Object.assign({}, currentSearch, {total_results:totalFound, timestamp:new Date().toISOString()})
   };
-  errDiv.style.display="none";
-  if(!payload.first_name||!payload.last_name){errDiv.textContent="First and last name are required.";errDiv.style.display="block";return;}
-  if(!payload.email||payload.email.indexOf("@")===-1){errDiv.textContent="A valid email is required.";errDiv.style.display="block";return;}
-  btn.disabled=true;btn.textContent="Submitting...";
-  fetch(BACKEND_URL+"/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
-    .then(function(r){return r.json();})
-    .then(function(data){
-      if(data.success){
-        document.getElementById("modal-form-content").style.display="none";
-        document.getElementById("modal-success-content").style.display="block";
-      }else{errDiv.textContent=data.error||"Submission failed.";errDiv.style.display="block";}
+  errDiv.style.display = "none";
+  if (!payload.first_name||!payload.last_name) { errDiv.textContent="First and last name are required."; errDiv.style.display="block"; return; }
+  if (!payload.email||payload.email.indexOf("@")===-1) { errDiv.textContent="A valid email is required."; errDiv.style.display="block"; return; }
+  btn.disabled = true; btn.textContent = "Submitting...";
+  fetch(BACKEND_URL + "/api/leads", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)})
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        document.getElementById("modal-form-content").style.display = "none";
+        document.getElementById("modal-success-content").style.display = "block";
+      } else { errDiv.textContent = data.error||"Submission failed."; errDiv.style.display = "block"; }
     })
-    .catch(function(){errDiv.textContent="Network error. Please try again.";errDiv.style.display="block";})
-    .finally(function(){btn.disabled=false;btn.textContent="Request Full Access →";});
+    .catch(function(){ errDiv.textContent = "Network error. Please try again."; errDiv.style.display = "block"; })
+    .finally(function(){ btn.disabled=false; btn.textContent="Request Full Access \u2192"; });
 }
 
-function setLoading(on){document.getElementById("spinner").classList.toggle("show",on);document.getElementById("search-btn").disabled=on;}
-function showToast(msg,type){
-  document.getElementById("toast-msg").textContent=msg;
-  var t=document.getElementById("toast");
-  t.className="toast"+(type?" "+type:"");
-  t.classList.add("show");
-  setTimeout(function(){t.classList.remove("show");},4500);
+/* ═══ UTILS ═══ */
+function setLoading(on) {
+  document.getElementById("spinner").classList.toggle("show", on);
+  document.getElementById("search-btn").disabled = on;
 }
-function esc(str){return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-document.addEventListener("keydown",function(e){if(e.key==="Escape")closeModal();});
+function showToast(msg, type) {
+  document.getElementById("toast-msg").textContent = msg;
+  var t = document.getElementById("toast");
+  t.className = "toast" + (type ? " "+type : "");
+  t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); }, 4500);
+}
+function esc(str) {
+  return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
 </script>
 </body>
 </html>
