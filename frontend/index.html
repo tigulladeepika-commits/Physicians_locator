@@ -16,35 +16,146 @@
   --teal:#0C7A7A;--teal2:#0FA8A8;--tg:rgba(12,122,122,.10);--tb:rgba(12,122,122,.22);
   --coral:#D95F4B;--gold:#C4993A;
   --s1:0 2px 8px rgba(20,20,32,.06);--s2:0 8px 28px rgba(20,20,32,.10);--s3:0 20px 60px rgba(20,20,32,.14);
-  --r:10px;--tr:0.2s cubic-bezier(.4,0,.2,1);
+  --r:10px;--tr:0.18s cubic-bezier(.4,0,.2,1);
   --f:'Plus Jakarta Sans',system-ui,sans-serif;
   --fd:'Cormorant Garamond',Georgia,serif;
   --fm:'DM Mono',monospace;
-  /* Sticky detail header height — used to offset scrollable content */
-  --detail-hdr-h: 0px;
+  --hdr:64px;
+  --sbar:68px;
 }
 html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--ink);font-size:15px;line-height:1.6;overflow-x:hidden}
 
-/* ─── HEADER ────────────────────────────────────────────────────────────── */
-.hdr{background:var(--w);border-bottom:1px solid var(--cream3);padding:0 clamp(1rem,4vw,2.5rem);height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;box-shadow:var(--s1)}
-.logo{display:flex;align-items:center;gap:11px;text-decoration:none}
+/* ══ HEADER ══ */
+.hdr{background:var(--w);border-bottom:1px solid var(--cream3);padding:0 clamp(1rem,4vw,2.5rem);height:var(--hdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:var(--s1)}
+.logo{display:flex;align-items:center;gap:11px;text-decoration:none;cursor:pointer}
 .logo-mark{width:36px;height:36px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden}
 .logo-mark::before{content:'';position:absolute;width:16px;height:16px;border:2px solid var(--teal2);border-radius:50%;top:7px;left:50%;transform:translateX(-50%)}
 .logo-mark::after{content:'';position:absolute;width:2px;height:9px;background:var(--teal2);bottom:5px;left:50%;transform:translateX(-50%);border-radius:1px}
 .logo-name{font-family:var(--fd);font-size:1.25rem;font-weight:700;color:var(--ink);letter-spacing:-.01em;line-height:1}
 .logo-name em{color:var(--teal);font-style:normal}
 .logo-sub{font-size:.62rem;font-weight:500;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
-.hdr-badge{display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:600;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:5px 13px;border-radius:100px;letter-spacing:.04em}
+.hdr-badge{display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:600;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:5px 13px;border-radius:100px}
 .hdr-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2.2s ease infinite}
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
 
-/* ─── PHASE 1: SEARCH ───────────────────────────────────────────────────── */
-.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 64px);padding:2rem 1rem}
+/* ══ PHASE 1: SEARCH CARD ══ */
+.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--hdr));padding:2rem 1rem}
 .search-card{background:var(--w);border-radius:20px;box-shadow:var(--s3);padding:2.5rem 2.25rem;width:100%;max-width:580px;border:1px solid var(--cream2)}
 .sc-eye{font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:.5rem}
 .sc-title{font-family:var(--fd);font-size:2rem;font-weight:700;color:var(--ink);line-height:1.15;letter-spacing:-.02em;margin-bottom:.35rem}
 .sc-title em{font-style:italic;color:var(--teal)}
 .sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
+
+/* ══ STICKY SEARCH BAR — IRCTC style ══ */
+.sbar{
+  background:#0F2044;
+  padding:0 clamp(1rem,3vw,2rem);
+  height:var(--sbar);
+  display:none;align-items:center;gap:8px;
+  position:sticky;top:var(--hdr);z-index:200;
+  box-shadow:0 4px 20px rgba(10,18,40,.55);
+  overflow-x:auto;overflow-y:hidden;
+  border-bottom:3px solid #0C7A7A;
+}
+.sbar.show{display:flex}
+/* Each field looks like a white-background input box — IRCTC style */
+.sbar-field{
+  display:flex;flex-direction:column;flex-shrink:0;
+  background:#fff;
+  border-radius:6px;
+  padding:5px 13px 5px 11px;
+  min-width:110px;
+  cursor:default;
+  border:1.5px solid #ddd;
+  transition:border-color .15s;
+  position:relative;
+}
+.sbar-field:hover{border-color:#0C7A7A;}
+/* small icon prefix on first field */
+.sbar-field.has-icon{padding-left:30px}
+.sbar-field-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#0C7A7A;width:13px;height:13px;flex-shrink:0}
+.sbar-label{font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:1px;line-height:1}
+.sbar-val{font-size:.84rem;font-weight:700;color:#111;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.sbar-val.teal{color:#0C7A7A}
+.sbar-val.green{color:#1a7a4a}
+/* separator arrow between fields — like IRCTC swap arrow */
+.sbar-sep{
+  display:flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;
+  background:#0F2044;border:1.5px solid rgba(255,255,255,.18);
+  flex-shrink:0;color:rgba(255,255,255,.5);
+  font-size:.7rem;
+}
+.sbar-chips{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;align-items:center;max-width:240px}
+.sbar-chips::-webkit-scrollbar{display:none}
+.sbar-chip{font-size:.68rem;font-weight:700;color:#0C7A7A;background:rgba(12,122,122,.1);border:1.5px solid rgba(12,122,122,.3);padding:2px 8px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+/* Right-side buttons */
+.sbar-btn{
+  margin-left:auto;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+  padding:9px 15px;
+  background:rgba(255,255,255,.08);
+  border:1.5px solid rgba(255,255,255,.18);
+  border-radius:6px;
+  font-family:var(--f);font-size:.78rem;font-weight:700;color:rgba(255,255,255,.75);
+  cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;
+}
+.sbar-btn:hover{background:rgba(255,255,255,.16);color:#fff}
+.sbar-btn svg{width:13px;height:13px}
+/* Modify Search — orange like IRCTC */
+.sbar-modify{
+  display:flex;align-items:center;gap:7px;
+  padding:9px 18px;
+  background:#E8730A;
+  border:none;border-radius:6px;
+  font-family:var(--f);font-size:.82rem;font-weight:700;color:#fff;
+  cursor:pointer;transition:background .15s,transform .1s;
+  white-space:nowrap;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(232,115,10,.4);
+}
+.sbar-modify:hover{background:#F08020;transform:translateY(-1px)}
+.sbar-modify svg{width:13px;height:13px}
+
+/* ══ MODIFY PANEL (inline dropdown from sbar) ══ */
+.modify-panel{display:none;background:var(--ink);border-top:1px solid rgba(255,255,255,.1);padding:1rem clamp(1rem,3vw,2rem);position:sticky;top:calc(var(--hdr) + var(--sbar));z-index:190;box-shadow:0 8px 24px rgba(20,20,32,.3)}
+.modify-panel.show{display:block}
+.mp-inner{display:grid;grid-template-columns:1fr 120px 160px 1fr auto;gap:.75rem;align-items:end;max-width:1200px}
+.mp-field{display:flex;flex-direction:column;gap:4px}
+.mp-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.mp-inp{width:100%;padding:9px 12px;font-family:var(--f);font-size:.85rem;color:var(--ink);background:rgba(255,255,255,.92);border:1.5px solid transparent;border-radius:8px;outline:none;transition:border-color .15s;appearance:none}
+.mp-inp:focus{border-color:var(--teal2);background:var(--w)}
+.mp-inp::placeholder{color:var(--ink3)}
+.mp-tag-box{min-height:40px;padding:4px 8px;background:rgba(255,255,255,.92);border:1.5px solid transparent;border-radius:8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;cursor:text;transition:border-color .15s}
+.mp-tag-box:focus-within{border-color:var(--teal2);background:var(--w)}
+.mp-chip{display:inline-flex;align-items:center;gap:4px;background:var(--ink);color:var(--w);font-size:.7rem;font-weight:600;padding:2px 7px 2px 9px;border-radius:100px;white-space:nowrap;animation:chipPop .15s ease}
+@keyframes chipPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.mp-chip-x{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:.85rem;padding:0;line-height:1;display:flex;align-items:center}
+.mp-chip-x:hover{color:var(--w)}
+.mp-chip-input{border:none;outline:none;font-family:var(--f);font-size:.82rem;color:var(--ink);background:transparent;min-width:80px;flex:1}
+.mp-chip-input::placeholder{color:var(--ink3)}
+.mp-apply{padding:9px 20px;background:var(--teal2);color:var(--w);border:none;border-radius:8px;font-family:var(--f);font-size:.85rem;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;height:40px}
+.mp-apply:hover{background:var(--teal)}
+
+/* shared dropdowns */
+.ac-list,.tax-list,.mp-ac-list,.mp-tax-list{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--w);border:1.5px solid var(--tb);border-radius:var(--r);box-shadow:var(--s3);z-index:600;max-height:230px;overflow-y:auto;display:none;scrollbar-width:thin;scrollbar-color:var(--cream3) transparent}
+.ac-list.open,.tax-list.open,.mp-ac-list.open,.mp-tax-list.open{display:block}
+.ac-item,.mp-ac-item{padding:9px 14px;font-size:.84rem;color:var(--ink2);cursor:pointer;border-bottom:1px solid var(--cream);display:flex;align-items:flex-start;gap:8px;transition:background .08s}
+.ac-item:last-child,.mp-ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item.sel,.mp-ac-item:hover,.mp-ac-item.sel{background:var(--tg)}
+.ac-ico{color:var(--teal);margin-top:2px;flex-shrink:0}
+.ac-main{font-weight:600;line-height:1.3;color:var(--ink)}
+.ac-sub{font-size:.72rem;color:var(--ink3);margin-top:1px}
+.tax-item,.mp-tax-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--cream);transition:background .08s}
+.tax-item:last-child,.mp-tax-item:last-child{border-bottom:none}
+.tax-item:hover,.tax-item.active,.mp-tax-item:hover,.mp-tax-item.active{background:var(--tg)}
+.tax-n{font-size:.84rem;font-weight:600;color:var(--ink)}
+.tax-c{font-size:.7rem;color:var(--ink3);margin-top:1px}
+.ac-spin{padding:10px 14px;font-size:.8rem;color:var(--ink3);display:flex;align-items:center;gap:7px}
+.ac-spin-d{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:ldot .55s ease infinite}
+.ac-spin-d:nth-child(2){animation-delay:.15s}.ac-spin-d:nth-child(3){animation-delay:.3s}
+@keyframes ldot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* ══ SHARED FORM FIELDS ══ */
 .field{margin-bottom:.9rem;position:relative}
 .field:last-child{margin-bottom:0}
 .lbl{display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
@@ -53,356 +164,71 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
 .inp::placeholder{color:var(--ink3)}
 .inp:focus{background:var(--w);border-color:var(--teal);box-shadow:0 0 0 3px var(--tg)}
 .inp-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-
-/* TAG INPUT */
 .tag-box{min-height:46px;padding:5px 9px;background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .15s,box-shadow .15s}
 .tag-box:focus-within{background:var(--w);border-color:var(--teal);box-shadow:0 0 0 3px var(--tg)}
 .chip{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:var(--w);font-size:.72rem;font-weight:600;padding:3px 8px 3px 10px;border-radius:100px;white-space:nowrap;max-width:220px;animation:chipPop .15s ease}
-@keyframes chipPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 .chip span{overflow:hidden;text-overflow:ellipsis}
 .chip-x{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:.9rem;padding:0;line-height:1;display:flex;align-items:center;flex-shrink:0;transition:color .1s}
 .chip-x:hover{color:var(--w)}
 .chip-input{border:none;outline:none;font-family:var(--f);font-size:.875rem;color:var(--ink);background:transparent;min-width:110px;flex:1;padding:2px 4px}
 .chip-input::placeholder{color:var(--ink3)}
 .fhint{font-size:.67rem;color:var(--ink3);margin-top:4px;font-style:italic}
-
-/* DROPDOWNS */
-.ac-list,.tax-list{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--w);border:1.5px solid var(--tb);border-radius:var(--r);box-shadow:var(--s3);z-index:600;max-height:240px;overflow-y:auto;display:none;scrollbar-width:thin;scrollbar-color:var(--cream3) transparent}
-.ac-list.open,.tax-list.open{display:block}
-.ac-item{padding:9px 14px;font-size:.85rem;color:var(--ink2);cursor:pointer;border-bottom:1px solid var(--cream);display:flex;align-items:flex-start;gap:9px;transition:background .08s}
-.ac-item:last-child{border-bottom:none}
-.ac-item:hover,.ac-item.sel{background:var(--tg);color:var(--ink)}
-.ac-ico{color:var(--teal);margin-top:2px;flex-shrink:0}
-.ac-main{font-weight:600;line-height:1.3;color:var(--ink)}
-.ac-sub{font-size:.72rem;color:var(--ink3);margin-top:1px}
-.tax-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--cream);transition:background .08s}
-.tax-item:last-child{border-bottom:none}
-.tax-item:hover,.tax-item.active{background:var(--tg)}
-.tax-n{font-size:.85rem;font-weight:600;color:var(--ink)}
-.tax-c{font-size:.7rem;color:var(--ink3);margin-top:1px}
 .tax-st{font-size:.67rem;color:var(--ink3);margin-top:4px;transition:opacity .5s}
-.ac-loading{padding:10px 14px;font-size:.8rem;color:var(--ink3);display:flex;align-items:center;gap:8px}
-.ac-loading-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:ldot .6s ease infinite}
-.ac-loading-dot:nth-child(2){animation-delay:.15s}
-.ac-loading-dot:nth-child(3){animation-delay:.3s}
-@keyframes ldot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
-
-/* SEARCH BTN */
-.btn-s{width:100%;padding:12px 16px;background:var(--ink);color:var(--w);border:none;border-radius:var(--r);font-family:var(--f);font-size:.9rem;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s,transform .15s,box-shadow .15s;margin-top:.75rem;position:relative;overflow:hidden}
+.btn-s{width:100%;padding:12px 16px;background:var(--ink);color:var(--w);border:none;border-radius:var(--r);font-family:var(--f);font-size:.9rem;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s,transform .12s,box-shadow .15s;margin-top:.75rem}
 .btn-s:hover{background:var(--teal);transform:translateY(-1px);box-shadow:var(--s2)}
 .btn-s:disabled{background:var(--cream3);cursor:not-allowed;transform:none;box-shadow:none;color:var(--ink3)}
 .btn-s svg{width:16px;height:16px;flex-shrink:0}
 
-/* ─── PHASE 2: RESULTS ──────────────────────────────────────────────────── */
-.phase-results{display:none;flex-direction:column;min-height:calc(100vh - 64px)}
+/* ══ RESULTS LAYOUT ══ */
+.phase-results{display:none;flex-direction:column}
+.res-count-bar{background:var(--cream);border-bottom:1px solid var(--cream2);padding:.6rem clamp(1rem,3vw,2rem);display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.rc-txt{font-size:.78rem;font-weight:700;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase}
+.rc-txt strong{color:var(--teal);font-size:.92rem}
+.rc-chips{display:flex;gap:5px;flex-wrap:wrap}
+.rc-chip{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 9px;border-radius:100px}
 
-/* RESULTS TOP BAR */
-.res-topbar{background:var(--w);border-bottom:1px solid var(--cream2);padding:.85rem clamp(1rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;position:sticky;top:64px;z-index:100;box-shadow:var(--s1)}
-.res-count{font-size:.8rem;font-weight:700;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
-.res-count strong{color:var(--teal);font-size:.95rem}
-.res-fchips{display:flex;flex-wrap:wrap;gap:5px}
-.res-fc{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 9px;border-radius:100px}
-.btn-new-search{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);font-family:var(--f);font-size:.78rem;font-weight:700;color:var(--ink2);cursor:pointer;transition:var(--tr)}
-.btn-new-search:hover{border-color:var(--teal);color:var(--teal);background:var(--tg)}
-.btn-new-search svg{width:13px;height:13px}
-
-/* SPLIT LAYOUT */
-.res-body{display:grid;grid-template-columns:440px 1fr;flex:1}
-.res-list-col{overflow-y:auto;height:calc(100vh - 64px - 56px);scrollbar-width:thin;scrollbar-color:var(--cream3) transparent;background:var(--w);border-right:1px solid var(--cream2)}
+.res-body{display:grid;grid-template-columns:440px 1fr}
+.res-list-col{background:var(--w);border-right:1px solid var(--cream2);overflow-y:auto;height:calc(100vh - var(--hdr) - var(--sbar) - 38px);scrollbar-width:thin;scrollbar-color:var(--cream3) transparent}
 .res-list-col::-webkit-scrollbar{width:5px}
 .res-list-col::-webkit-scrollbar-thumb{background:var(--cream3);border-radius:3px}
+.res-map-col{position:relative}
+#map{width:100%;height:calc(100vh - var(--hdr) - var(--sbar) - 38px);position:sticky;top:calc(var(--hdr) + var(--sbar) + 38px)}
 
-/* PHYSICIAN CARD — collapsed */
-.dc{border-bottom:1px solid var(--cream2);cursor:pointer;transition:background .12s;position:relative;overflow:hidden}
+/* dynamic sticky offset when modify panel open */
+body.mp-open .res-list-col{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px)}
+body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);top:calc(var(--hdr) + var(--sbar) + 38px + 70px)}
+
+/* ══ PHYSICIAN CARDS ══ */
+.dc{border-bottom:1px solid var(--cream2);cursor:pointer;transition:background .1s;position:relative}
 .dc:hover{background:#F7F9FF}
 .dc.active{background:var(--tg);border-left:3px solid var(--teal)}
-.dc-head{padding:.95rem 1.5rem;display:flex;align-items:center;gap:12px}
+.dc-head{padding:.9rem 1.4rem;display:flex;align-items:center;gap:11px}
 .dav{width:42px;height:42px;border-radius:10px;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--w);flex-shrink:0;position:relative;overflow:hidden}
 .dav::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(12,122,122,.5),transparent)}
 .dc-main{flex:1;min-width:0}
-.dc-name{font-weight:700;font-size:.9rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
-.dc-spec{font-size:.74rem;color:var(--teal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.dc-name{font-weight:700;font-size:.88rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.dc-spec{font-size:.73rem;color:var(--teal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .dc-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
-.dc-dist{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 8px;border-radius:100px}
+.dc-dist{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 7px;border-radius:100px}
 .dc-num{width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--w);font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center}
-.dc-chevron{width:16px;height:16px;color:var(--ink3);transition:transform .22s ease;flex-shrink:0;margin-left:4px}
+.dc-chevron{width:16px;height:16px;color:var(--ink3);transition:transform .22s ease;flex-shrink:0;margin-left:2px}
 .dc.expanded .dc-chevron{transform:rotate(180deg)}
-
-/* EXPANDED DETAILS */
-.dc-body{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--cream)}
-.dc.expanded .dc-body{max-height:400px}
-.dc-body-inner{padding:.85rem 1.5rem 1rem 1.5rem;border-top:1px solid var(--cream2)}
-.dc-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:.55rem;font-size:.8rem;color:var(--ink2)}
+.dc-body{max-height:0;overflow:hidden;transition:max-height .28s ease;background:var(--cream)}
+.dc.expanded .dc-body{max-height:360px}
+.dc-body-inner{padding:.8rem 1.4rem .95rem}
+.dc-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:.5rem;font-size:.8rem;color:var(--ink2);line-height:1.45}
 .dc-row svg{width:13px;height:13px;color:var(--ink3);flex-shrink:0;margin-top:2px}
-.dc-npi{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:.67rem;color:var(--ink3);background:var(--cream2);padding:3px 9px;border-radius:5px;border:1px solid var(--cream3);margin-bottom:.75rem}
-.dc-actions{display:flex;gap:7px}
-.dbt{flex:1;padding:7px 10px;border-radius:7px;font-size:.74rem;font-weight:700;cursor:pointer;border:none;transition:background .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:.03em}
-.dbt-p{background:var(--ink);color:var(--w)}
-.dbt-p:hover{background:var(--teal)}
-.dbt-s{background:var(--cream2);color:var(--ink2);border:1px solid var(--cream3)}
-.dbt-s:hover{background:var(--cream3)}
-/* NEW: View Details button */
-.dbt-d{background:var(--teal);color:var(--w)}
-.dbt-d:hover{background:var(--teal2);transform:translateY(-1px)}
+.dc-npi{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:.67rem;color:var(--ink3);background:var(--cream2);padding:3px 9px;border-radius:5px;border:1px solid var(--cream3);margin-bottom:.7rem}
+.dc-acts{display:flex;gap:7px;margin-top:.1rem}
+.dbt{flex:1;padding:7px 10px;border-radius:7px;font-size:.74rem;font-weight:700;cursor:pointer;border:none;transition:background .12s;display:flex;align-items:center;justify-content:center;gap:5px}
+.dbt-p{background:var(--ink);color:var(--w)}.dbt-p:hover{background:var(--teal)}
+.dbt-s{background:var(--cream2);color:var(--ink2);border:1px solid var(--cream3)}.dbt-s:hover{background:var(--cream3)}
 .dbt svg{width:12px;height:12px}
 
-/* LOAD MORE */
-.load-more-wrap{padding:1rem 1.5rem}
-.btn-load-more{width:100%;padding:11px;background:var(--w);border:2px dashed var(--cream3);border-radius:var(--r);color:var(--teal);font-family:var(--f);font-size:.84rem;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s;text-align:center;letter-spacing:.03em}
-.btn-load-more:hover{border-color:var(--teal);background:var(--tg)}
-.btn-load-more:disabled{opacity:.5;cursor:not-allowed}
-
-/* MAP */
-.res-map-col{position:relative}
-#map{width:100%;height:calc(100vh - 64px - 56px);position:sticky;top:calc(64px + 56px)}
-
-/* ─── PHASE 3: PHYSICIAN DETAIL PAGE ────────────────────────────────────── */
-.phase-detail{display:none;flex-direction:column;min-height:calc(100vh - 64px)}
-
-/*
- * ════════════════════════════════════════════════════════════════
- *  STICKY DETAIL HEADER — IRCTC-style summary strip
- *  Sits at top:64px (below the main nav), slides in on scroll.
- *  Contains: Name · NPI · Distance · Location · Specialties
- * ════════════════════════════════════════════════════════════════
- */
-.detail-sticky{
-  position:sticky;
-  top:64px;
-  z-index:200;
-  background:var(--w);
-  border-bottom:2px solid var(--teal);
-  box-shadow:0 4px 20px rgba(12,122,122,.12);
-  transform:translateY(0);
-  transition:transform .3s cubic-bezier(.4,0,.2,1), box-shadow .3s;
-  overflow:hidden;
-}
-/* Rainbow accent line at very top — mirrors IRCTC's colored top strip */
-.detail-sticky::before{
-  content:'';
-  position:absolute;
-  top:0;left:0;right:0;
-  height:3px;
-  background:linear-gradient(90deg, var(--teal) 0%, var(--teal2) 40%, var(--gold) 70%, var(--coral) 100%);
-}
-.detail-sticky.hidden{
-  transform:translateY(-110%);
-  box-shadow:none;
-}
-/* Inner strip — the actual IRCTC row layout */
-.ds-inner{
-  display:flex;
-  align-items:stretch;
-  min-height:58px;
-  padding:0 clamp(1rem,3vw,2rem);
-  gap:0;
-  overflow-x:auto;
-  scrollbar-width:none;
-}
-.ds-inner::-webkit-scrollbar{display:none}
-
-/* Each cell = one key identifier (like IRCTC route / date / class columns) */
-.ds-cell{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  padding:.55rem 1.1rem;
-  border-right:1px solid var(--cream2);
-  min-width:0;
-  flex-shrink:0;
-}
-.ds-cell:first-child{padding-left:0}
-.ds-cell:last-child{border-right:none;padding-right:0}
-.ds-cell.grow{flex:1;min-width:180px}
-.ds-label{
-  font-family:var(--fm);
-  font-size:.56rem;
-  font-weight:500;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-  color:var(--ink3);
-  margin-bottom:2px;
-  white-space:nowrap;
-}
-.ds-value{
-  font-size:.82rem;
-  font-weight:700;
-  color:var(--ink);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  line-height:1.2;
-}
-.ds-value.teal{color:var(--teal)}
-.ds-value.mono{font-family:var(--fm);font-size:.78rem;color:var(--teal)}
-/* Distance pill — mimics IRCTC's duration chip */
-.ds-dist-pill{
-  display:inline-flex;
-  align-items:center;
-  gap:4px;
-  background:var(--tg);
-  border:1px solid var(--tb);
-  color:var(--teal);
-  font-size:.68rem;
-  font-weight:700;
-  padding:2px 9px;
-  border-radius:100px;
-  white-space:nowrap;
-}
-/* Status badge inside sticky */
-.ds-status{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  font-size:.65rem;
-  font-weight:700;
-  letter-spacing:.05em;
-  padding:2px 8px;
-  border-radius:100px;
-  text-transform:uppercase;
-}
-.ds-status.recruiting{background:#E6F4F4;color:var(--teal);border:1px solid var(--tb)}
-.ds-status.active{background:#FEF3E2;color:var(--gold);border:1px solid rgba(196,153,58,.3)}
-/* Back button in sticky */
-.ds-back{
-  display:flex;align-items:center;gap:5px;
-  font-size:.74rem;font-weight:700;
-  color:var(--ink3);
-  background:var(--cream);
-  border:1.5px solid var(--cream3);
-  border-radius:8px;
-  padding:5px 12px;
-  cursor:pointer;
-  white-space:nowrap;
-  transition:var(--tr);
-  align-self:center;
-  margin-left:auto;
-  flex-shrink:0;
-}
-.ds-back:hover{color:var(--teal);border-color:var(--teal);background:var(--tg)}
-
-/* ─── DETAIL HERO (visible at top, scroll away = sticky appears) ─────── */
-.detail-hero{
-  background:var(--w);
-  border-bottom:1px solid var(--cream2);
-  padding:1.75rem clamp(1rem,4vw,2.5rem);
-}
-.detail-hero-nav{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:1.2rem;
-  flex-wrap:wrap;gap:.5rem;
-}
-.detail-back-full{
-  display:flex;align-items:center;gap:7px;
-  font-size:.8rem;font-weight:700;color:var(--ink3);
-  background:none;border:none;cursor:pointer;
-  padding:0;transition:color .15s;
-}
-.detail-back-full:hover{color:var(--teal)}
-.detail-hero-badges{display:flex;flex-wrap:wrap;gap:6px}
-.badge{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:.67rem;font-weight:700;letter-spacing:.05em;
-  text-transform:uppercase;padding:3px 10px;border-radius:100px;
-}
-.badge-teal{background:var(--tg);color:var(--teal);border:1px solid var(--tb)}
-.badge-gold{background:#FEF3E2;color:var(--gold);border:1px solid rgba(196,153,58,.3)}
-.badge-ink{background:var(--cream2);color:var(--ink2);border:1px solid var(--cream3)}
-.detail-hero-name{
-  font-family:var(--fd);
-  font-size:clamp(1.5rem,3vw,2.1rem);
-  font-weight:700;color:var(--ink);
-  letter-spacing:-.02em;
-  line-height:1.2;
-  margin-bottom:.4rem;
-}
-.detail-hero-spec{
-  font-size:.9rem;color:var(--teal);font-weight:600;margin-bottom:1.1rem;
-}
-/* Key identifier pills row — the "at-a-glance" summary (like IRCTC route row) */
-.detail-hero-pills{
-  display:flex;flex-wrap:wrap;gap:.6rem;
-  margin-bottom:.5rem;
-}
-.hero-pill{
-  display:flex;align-items:center;gap:8px;
-  background:var(--cream);border:1.5px solid var(--cream2);
-  border-radius:10px;padding:.55rem .85rem;
-}
-.hero-pill-icon{font-size:1rem;line-height:1;flex-shrink:0}
-.hero-pill-label{font-family:var(--fm);font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:1px}
-.hero-pill-value{font-size:.82rem;font-weight:700;color:var(--ink);line-height:1.2}
-.hero-pill-value.teal{color:var(--teal)}
-
-/* ─── DETAIL BODY ────────────────────────────────────────────────────── */
-.detail-body{
-  max-width:900px;margin:0 auto;
-  padding:1.75rem clamp(1rem,4vw,2.5rem);
-  display:grid;
-  grid-template-columns:1fr 280px;
-  gap:1.75rem;
-  width:100%;
-}
-.detail-section{margin-bottom:1.75rem}
-.detail-section-title{
-  font-family:var(--fm);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ink3);margin-bottom:.85rem;
-  padding-bottom:.5rem;border-bottom:1px solid var(--cream2);
-}
-.detail-info-row{
-  display:flex;align-items:flex-start;gap:10px;
-  padding:.65rem 0;border-bottom:1px solid var(--cream);
-  font-size:.85rem;color:var(--ink2);
-}
-.detail-info-row:last-child{border-bottom:none}
-.dir-label{
-  font-size:.7rem;font-weight:700;color:var(--ink3);
-  text-transform:uppercase;letter-spacing:.07em;
-  min-width:100px;flex-shrink:0;margin-top:1px;
-}
-.dir-value{font-weight:500;color:var(--ink);flex:1;word-break:break-word}
-.tax-tag{
-  display:inline-flex;margin:2px 3px;
-  background:var(--tg);color:var(--teal);
-  font-size:.7rem;font-weight:700;
-  padding:2px 9px;border-radius:100px;
-  border:1px solid var(--tb);
-}
-
-/* SIDEBAR */
-.detail-sidebar{display:flex;flex-direction:column;gap:1rem}
-.scard{
-  background:var(--w);border:1.5px solid var(--cream2);
-  border-radius:14px;padding:1.1rem;
-  box-shadow:var(--s1);
-}
-.scard-title{font-family:var(--fm);font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:.75rem}
-.scard-cta{background:var(--ink);border-radius:14px;padding:1.25rem}
-.scard-cta .scard-title{color:rgba(255,255,255,.5)}
-.scard-cta p{font-size:.82rem;color:rgba(255,255,255,.7);margin-bottom:1rem;line-height:1.5}
-.btn-cta{
-  width:100%;padding:9px 12px;
-  background:var(--teal);color:var(--w);
-  border:none;border-radius:8px;
-  font-family:var(--f);font-size:.82rem;font-weight:700;
-  cursor:pointer;transition:background .15s,transform .1s;
-  display:flex;align-items:center;justify-content:center;gap:6px;
-}
-.btn-cta:hover{background:var(--teal2);transform:translateY(-1px)}
-.npi-display{
-  font-family:var(--fm);font-size:.95rem;font-weight:500;
-  color:var(--teal);background:var(--tg);
-  border:1px solid var(--tb);border-radius:8px;
-  padding:.5rem .75rem;text-align:center;letter-spacing:.04em;
-}
-
-/* SPINNER */
-.sw{position:fixed;inset:0;background:rgba(250,248,244,.78);display:none;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(3px)}
-.sw.show{display:flex}
-.sb{background:var(--w);border-radius:16px;padding:2rem 2.5rem;box-shadow:var(--s3);text-align:center;border:1px solid var(--cream2)}
-.sp{width:44px;height:44px;border:3px solid var(--cream3);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .75rem}
-@keyframes spin{to{transform:rotate(360deg)}}
-.sb p{font-size:.82rem;color:var(--ink3);font-weight:500}
+/* load more */
+.load-more-wrap{padding:1rem 1.4rem}
+.btn-lm{width:100%;padding:11px;background:var(--w);border:2px dashed var(--cream3);border-radius:var(--r);color:var(--teal);font-family:var(--f);font-size:.84rem;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s;text-align:center}
+.btn-lm:hover{border-color:var(--teal);background:var(--tg)}
 
 /* PINS */
 .map-pin{position:relative;width:30px;height:40px;cursor:pointer}
@@ -411,6 +237,14 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
 .map-pin .pn{position:absolute;top:7px;left:50%;transform:translateX(-50%);font-family:var(--f);font-size:.68rem;font-weight:800;color:#fff;line-height:1;pointer-events:none;letter-spacing:-.5px}
 .map-pin.active-pin svg path{fill:var(--gold)}
 .map-pin.active-pin svg{filter:drop-shadow(0 4px 8px rgba(196,153,58,.5));transform:scale(1.25) translateY(-3px)}
+
+/* SPINNER */
+.sw{position:fixed;inset:0;background:rgba(250,248,244,.78);display:none;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(3px)}
+.sw.show{display:flex}
+.sb2{background:var(--w);border-radius:16px;padding:2rem 2.5rem;box-shadow:var(--s3);text-align:center;border:1px solid var(--cream2)}
+.sp{width:44px;height:44px;border:3px solid var(--cream3);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .75rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sb2 p{font-size:.82rem;color:var(--ink3);font-weight:500}
 
 /* MODAL */
 .mbg{position:fixed;inset:0;background:rgba(13,27,53,.55);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem}
@@ -439,39 +273,34 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
 .msr{width:64px;height:64px;background:linear-gradient(135deg,var(--teal),var(--teal2));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
 @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
 .msr svg{width:28px;height:28px;color:var(--w)}
-.mst{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:var(--ink);margin-bottom:.5rem;letter-spacing:-.02em}
-.msm{font-size:.85rem;color:var(--ink3);line-height:1.6}
+.mst2{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:var(--ink);margin-bottom:.5rem;letter-spacing:-.02em}
+.msm2{font-size:.85rem;color:var(--ink3);line-height:1.6}
 
 /* TOAST */
 .toast{position:fixed;bottom:1.75rem;right:1.75rem;background:var(--ink);color:var(--w);padding:11px 18px;border-radius:var(--r);font-size:.83rem;font-weight:500;box-shadow:var(--s3);z-index:3000;transform:translateY(80px);opacity:0;transition:all .3s ease;max-width:300px;display:flex;align-items:center;gap:9px}
 .toast.show{transform:none;opacity:1}
-.toast.error{background:var(--coral)}
-.toast.success{background:var(--teal)}
+.toast.error{background:var(--coral)}.toast.success{background:var(--teal)}
 
-/* ─── RESPONSIVE ─────────────────────────────────────────────────────── */
 @media(max-width:900px){
   .res-body{grid-template-columns:1fr}
-  .res-list-col{height:auto;max-height:60vh}
-  #map{height:400px;position:static}
-  .detail-body{grid-template-columns:1fr}
-  .detail-sidebar{order:-1}
-  .ds-cell{padding:.45rem .7rem}
-  .ds-value{font-size:.76rem}
+  .res-list-col{height:auto;max-height:55vh}
+  #map{height:380px;position:static}
+  .mp-inner{grid-template-columns:1fr 1fr}
+  .mp-apply{grid-column:1/-1}
 }
 @media(max-width:520px){
   .search-card{padding:1.75rem 1.25rem}
   .sc-title{font-size:1.6rem}
   .inp-row{grid-template-columns:1fr}
-  .detail-hero-pills{gap:.4rem}
-  .hero-pill{padding:.4rem .6rem}
+  .sbar{gap:6px}
 }
 </style>
 </head>
 <body>
 
-<!-- MAIN NAV HEADER -->
+<!-- HEADER -->
 <header class="hdr">
-  <a href="#" class="logo" onclick="resetToSearch();return false;">
+  <a class="logo" onclick="resetToSearch();return false;" href="#">
     <div class="logo-mark"></div>
     <div>
       <div class="logo-name">Aquar<em>ient</em></div>
@@ -481,30 +310,112 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
   <div class="hdr-badge"><div class="hdr-dot"></div>NPPES Registry</div>
 </header>
 
-<!-- ═══ PHASE 1: SEARCH ═══ -->
+<!-- ══ STICKY SEARCH BAR — IRCTC style ══ -->
+<div class="sbar" id="sbar">
+
+  <!-- Location field with pin icon -->
+  <div class="sbar-field has-icon">
+    <svg class="sbar-field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+    <div class="sbar-label">Location</div>
+    <div class="sbar-val" id="sb-loc">—</div>
+  </div>
+
+  <!-- arrow separator -->
+  <div class="sbar-sep">›</div>
+
+  <!-- Radius -->
+  <div class="sbar-field has-icon">
+    <svg class="sbar-field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    <div class="sbar-label">Radius</div>
+    <div class="sbar-val teal" id="sb-radius">—</div>
+  </div>
+
+  <!-- arrow separator -->
+  <div class="sbar-sep">›</div>
+
+  <!-- Tax Code -->
+  <div class="sbar-field has-icon">
+    <svg class="sbar-field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <div class="sbar-label">Tax. Code</div>
+    <div class="sbar-val" id="sb-code">—</div>
+  </div>
+
+  <!-- arrow separator -->
+  <div class="sbar-sep">›</div>
+
+  <!-- Specialties -->
+  <div class="sbar-field has-icon" style="min-width:160px">
+    <svg class="sbar-field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <div class="sbar-label">Specialties</div>
+    <div class="sbar-chips" id="sb-chips"></div>
+  </div>
+
+  <!-- Modify Search — orange IRCTC button -->
+  <button class="sbar-modify" id="sbar-modify-btn" onclick="toggleModifyPanel()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Modify Search
+  </button>
+
+  <!-- New Search -->
+  <button class="sbar-btn" onclick="resetToSearch()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+    New Search
+  </button>
+
+</div>
+
+<!-- ══ MODIFY PANEL ══ -->
+<div class="modify-panel" id="modify-panel">
+  <div class="mp-inner">
+    <div class="mp-field" id="mp-addr-group">
+      <div class="mp-label">Address / Location</div>
+      <input type="text" id="mp-address" class="mp-inp" placeholder="City, ZIP or address..." autocomplete="off"/>
+      <div class="mp-ac-list" id="mp-ac-list"></div>
+    </div>
+    <div class="mp-field">
+      <div class="mp-label">Radius</div>
+      <select id="mp-radius" class="mp-inp">
+        <option value="5">5 miles</option>
+        <option value="10">10 miles</option>
+        <option value="25">25 miles</option>
+        <option value="50">50 miles</option>
+        <option value="100">100 miles</option>
+      </select>
+    </div>
+    <div class="mp-field">
+      <div class="mp-label">Tax. Code</div>
+      <input type="text" id="mp-taxcode" class="mp-inp" placeholder="207Q00000X"/>
+    </div>
+    <div class="mp-field" id="mp-tax-field">
+      <div class="mp-label">Specialties</div>
+      <div class="mp-tag-box" id="mp-tags-box" onclick="document.getElementById('mp-tax-inp').focus()">
+        <input type="text" class="mp-chip-input" id="mp-tax-inp" placeholder="Search specialties..." autocomplete="off"/>
+      </div>
+      <div class="mp-tax-list" id="mp-tax-list"></div>
+    </div>
+    <button class="mp-apply" onclick="applyModify()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Apply
+    </button>
+  </div>
+</div>
+
+<!-- ══ PHASE 1: SEARCH ══ -->
 <div class="phase-search" id="phase-search">
   <div class="search-card">
     <div class="sc-eye">US Physician Directory</div>
     <h1 class="sc-title">Find a <em>specialist</em> near you</h1>
     <p class="sc-desc">Search 6M+ licensed providers across all 50 states using the official NPPES registry.</p>
+
     <div class="field" id="addr-group">
-      <div class="lbl">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-        Address / Location <span class="req">*</span>
-      </div>
+      <div class="lbl"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>Address / Location <span class="req">*</span></div>
       <input type="text" id="address-input" class="inp" placeholder="Enter city, ZIP, or street address..." autocomplete="off"/>
       <div class="ac-list" id="autocomplete-list"></div>
     </div>
     <div class="inp-row">
       <div class="field">
         <div class="lbl">Search Radius</div>
-        <select id="radius-input" class="inp">
-          <option value="5">5 miles</option>
-          <option value="10" selected>10 miles</option>
-          <option value="25">25 miles</option>
-          <option value="50">50 miles</option>
-          <option value="100">100 miles</option>
-        </select>
+        <select id="radius-input" class="inp"><option value="5">5 miles</option><option value="10" selected>10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select>
       </div>
       <div class="field">
         <div class="lbl">Taxonomy Code</div>
@@ -512,10 +423,7 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
       </div>
     </div>
     <div class="field" id="tax-field">
-      <div class="lbl">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        Description / Specialty
-      </div>
+      <div class="lbl"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Description / Specialty</div>
       <div class="tag-box" id="tax-tags-box" onclick="document.getElementById('taxonomy-desc').focus()">
         <input type="text" class="chip-input" id="taxonomy-desc" placeholder="Type to search specialties..." autocomplete="off"/>
       </div>
@@ -530,17 +438,11 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
   </div>
 </div>
 
-<!-- ═══ PHASE 2: RESULTS + MAP ═══ -->
+<!-- ══ PHASE 2: RESULTS ══ -->
 <div class="phase-results" id="phase-results">
-  <div class="res-topbar">
-    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-      <div class="res-count">Showing <strong id="res-showing">0</strong> of <strong id="res-total">0</strong> providers</div>
-      <div class="res-fchips" id="res-fchips"></div>
-    </div>
-    <button class="btn-new-search" onclick="resetToSearch()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
-      New Search
-    </button>
+  <div class="res-count-bar">
+    <div class="rc-txt">Showing <strong id="rc-shown">0</strong> of <strong id="rc-total">0</strong> providers</div>
+    <div class="rc-chips" id="rc-chips"></div>
   </div>
   <div class="res-body">
     <div class="res-list-col" id="results-list"></div>
@@ -548,92 +450,8 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     PHASE 3: PHYSICIAN DETAIL PAGE
-     ═══════════════════════════════════════════════════════════════════════ -->
-<div class="phase-detail" id="phase-detail">
-
-  <!--
-    ┌──────────────────────────────────────────────────────────────┐
-    │  STICKY DETAIL HEADER (IRCTC-style)                          │
-    │  • position:sticky; top:64px  (below main nav)               │
-    │  • Always visible while scrolling the detail content         │
-    │  • Cells: Name | NPI | Specialty | Distance | Location | Btn │
-    └──────────────────────────────────────────────────────────────┘
-  -->
-  <div class="detail-sticky" id="detail-sticky">
-    <div class="ds-inner" id="ds-inner">
-      <!-- cells injected by renderDetailSticky() -->
-    </div>
-  </div>
-
-  <!-- SCROLLABLE CONTENT BELOW THE STICKY HEADER -->
-
-  <!-- Hero section (full version — scrolls away) -->
-  <div class="detail-hero" id="detail-hero">
-    <div class="detail-hero-nav">
-      <button class="detail-back-full" onclick="closeDetail()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
-        Back to results
-      </button>
-      <div class="detail-hero-badges" id="detail-badges"></div>
-    </div>
-    <div class="detail-hero-name" id="detail-name"></div>
-    <div class="detail-hero-spec" id="detail-spec"></div>
-    <!-- Key identifier pills — the "at-a-glance" row (mirrors IRCTC route/time/class row) -->
-    <div class="detail-hero-pills" id="detail-pills"></div>
-  </div>
-
-  <!-- Main body: 2-col grid -->
-  <div class="detail-body">
-    <!-- LEFT: full info -->
-    <div>
-      <div class="detail-section">
-        <div class="detail-section-title">Provider Information</div>
-        <div id="detail-info-rows"></div>
-      </div>
-      <div class="detail-section">
-        <div class="detail-section-title">All Specialties / Taxonomies</div>
-        <div id="detail-tax-tags" style="line-height:2.2"></div>
-      </div>
-    </div>
-
-    <!-- RIGHT: sidebar -->
-    <div class="detail-sidebar">
-      <!-- CTA card -->
-      <div class="scard scard-cta">
-        <div class="scard-title">Get In Touch</div>
-        <p>Contact this provider or request full directory access from an Aquarient specialist.</p>
-        <button class="btn-cta" onclick="openLeadModal()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg>
-          Request Contact
-        </button>
-      </div>
-
-      <!-- NPI reference -->
-      <div class="scard">
-        <div class="scard-title">NPI Number</div>
-        <div class="npi-display" id="sidebar-npi">—</div>
-        <div style="font-size:.68rem;color:var(--ink3);margin-top:.5rem;text-align:center">National Provider Identifier</div>
-      </div>
-
-      <!-- Quick details -->
-      <div class="scard">
-        <div class="scard-title">Quick Reference</div>
-        <div id="sidebar-quick"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Extra scroll padding so last content clears sticky header -->
-  <div style="height:3rem"></div>
-</div>
-<!-- END PHASE 3 -->
-
 <!-- SPINNER -->
-<div class="sw" id="spinner">
-  <div class="sb"><div class="sp"></div><p>Searching providers...</p></div>
-</div>
+<div class="sw" id="spinner"><div class="sb2"><div class="sp"></div><p>Searching providers...</p></div></div>
 
 <!-- MODAL -->
 <div class="mbg" id="lead-modal">
@@ -642,7 +460,7 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
     <div id="modal-form-content">
       <div class="mey">Unlock Full Access</div>
       <h2 class="mtitle">View All Results</h2>
-      <div class="msub">We found <strong id="modal-total">many</strong> physicians matching your search. Leave your details and an Aquarient specialist will send you the complete list.</div>
+      <div class="msub">We found <strong id="modal-total">many</strong> physicians. Leave your details and an Aquarient specialist will send the complete list.</div>
       <form id="lead-form" novalidate>
         <div class="mfr">
           <div class="mff"><label class="mfl">First Name <span class="req">*</span></label><input type="text" class="mfi" name="first_name" placeholder="Jane" required/></div>
@@ -661,746 +479,459 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
     </div>
     <div id="modal-success-content" class="mss">
       <div class="msr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
-      <h3 class="mst">Request Received!</h3>
-      <p class="msm">Thank you! An Aquarient representative will contact you shortly with the complete physician directory.</p>
+      <h3 class="mst2">Request Received!</h3>
+      <p class="msm2">Thank you! An Aquarient representative will contact you shortly.</p>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-  <span id="toast-msg"></span>
-</div>
+<div class="toast" id="toast"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><span id="toast-msg"></span></div>
 
 <script>
-/* ═══ CONFIG ═══ */
-var MAPQUEST_KEY = (window.ENV && window.ENV.MAPQUEST_KEY) ? window.ENV.MAPQUEST_KEY : "";
-var BACKEND_URL  = (window.ENV && window.ENV.BACKEND_URL)  ? window.ENV.BACKEND_URL  : "";
-var MAX_PAGE     = 10;
+/* ══ CONFIG ══ */
+var MAPQUEST_KEY=(window.ENV&&window.ENV.MAPQUEST_KEY)?window.ENV.MAPQUEST_KEY:"";
+var BACKEND_URL=(window.ENV&&window.ENV.BACKEND_URL)?window.ENV.BACKEND_URL:"";
+var MAX_PAGE=10;
+if(!MAPQUEST_KEY)console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
+if(!BACKEND_URL)console.warn("[PhysicianLocator] BACKEND_URL not set");
 
-if (!MAPQUEST_KEY) console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
-if (!BACKEND_URL)  console.warn("[PhysicianLocator] BACKEND_URL not set");
+/* ══ STATE ══ */
+var map=null,markers=[],mapInited=false;
+var allPhysicians=[],totalFound=0,shownCount=0;
+var selLat=null,selLng=null,selCity="",selState="";
+var mpLat=null,mpLng=null,mpCity="",mpState=""; // modify panel coords
+var acTimer=null,taxTimer=null,mpAcTimer=null,mpTaxTimer=null;
+var currentSearch={},taxTags=[],mpTaxTags=[];
 
-/* ═══ STATE ═══ */
-var map = null, markers = [];
-var allPhysicians = [], totalFound = 0, currentPage = 0;
-var selectedLat = null, selectedLng = null, selectedCity = "", selectedState = "";
-var acTimer = null, taxTimer = null;
-var currentSearch = {}, taxTags = [];
-var mapInited = false;
-var currentDetailPhysician = null;    // physician object currently shown in detail view
-var detailScrollCleanup = null;       // cleanup fn for scroll listener on detail page
-
-/* ═══ INIT ═══ */
-window.addEventListener("DOMContentLoaded", function() {
-  initAC();
-  initTax();
-  document.getElementById("search-btn").addEventListener("click", doSearch);
-  document.getElementById("address-input").addEventListener("keydown", function(e){ if(e.key==="Enter") doSearch(); });
-  document.getElementById("modal-close").addEventListener("click", closeModal);
-  document.getElementById("lead-modal").addEventListener("click", function(e){ if(e.target===document.getElementById("lead-modal")) closeModal(); });
-  document.getElementById("lead-form").addEventListener("submit", submitLead);
-  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeModal(); });
+/* ══ INIT ══ */
+window.addEventListener("DOMContentLoaded",function(){
+  initAC("address-input","autocomplete-list","addr-group",
+    function(lat,lng,city,state,fmt){selLat=lat;selLng=lng;selCity=city;selState=state;if(fmt)document.getElementById("address-input").value=fmt;},
+    function(){selLat=selLng=null;selCity=selState="";});
+  initTaxAC("taxonomy-desc","tax-ac-list","tax-field","tax-tags-box",taxTags,renderMainTags);
+  initAC("mp-address","mp-ac-list","mp-addr-group",
+    function(lat,lng,city,state,fmt){mpLat=lat;mpLng=lng;mpCity=city;mpState=state;if(fmt)document.getElementById("mp-address").value=fmt;},
+    function(){mpLat=mpLng=null;mpCity=mpState="";});
+  initTaxAC("mp-tax-inp","mp-tax-list","mp-tax-field","mp-tags-box",mpTaxTags,renderMpTags);
+  document.getElementById("search-btn").addEventListener("click",doSearch);
+  document.getElementById("address-input").addEventListener("keydown",function(e){if(e.key==="Enter")doSearch();});
+  document.getElementById("modal-close").addEventListener("click",closeModal);
+  document.getElementById("lead-modal").addEventListener("click",function(e){if(e.target===document.getElementById("lead-modal"))closeModal();});
+  document.getElementById("lead-form").addEventListener("submit",submitLead);
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeModal();closeModifyPanel();}});
   checkTaxSt();
 });
 
-/* ═══ MAP INIT (lazy) ═══ */
-function initMap() {
-  if (mapInited) return;
-  mapInited = true;
-  L.mapquest.key = MAPQUEST_KEY;
-  map = L.mapquest.map("map", {
-    center: [39.8283, -98.5795],
-    layers: L.mapquest.tileLayer("map"),
-    zoom: 4, maxZoom: 20, zoomControl: true
-  });
-  map.eachLayer(function(l){ if(l.options && l.options.maxZoom !== undefined) l.options.maxZoom = 20; });
+/* ══ MAP ══ */
+function initMap(){
+  if(mapInited)return; mapInited=true;
+  L.mapquest.key=MAPQUEST_KEY;
+  map=L.mapquest.map("map",{center:[39.8283,-98.5795],layers:L.mapquest.tileLayer("map"),zoom:4,maxZoom:20,zoomControl:true});
+  map.eachLayer(function(l){if(l.options&&l.options.maxZoom!==undefined)l.options.maxZoom=20;});
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   PHASE SWITCHING
-   ═══════════════════════════════════════════════════════════════════════════ */
-function showResults() {
-  document.getElementById("phase-search").style.display  = "none";
-  document.getElementById("phase-detail").style.display  = "none";
-  document.getElementById("phase-results").style.display = "flex";
+/* ══ PHASES ══ */
+function showResultsPhase(){
+  document.getElementById("phase-search").style.display="none";
+  document.getElementById("phase-results").style.display="flex";
+  document.getElementById("sbar").classList.add("show");
   initMap();
-  setTimeout(function(){ if(map) map.invalidateSize(); }, 100);
+  setTimeout(function(){if(map)map.invalidateSize();},120);
+}
+function resetToSearch(){
+  document.getElementById("phase-results").style.display="none";
+  document.getElementById("sbar").classList.remove("show");
+  closeModifyPanel();
+  document.getElementById("phase-search").style.display="flex";
+  allPhysicians=[];totalFound=0;shownCount=0;
+  selLat=selLng=null;selCity=selState="";
+  document.getElementById("results-list").innerHTML="";
+  if(map){markers.forEach(function(m){if(m)map.removeLayer(m);});markers=[];}
 }
 
-function resetToSearch() {
-  // Tear down detail scroll listener if active
-  if (detailScrollCleanup) { detailScrollCleanup(); detailScrollCleanup = null; }
-
-  document.getElementById("phase-results").style.display = "none";
-  document.getElementById("phase-detail").style.display  = "none";
-  document.getElementById("phase-search").style.display  = "flex";
-  allPhysicians = []; totalFound = 0; currentPage = 0;
-  selectedLat = selectedLng = null; selectedCity = selectedState = "";
-  document.getElementById("results-list").innerHTML = "";
-  if (map) { markers.forEach(function(m){ if(m) map.removeLayer(m); }); markers = []; }
+/* ══ STICKY BAR UPDATE ══ */
+function updateSbar(){
+  document.getElementById("sb-loc").textContent=currentSearch.address||"—";
+  document.getElementById("sb-radius").textContent=(currentSearch.radius||"—")+" miles";
+  document.getElementById("sb-code").textContent=currentSearch.taxonomy_code||"—";
+  var chipsEl=document.getElementById("sb-chips");
+  chipsEl.innerHTML="";
+  var labels=currentSearch.descriptions||[];
+  if(!labels.length){chipsEl.innerHTML='<span style="font-size:.78rem;color:rgba(255,255,255,.4)">None</span>';return;}
+  labels.forEach(function(d){var s=document.createElement("span");s.className="sbar-chip";s.textContent=d;chipsEl.appendChild(s);});
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   PHASE 3: OPEN / CLOSE DETAIL VIEW
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/**
- * openDetail(physician)
- * ─────────────────────
- * Switches to the detail phase and renders all content.
- * Also wires up the sticky header scroll behaviour.
- */
-function openDetail(p) {
-  currentDetailPhysician = p;
-
-  document.getElementById("phase-results").style.display = "none";
-  document.getElementById("phase-search").style.display  = "none";
-  var detailEl = document.getElementById("phase-detail");
-  detailEl.style.display = "flex";
-  window.scrollTo(0, 0);
-
-  renderDetailHero(p);
-  renderDetailSticky(p);
-  renderDetailBody(p);
-  initDetailStickyScroll();
-}
-
-/** Go back to results list */
-function closeDetail() {
-  if (detailScrollCleanup) { detailScrollCleanup(); detailScrollCleanup = null; }
-  document.getElementById("phase-detail").style.display  = "none";
-  document.getElementById("phase-results").style.display = "flex";
-  window.scrollTo(0, 0);
-}
-
-/* ─── Render hero section ─────────────────────────────────────────────── */
-function renderDetailHero(p) {
-  var at = (p.all_taxonomies||[]).map(function(t){ return t.desc; }).filter(Boolean);
-  var spec = at.slice(0,3).join(" · ") || p.taxonomy_desc || "Provider";
-
-  // Badges
-  var badgesEl = document.getElementById("detail-badges");
-  badgesEl.innerHTML =
-    '<span class="badge badge-teal">&#10003; Verified NPPES</span>'
-    + (p.taxonomy_desc ? '<span class="badge badge-ink">'+esc(p.taxonomy_desc)+'</span>' : '')
-    + (p.distance_miles != null ? '<span class="badge badge-gold">&#128205; '+p.distance_miles+' mi away</span>' : '');
-
-  document.getElementById("detail-name").textContent = p.name || "Unknown Provider";
-  document.getElementById("detail-spec").textContent = spec;
-
-  // Key identifier pills — Location / Distance / NPI / Phone (like IRCTC route-info row)
-  var pills = [
-    { icon:"📍", label:"Location",  value: [p.city, p.state].filter(Boolean).join(", ") || p.address || "—" },
-    { icon:"📏", label:"Distance",  value: p.distance_miles != null ? p.distance_miles+" mi" : "—" },
-    { icon:"🔬", label:"NPI",       value: p.npi || "—" },
-    { icon:"📞", label:"Phone",     value: p.phone || "—" },
-  ];
-  document.getElementById("detail-pills").innerHTML = pills.map(function(pill){
-    return '<div class="hero-pill">'
-      + '<div class="hero-pill-icon">'+pill.icon+'</div>'
-      + '<div>'
-      +   '<div class="hero-pill-label">'+pill.label+'</div>'
-      +   '<div class="hero-pill-value">'+esc(pill.value)+'</div>'
-      + '</div>'
-      + '</div>';
-  }).join("");
-}
-
-/* ─── Render sticky header cells ─────────────────────────────────────── */
-/*
- * Layout mirrors IRCTC:
- *   [Name (grow)] | [NPI] | [Specialty] | [Distance] | [Location] | [← Back btn]
- *
- * Each .ds-cell is a column. On mobile the strip scrolls horizontally.
- */
-function renderDetailSticky(p) {
-  var at   = (p.all_taxonomies||[]).map(function(t){ return t.desc; }).filter(Boolean);
-  var spec = at[0] || p.taxonomy_desc || "Provider";
-  var loc  = [p.city, p.state].filter(Boolean).join(", ") || p.address || "—";
-  var dist = p.distance_miles != null
-    ? '<span class="ds-dist-pill">&#128205; '+p.distance_miles+' mi</span>'
-    : '<span style="color:var(--ink3)">—</span>';
-
-  document.getElementById("ds-inner").innerHTML =
-    /* Name */
-    '<div class="ds-cell grow">'
-    +  '<div class="ds-label">Provider</div>'
-    +  '<div class="ds-value teal" title="'+esc(p.name||"")+'">'+esc(p.name||"Unknown")+'</div>'
-    +'</div>'
-    /* NPI */
-    +'<div class="ds-cell">'
-    +  '<div class="ds-label">NPI</div>'
-    +  '<div class="ds-value mono">'+esc(p.npi||"—")+'</div>'
-    +'</div>'
-    /* Specialty */
-    +'<div class="ds-cell" style="max-width:180px">'
-    +  '<div class="ds-label">Specialty</div>'
-    +  '<div class="ds-value" title="'+esc(spec)+'">'+esc(spec)+'</div>'
-    +'</div>'
-    /* Distance */
-    +'<div class="ds-cell">'
-    +  '<div class="ds-label">Distance</div>'
-    +  '<div class="ds-value">'+dist+'</div>'
-    +'</div>'
-    /* Location */
-    +'<div class="ds-cell" style="max-width:160px">'
-    +  '<div class="ds-label">Location</div>'
-    +  '<div class="ds-value" title="'+esc(loc)+'">'+esc(loc)+'</div>'
-    +'</div>'
-    /* Back button */
-    +'<button class="ds-back" onclick="closeDetail()">'
-    +  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>'
-    +  'Results'
-    +'</button>';
-}
-
-/* ─── Sticky scroll behaviour ─────────────────────────────────────────── */
-/*
- * The sticky header uses position:sticky (CSS-native, no JS scroll needed for
- * the sticking itself). However we add a subtle "hidden on hero / visible after
- * hero" class toggle so the header only fully appears after the hero has scrolled
- * away — exactly how IRCTC hides/shows its top strip.
- *
- * IntersectionObserver watches the hero pills row. When it exits the viewport
- * the sticky header transitions in; when the hero is back, it hides.
- */
-function initDetailStickyScroll() {
-  var stickyEl = document.getElementById("detail-sticky");
-  var heroEl   = document.getElementById("detail-hero");
-
-  // Start hidden — only appears after hero scrolls away
-  stickyEl.classList.add("hidden");
-
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      // Hero out of view → show sticky strip
-      stickyEl.classList.toggle("hidden", entry.isIntersecting);
-    });
-  }, { threshold: 0, rootMargin: "-72px 0px 0px 0px" });
-
-  observer.observe(heroEl);
-
-  // Store cleanup so we can disconnect when leaving detail page
-  detailScrollCleanup = function() { observer.disconnect(); };
-}
-
-/* ─── Render body + sidebar ───────────────────────────────────────────── */
-function renderDetailBody(p) {
-  var at = (p.all_taxonomies||[]).map(function(t){ return t.desc; }).filter(Boolean);
-
-  /* Info rows */
-  var rows = [
-    { label:"Full Name",    value: p.name || "—" },
-    { label:"Address",      value: p.address || "—" },
-    { label:"City / State", value: [p.city, p.state].filter(Boolean).join(", ") || "—" },
-    { label:"ZIP Code",     value: p.zip || "—" },
-    { label:"Phone",        value: p.phone || "—" },
-    { label:"Distance",     value: p.distance_miles != null ? p.distance_miles+" miles" : "—" },
-    { label:"Primary Taxonomy", value: p.taxonomy_desc || "—" },
-    { label:"Taxonomy Code",    value: p.taxonomy_code || "—" },
-  ];
-  document.getElementById("detail-info-rows").innerHTML = rows.map(function(r){
-    return '<div class="detail-info-row">'
-      + '<div class="dir-label">'+esc(r.label)+'</div>'
-      + '<div class="dir-value">'+esc(r.value)+'</div>'
-      + '</div>';
-  }).join("");
-
-  /* Taxonomy tags */
-  document.getElementById("detail-tax-tags").innerHTML = at.length
-    ? at.map(function(t){ return '<span class="tax-tag">'+esc(t)+'</span>'; }).join("")
-    : '<span style="font-size:.82rem;color:var(--ink3)">No additional taxonomies listed.</span>';
-
-  /* Sidebar NPI */
-  document.getElementById("sidebar-npi").textContent = p.npi || "—";
-
-  /* Sidebar quick ref */
-  var qrows = [
-    { k:"State",    v: p.state || "—" },
-    { k:"ZIP",      v: p.zip || "—" },
-    { k:"Distance", v: p.distance_miles != null ? p.distance_miles+" mi" : "—" },
-  ];
-  document.getElementById("sidebar-quick").innerHTML = qrows.map(function(r){
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--cream2);font-size:.8rem">'
-      + '<span style="color:var(--ink3)">'+esc(r.k)+'</span>'
-      + '<span style="font-weight:700;color:var(--ink)">'+esc(r.v)+'</span>'
-      + '</div>';
-  }).join("");
-}
-
-/* ═══ ADDRESS AUTOCOMPLETE ═══ */
-function initAC() {
-  var inp  = document.getElementById("address-input");
-  var list = document.getElementById("autocomplete-list");
-  var idx  = -1, lastQ = "";
-
-  inp.addEventListener("input", function() {
-    selectedLat = selectedLng = null; selectedCity = selectedState = "";
-    clearTimeout(acTimer);
-    var v = inp.value.trim();
-    if (v.length < 2) { closeAC(); return; }
-    if (v === lastQ) return;
-    showACLoading(list);
-    acTimer = setTimeout(function(){ lastQ = v; fetchAC(v); }, 150);
-  });
-
-  inp.addEventListener("keydown", function(e) {
-    var items = list.querySelectorAll(".ac-item");
-    if (e.key === "ArrowDown") { idx = Math.min(idx+1, items.length-1); hiAC(items,idx); e.preventDefault(); }
-    else if (e.key === "ArrowUp") { idx = Math.max(idx-1, 0); hiAC(items,idx); e.preventDefault(); }
-    else if (e.key === "Enter") { if(idx>=0 && items[idx]) items[idx].click(); else closeAC(); }
-    else if (e.key === "Escape") closeAC();
-  });
-
-  document.addEventListener("click", function(e) {
-    if (!document.getElementById("addr-group").contains(e.target)) closeAC();
-  });
-
-  function hiAC(items,i) {
-    items.forEach(function(it,j){ it.classList.toggle("sel",j===i); });
-    if (items[i]) items[i].scrollIntoView({block:"nearest"});
+/* ══ MODIFY PANEL ══ */
+function toggleModifyPanel(){
+  var panel=document.getElementById("modify-panel");
+  var open=panel.classList.toggle("show");
+  document.body.classList.toggle("mp-open",open);
+  if(open){
+    // Pre-fill from current search
+    document.getElementById("mp-address").value=currentSearch.address||"";
+    document.getElementById("mp-radius").value=currentSearch.radius||"10";
+    document.getElementById("mp-taxcode").value=currentSearch.taxonomy_code||"";
+    mpLat=selLat;mpLng=selLng;mpCity=selCity;mpState=selState;
+    mpTaxTags=JSON.parse(JSON.stringify(taxTags));
+    renderMpTags();
+    setTimeout(function(){if(map)map.invalidateSize();},100);
   }
-  function fetchAC(text) {
-    fetch(BACKEND_URL + "/api/autocomplete?text=" + encodeURIComponent(text) + "&limit=7")
-      .then(function(r){ return r.json(); })
-      .then(function(data){ renderAC(data.features||[]); })
-      .catch(function(){ closeAC(); });
+}
+function closeModifyPanel(){
+  document.getElementById("modify-panel").classList.remove("show");
+  document.body.classList.remove("mp-open");
+  setTimeout(function(){if(map)map.invalidateSize();},100);
+}
+function applyModify(){
+  var addr=document.getElementById("mp-address").value.trim();
+  var radius=document.getElementById("mp-radius").value;
+  var taxCode=document.getElementById("mp-taxcode").value.trim();
+  var partial=document.getElementById("mp-tax-inp").value.trim();
+  var descs=mpTaxTags.map(function(t){return t.display;});
+  if(partial.length>=2&&descs.indexOf(partial)===-1)descs.push(partial);
+  if(!addr){showToast("Please enter a location.","error");return;}
+  if(!taxCode&&descs.length===0){showToast("Please enter a taxonomy code or specialty.","error");return;}
+  // Sync back to main state
+  document.getElementById("address-input").value=addr;
+  document.getElementById("radius-input").value=radius;
+  document.getElementById("taxonomy-code").value=taxCode;
+  taxTags=JSON.parse(JSON.stringify(mpTaxTags));
+  renderMainTags();
+  selLat=mpLat;selLng=mpLng;selCity=mpCity;selState=mpState;
+  currentSearch={address:addr,radius:radius,taxonomy_code:taxCode,descriptions:descs};
+  closeModifyPanel();
+  runSearch(addr,radius,taxCode,descs,true);
+}
+
+/* ══ ADDRESS AUTOCOMPLETE (reusable) ══ */
+function initAC(inputId,listId,groupId,onSelect,onReset){
+  var inp=document.getElementById(inputId);
+  var list=document.getElementById(listId);
+  var idx=-1,lastQ="",timer=null;
+  inp.addEventListener("input",function(){
+    onReset();clearTimeout(timer);
+    var v=inp.value.trim();if(v.length<2){closeAC();return;}
+    if(v===lastQ)return;
+    showSpin(list);
+    timer=setTimeout(function(){lastQ=v;fetchAC(v);},130);
+  });
+  inp.addEventListener("keydown",function(e){
+    var items=list.querySelectorAll(".ac-item,.mp-ac-item");
+    if(e.key==="ArrowDown"){idx=Math.min(idx+1,items.length-1);hiAC(items,idx);e.preventDefault();}
+    else if(e.key==="ArrowUp"){idx=Math.max(idx-1,0);hiAC(items,idx);e.preventDefault();}
+    else if(e.key==="Enter"){if(idx>=0&&items[idx])items[idx].click();else closeAC();}
+    else if(e.key==="Escape")closeAC();
+  });
+  document.addEventListener("click",function(e){var g=document.getElementById(groupId);if(g&&!g.contains(e.target))closeAC();});
+  function hiAC(items,i){items.forEach(function(it,j){it.classList.toggle("sel",j===i);});if(items[i])items[i].scrollIntoView({block:"nearest"});}
+  function fetchAC(text){
+    fetch(BACKEND_URL+"/api/autocomplete?text="+encodeURIComponent(text)+"&limit=7")
+      .then(function(r){return r.json();})
+      .then(function(data){renderAC(data.features||[]);})
+      .catch(function(){closeAC();});
   }
-  function renderAC(features) {
-    if (!features.length) { closeAC(); return; }
-    idx = -1; list.innerHTML = "";
-    features.forEach(function(f) {
-      var p   = f.properties || {};
-      var c   = (f.geometry && f.geometry.coordinates) ? f.geometry.coordinates : [];
-      var fmt = p.formatted || ""; if (!fmt) return;
-      var parts = fmt.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
-      var main  = parts.slice(0,2).join(", "), sub = parts.slice(2).join(", ");
-      var item  = document.createElement("div"); item.className = "ac-item";
-      item.innerHTML = '<span class="ac-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg></span>'
-        + '<div><div class="ac-main">' + esc(main) + '</div>' + (sub ? '<div class="ac-sub">'+esc(sub)+'</div>' : '') + '</div>';
-      item.addEventListener("click", function() {
-        inp.value = fmt; selectedLat = c[1]; selectedLng = c[0];
-        selectedCity = p.city || p.county || ""; selectedState = p.state_code || "";
+  function renderAC(features){
+    if(!features.length){closeAC();return;}
+    idx=-1;list.innerHTML="";
+    features.forEach(function(f){
+      var p=f.properties||{},c=(f.geometry&&f.geometry.coordinates)?f.geometry.coordinates:[];
+      var fmt=p.formatted||"";if(!fmt)return;
+      var parts=fmt.split(",").map(function(s){return s.trim();}).filter(Boolean);
+      var main=parts.slice(0,2).join(", "),sub=parts.slice(2).join(", ");
+      var cls=listId.indexOf("mp-")===0?"mp-ac-item":"ac-item";
+      var item=document.createElement("div");item.className=cls;
+      item.innerHTML='<span class="ac-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg></span>'
+        +'<div><div class="ac-main">'+esc(main)+'</div>'+(sub?'<div class="ac-sub">'+esc(sub)+'</div>':'')+'</div>';
+      item.addEventListener("click",function(){
+        onSelect(c[1],c[0],p.city||p.county||"",p.state_code||"",fmt);
         closeAC();
       });
       list.appendChild(item);
     });
     list.classList.add("open");
   }
-  function closeAC() { list.classList.remove("open"); list.innerHTML = ""; idx = -1; }
+  function closeAC(){list.classList.remove("open");list.innerHTML="";idx=-1;}
 }
 
-function showACLoading(list) {
-  list.innerHTML = '<div class="ac-loading"><div class="ac-loading-dot"></div><div class="ac-loading-dot"></div><div class="ac-loading-dot"></div></div>';
-  list.classList.add("open");
-}
-
-/* ═══ TAXONOMY AUTOCOMPLETE ═══ */
-function initTax() {
-  var inp  = document.getElementById("taxonomy-desc");
-  var list = document.getElementById("tax-ac-list");
-  var box  = document.getElementById("tax-tags-box");
-  var lastQ = "";
-
-  box.addEventListener("click", function(){ inp.focus(); });
-
-  inp.addEventListener("input", function() {
-    clearTimeout(taxTimer);
-    var v = inp.value.trim();
-    if (v.length < 2) { closeTL(); return; }
-    if (v === lastQ) return;
-    showACLoading(list);
-    taxTimer = setTimeout(function(){ lastQ = v; fetchTL(v); }, 150);
+/* ══ TAXONOMY AUTOCOMPLETE (reusable) ══ */
+function initTaxAC(inputId,listId,fieldId,boxId,tagsArr,renderFn){
+  var inp=document.getElementById(inputId);
+  var list=document.getElementById(listId);
+  var box=document.getElementById(boxId);
+  var lastQ="",timer=null;
+  box.addEventListener("click",function(){inp.focus();});
+  inp.addEventListener("input",function(){
+    clearTimeout(timer);
+    var v=inp.value.trim();if(v.length<2){closeTL();return;}
+    if(v===lastQ)return;
+    showSpin(list);
+    timer=setTimeout(function(){lastQ=v;fetchTL(v);},130);
   });
-
-  inp.addEventListener("keydown", function(e) {
-    var active = list.querySelector(".tax-item.active");
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      var n = active ? active.nextElementSibling : list.querySelector(".tax-item");
-      if (n) { if(active) active.classList.remove("active"); n.classList.add("active"); n.scrollIntoView({block:"nearest"}); }
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      var pr = active ? active.previousElementSibling : null;
-      if (pr) { active.classList.remove("active"); pr.classList.add("active"); pr.scrollIntoView({block:"nearest"}); }
-    } else if (e.key === "Enter") {
-      e.preventDefault(); e.stopPropagation();
-      if (active) { active.click(); }
-      else { var r = inp.value.trim(); if (r.length >= 2) addTag({display:r,classification:""}); }
-    } else if (e.key === "Backspace" && inp.value === "" && taxTags.length) {
-      removeTag(taxTags.length-1);
-    } else if (e.key === "Escape") { closeTL(); }
+  inp.addEventListener("keydown",function(e){
+    var active=list.querySelector(".tax-item.active,.mp-tax-item.active");
+    if(e.key==="ArrowDown"){e.preventDefault();var n=active?active.nextElementSibling:list.querySelector(".tax-item,.mp-tax-item");if(n){if(active)active.classList.remove("active");n.classList.add("active");n.scrollIntoView({block:"nearest"});}}
+    else if(e.key==="ArrowUp"){e.preventDefault();var pr=active?active.previousElementSibling:null;if(pr){active.classList.remove("active");pr.classList.add("active");pr.scrollIntoView({block:"nearest"});}}
+    else if(e.key==="Enter"){e.preventDefault();e.stopPropagation();if(active){active.click();}else{var r=inp.value.trim();if(r.length>=2){addTagTo(tagsArr,{display:r,classification:""},renderFn,inp);}}}
+    else if(e.key==="Backspace"&&inp.value===""&&tagsArr.length){tagsArr.splice(tagsArr.length-1,1);renderFn();inp.focus();}
+    else if(e.key==="Escape"){closeTL();}
   });
-
-  document.addEventListener("click", function(e) {
-    if (!document.getElementById("tax-field").contains(e.target)) closeTL();
-  });
-
-  function fetchTL(q) {
-    fetch(BACKEND_URL + "/api/taxonomy-search?q=" + encodeURIComponent(q))
-      .then(function(r){ return r.json(); })
-      .then(function(data){ renderTL(data.results||[]); })
-      .catch(function(){ closeTL(); });
+  document.addEventListener("click",function(e){var f=document.getElementById(fieldId);if(f&&!f.contains(e.target))closeTL();});
+  function fetchTL(q){
+    fetch(BACKEND_URL+"/api/taxonomy-search?q="+encodeURIComponent(q))
+      .then(function(r){return r.json();})
+      .then(function(data){renderTL(data.results||[]);})
+      .catch(function(){closeTL();});
   }
-  function renderTL(results) {
-    var already = {};
-    taxTags.forEach(function(t){ already[t.display.toLowerCase()] = 1; });
-    var filtered = results.filter(function(r){ return !already[r.display.toLowerCase()]; });
-    if (!filtered.length) { closeTL(); return; }
-    list.innerHTML = "";
-    filtered.forEach(function(r) {
-      var item = document.createElement("div"); item.className = "tax-item";
-      item.innerHTML = '<div class="tax-n">' + esc(r.display) + '</div><div class="tax-c">' + esc(r.classification) + '</div>';
-      item.addEventListener("mouseenter", function() {
-        list.querySelectorAll(".tax-item").forEach(function(i){ i.classList.remove("active"); });
-        item.classList.add("active");
-      });
-      item.addEventListener("click", function(e){ e.stopPropagation(); addTag(r); closeTL(); lastQ = ""; });
+  function renderTL(results){
+    var already={};tagsArr.forEach(function(t){already[t.display.toLowerCase()]=1;});
+    var filtered=results.filter(function(r){return!already[r.display.toLowerCase()];});
+    if(!filtered.length){closeTL();return;}
+    list.innerHTML="";
+    var cls=listId.indexOf("mp-")===0?"mp-tax-item":"tax-item";
+    filtered.forEach(function(r){
+      var item=document.createElement("div");item.className=cls;
+      item.innerHTML='<div class="tax-n">'+esc(r.display)+'</div><div class="tax-c">'+esc(r.classification)+'</div>';
+      item.addEventListener("mouseenter",function(){list.querySelectorAll(".tax-item,.mp-tax-item").forEach(function(i){i.classList.remove("active");});item.classList.add("active");});
+      item.addEventListener("click",function(e){e.stopPropagation();addTagTo(tagsArr,r,renderFn,inp);closeTL();lastQ="";});
       list.appendChild(item);
     });
     list.classList.add("open");
   }
-  function closeTL() { list.classList.remove("open"); list.innerHTML = ""; }
+  function closeTL(){list.classList.remove("open");list.innerHTML="";}
 }
 
-function addTag(r) {
-  for (var i=0; i<taxTags.length; i++) { if (taxTags[i].display.toLowerCase()===r.display.toLowerCase()) return; }
-  taxTags.push(r); renderTags();
-  document.getElementById("taxonomy-desc").value = "";
-  document.getElementById("taxonomy-desc").focus();
+function addTagTo(arr,r,renderFn,inp){
+  for(var i=0;i<arr.length;i++){if(arr[i].display.toLowerCase()===r.display.toLowerCase())return;}
+  arr.push(r);renderFn();if(inp){inp.value="";inp.focus();}
 }
-function removeTag(idx) { taxTags.splice(idx,1); renderTags(); document.getElementById("taxonomy-desc").focus(); }
-function renderTags() {
-  var box = document.getElementById("tax-tags-box");
-  var inp = document.getElementById("taxonomy-desc");
-  box.querySelectorAll(".chip").forEach(function(el){ el.remove(); });
-  taxTags.forEach(function(tag,i) {
-    var chip = document.createElement("span"); chip.className = "chip";
-    chip.innerHTML = '<span title="'+esc(tag.display)+'">'+esc(tag.display)+'</span><button class="chip-x" type="button">&#x2715;</button>';
-    chip.querySelector(".chip-x").addEventListener("click", function(e){ e.stopPropagation(); removeTag(i); });
-    box.insertBefore(chip, inp);
+
+function renderMainTags(){
+  var box=document.getElementById("tax-tags-box"),inp=document.getElementById("taxonomy-desc");
+  box.querySelectorAll(".chip").forEach(function(el){el.remove();});
+  taxTags.forEach(function(tag,i){
+    var chip=document.createElement("span");chip.className="chip";
+    chip.innerHTML='<span title="'+esc(tag.display)+'">'+esc(tag.display)+'</span><button class="chip-x" type="button">&#x2715;</button>';
+    chip.querySelector(".chip-x").addEventListener("click",function(e){e.stopPropagation();taxTags.splice(i,1);renderMainTags();});
+    box.insertBefore(chip,inp);
   });
-  inp.placeholder = taxTags.length ? "Add more..." : "Type to search specialties...";
+  inp.placeholder=taxTags.length?"Add more...":"Type to search specialties...";
 }
 
-function checkTaxSt() {
-  fetch(BACKEND_URL + "/api/taxonomy-status")
-    .then(function(r){ return r.json(); })
-    .then(function(data) {
-      var el = document.getElementById("tax-status");
-      if (data.loaded) {
-        el.textContent = data.count + " specialties \u00b7 " + data.source;
-        setTimeout(function(){ el.style.opacity="0"; }, 3000);
-      }
-    }).catch(function(){});
+function renderMpTags(){
+  var box=document.getElementById("mp-tags-box"),inp=document.getElementById("mp-tax-inp");
+  box.querySelectorAll(".mp-chip").forEach(function(el){el.remove();});
+  mpTaxTags.forEach(function(tag,i){
+    var chip=document.createElement("span");chip.className="mp-chip";
+    chip.innerHTML='<span>'+esc(tag.display)+'</span><button class="mp-chip-x" type="button">&#x2715;</button>';
+    chip.querySelector(".mp-chip-x").addEventListener("click",function(e){e.stopPropagation();mpTaxTags.splice(i,1);renderMpTags();});
+    box.insertBefore(chip,inp);
+  });
+  inp.placeholder=mpTaxTags.length?"Add more...":"Search specialties...";
 }
 
-/* ═══ SEARCH ═══ */
-function doSearch() {
-  var address  = document.getElementById("address-input").value.trim();
-  var radius   = document.getElementById("radius-input").value;
-  var taxCode  = document.getElementById("taxonomy-code").value.trim();
-  var partial  = document.getElementById("taxonomy-desc").value.trim();
-  var descs    = taxTags.map(function(t){ return t.display; });
-  if (partial.length >= 2 && descs.indexOf(partial) === -1) descs.push(partial);
+function checkTaxSt(){
+  fetch(BACKEND_URL+"/api/taxonomy-status").then(function(r){return r.json();}).then(function(data){
+    var el=document.getElementById("tax-status");
+    if(data.loaded){el.textContent=data.count+" specialties \u00b7 "+data.source;setTimeout(function(){el.style.opacity="0";},3000);}
+  }).catch(function(){});
+}
 
-  if (!address) { showToast("Please enter a US address or location.", "error"); return; }
-  if (!taxCode && descs.length === 0) { showToast("Please enter a taxonomy code or at least one specialty.", "error"); return; }
+/* ══ SEARCH ══ */
+function doSearch(){
+  var address=document.getElementById("address-input").value.trim();
+  var radius=document.getElementById("radius-input").value;
+  var taxCode=document.getElementById("taxonomy-code").value.trim();
+  var partial=document.getElementById("taxonomy-desc").value.trim();
+  var descs=taxTags.map(function(t){return t.display;});
+  if(partial.length>=2&&descs.indexOf(partial)===-1)descs.push(partial);
+  if(!address){showToast("Please enter a US address or location.","error");return;}
+  if(!taxCode&&descs.length===0){showToast("Please enter a taxonomy code or at least one specialty.","error");return;}
+  currentSearch={address:address,radius:radius,taxonomy_code:taxCode,descriptions:descs};
+  if(!selLat||!selLng){
+    setLoading(true);
+    fetch(BACKEND_URL+"/api/geocode?address="+encodeURIComponent(address))
+      .then(function(r){return r.json();})
+      .then(function(gd){
+        if(gd.error){showToast("Could not find that address.","error");setLoading(false);return;}
+        selLat=gd.lat;selLng=gd.lng;selCity=gd.city||"";selState=gd.state||"";
+        if(gd.formatted)document.getElementById("address-input").value=gd.formatted;
+        runSearch(address,radius,taxCode,descs,false);
+      }).catch(function(){showToast("Geocoding failed.","error");setLoading(false);});
+  }else{runSearch(address,radius,taxCode,descs,false);}
+}
 
-  currentPage = 0;
-  currentSearch = { address:address, radius:radius, taxonomy_code:taxCode, descriptions:descs };
+function runSearch(address,radius,taxCode,descs,clearExisting){
   setLoading(true);
-
-  var runSearch = function() {
-    var params = new URLSearchParams({
-      lat: selectedLat, lng: selectedLng, radius: radius,
-      taxonomy_code: taxCode,
-      descriptions: JSON.stringify(descs),
-      city: selectedCity, state: selectedState
-    });
-    fetch(BACKEND_URL + "/api/search?" + params)
-      .then(function(r){ return r.json(); })
-      .then(function(data) {
-        if (data.error) { showToast(data.error, "error"); setLoading(false); return; }
-        allPhysicians  = data.physicians || [];
-        totalFound     = data.total || allPhysicians.length;
-        showResults();
-        renderTopBar();
-        renderCards();
-        plotMarkers();
-        setLoading(false);
-      })
-      .catch(function(err) {
-        showToast("Search failed. Please try again.", "error");
-        console.error(err); setLoading(false);
-      });
-  };
-
-  if (!selectedLat || !selectedLng) {
-    fetch(BACKEND_URL + "/api/geocode?address=" + encodeURIComponent(address))
-      .then(function(r){ return r.json(); })
-      .then(function(gd) {
-        if (gd.error) { showToast("Could not find that US address. Please be more specific.", "error"); setLoading(false); return; }
-        selectedLat = gd.lat; selectedLng = gd.lng;
-        selectedCity = gd.city || ""; selectedState = gd.state || "";
-        if (gd.formatted) document.getElementById("address-input").value = gd.formatted;
-        runSearch();
-      })
-      .catch(function(){ showToast("Geocoding failed.", "error"); setLoading(false); });
-  } else { runSearch(); }
+  var params=new URLSearchParams({lat:selLat,lng:selLng,radius:radius,taxonomy_code:taxCode,descriptions:JSON.stringify(descs),city:selCity,state:selState});
+  fetch(BACKEND_URL+"/api/search?"+params)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.error){showToast(data.error,"error");setLoading(false);return;}
+      allPhysicians=data.physicians||[];totalFound=data.total||allPhysicians.length;
+      currentSearch={address:address,radius:radius,taxonomy_code:taxCode,descriptions:descs};
+      showResultsPhase();
+      updateSbar();
+      renderCountBar();
+      renderCards();
+      plotMarkers();
+      setLoading(false);
+    }).catch(function(err){showToast("Search failed. Please try again.","error");console.error(err);setLoading(false);});
 }
 
-/* ═══ TOPBAR ═══ */
-function renderTopBar() {
-  var shown = Math.min(allPhysicians.length, (currentPage+1)*MAX_PAGE);
-  document.getElementById("res-showing").textContent = shown;
-  document.getElementById("res-total").textContent   = totalFound.toLocaleString();
-  var chips = document.getElementById("res-fchips");
-  chips.innerHTML = "";
-  var labels = currentSearch.taxonomy_code ? [currentSearch.taxonomy_code] : (currentSearch.descriptions||[]);
-  labels.forEach(function(d) {
-    var s = document.createElement("span"); s.className = "res-fc"; s.textContent = d;
-    chips.appendChild(s);
-  });
+/* ══ COUNT BAR ══ */
+function renderCountBar(){
+  var end=Math.min(allPhysicians.length,MAX_PAGE);
+  shownCount=end;
+  document.getElementById("rc-shown").textContent=end;
+  document.getElementById("rc-total").textContent=totalFound.toLocaleString();
+  var chips=document.getElementById("rc-chips");chips.innerHTML="";
+  var labels=currentSearch.taxonomy_code?[currentSearch.taxonomy_code]:(currentSearch.descriptions||[]);
+  labels.forEach(function(d){var s=document.createElement("span");s.className="rc-chip";s.textContent=d;chips.appendChild(s);});
 }
 
-/* ═══ CARDS ═══ */
-function renderCards() {
-  var col = document.getElementById("results-list");
-  col.innerHTML = "";
-  var end = Math.min(allPhysicians.length, MAX_PAGE);
-  currentPage = 0;
-  for (var i=0; i<end; i++) appendCard(col, allPhysicians[i], i);
+/* ══ CARDS ══ */
+function renderCards(){
+  var col=document.getElementById("results-list");
+  col.innerHTML="";
+  var end=Math.min(allPhysicians.length,MAX_PAGE);
+  for(var i=0;i<end;i++)appendCard(col,allPhysicians[i],i);
   appendLoadMore(col);
 }
 
-function appendCard(col, p, i) {
-  var name     = p.name || "Unknown Provider";
-  var words    = name.split(" ").slice(0,2);
-  var ini      = words.map(function(w){ return w[0]||""; }).join("").toUpperCase();
-  var at       = (p.all_taxonomies||[]).map(function(t){ return t.desc; }).filter(Boolean);
-  var spec     = at.length>1 ? at.slice(0,2).join(" \u00b7 ") : (p.taxonomy_desc||"Provider");
-  var distHtml = p.distance_miles!=null ? '<span class="dc-dist">&#128205; '+p.distance_miles+' mi</span>' : "";
-  var pIdx     = i; // capture for closures
+function appendCard(col,p,i){
+  var name=p.name||"Unknown Provider";
+  var ini=name.split(" ").slice(0,2).map(function(w){return w[0]||"";}).join("").toUpperCase();
+  var at=(p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean);
+  var spec=at.length>1?at.slice(0,2).join(" \u00b7 "):(p.taxonomy_desc||"Provider");
+  var distHtml=p.distance_miles!=null?'<span class="dc-dist">&#128205; '+p.distance_miles+' mi</span>':"";
 
-  var card = document.createElement("div");
-  card.className = "dc";
-  card.dataset.index = i;
-
-  card.innerHTML =
+  var card=document.createElement("div");card.className="dc";card.dataset.index=i;
+  card.innerHTML=
     '<div class="dc-head">'
-    + '<div class="dav">'+ini+'</div>'
-    + '<div class="dc-main">'
-    +   '<div class="dc-name">'+esc(name)+'</div>'
-    +   '<div class="dc-spec">'+esc(spec)+'</div>'
-    + '</div>'
-    + '<div class="dc-right">'
-    +   '<div class="dc-num">'+(i+1)+'</div>'
-    +   distHtml
-    + '</div>'
-    + '<svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'
-    + '</div>'
-    + '<div class="dc-body">'
-    +   '<div class="dc-body-inner">'
-    +     (p.address ? '<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg><span>'+esc(p.address)+'</span></div>' : '')
-    +     (p.phone ? '<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg><span>'+esc(p.phone)+'</span></div>' : '')
-    +     (at.length>2 ? '<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>'+esc(at.join(", "))+'</span></div>' : '')
-    +     (p.npi ? '<div class="dc-npi">NPI &nbsp;'+esc(p.npi)+'</div>' : '')
-    +     '<div class="dc-actions">'
-    /* ── NEW: "View Details" button → opens PHASE 3 ── */
-    +       '<button class="dbt dbt-d" data-detail="'+pIdx+'">&#8599; Details</button>'
-    +       '<button class="dbt dbt-p" onclick="openLeadModal();event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg> Contact</button>'
-    +       '<button class="dbt dbt-s" onclick="focusMap('+i+');event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> Map</button>'
-    +     '</div>'
-    +   '</div>'
-    + '</div>';
+    +'<div class="dav">'+ini+'</div>'
+    +'<div class="dc-main"><div class="dc-name">'+esc(name)+'</div><div class="dc-spec">'+esc(spec)+'</div></div>'
+    +'<div class="dc-right"><div class="dc-num">'+(i+1)+'</div>'+distHtml+'</div>'
+    +'<svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'
+    +'</div>'
+    +'<div class="dc-body"><div class="dc-body-inner">'
+    +(p.address?'<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg><span>'+esc(p.address)+'</span></div>':"")
+    +(p.phone?'<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg><span>'+esc(p.phone)+'</span></div>':"")
+    +(at.length>2?'<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>'+esc(at.join(", "))+'</span></div>':"")
+    +(p.npi?'<div class="dc-npi">NPI &nbsp;'+esc(p.npi)+'</div>':"")
+    +'<div class="dc-acts">'
+    +'<button class="dbt dbt-p" onclick="openLeadModal();event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg> Contact</button>'
+    +'<button class="dbt dbt-s" onclick="focusMap('+i+');event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> View Map</button>'
+    +'</div></div></div>';
 
-  /* Wire up "View Details" button */
-  card.querySelector("[data-detail]").addEventListener("click", function(e) {
-    e.stopPropagation();
-    var idx = parseInt(e.currentTarget.dataset.detail);
-    openDetail(allPhysicians[idx]);
-  });
-
-  card.addEventListener("click", function(e) {
-    if (e.target.closest("button")) return;
-    var wasExpanded = card.classList.contains("expanded");
-    document.querySelectorAll(".dc.expanded").forEach(function(c){ c.classList.remove("expanded","active"); });
-    if (!wasExpanded) {
+  card.addEventListener("click",function(e){
+    if(e.target.closest("button"))return;
+    var was=card.classList.contains("expanded");
+    document.querySelectorAll(".dc.expanded").forEach(function(c){c.classList.remove("expanded","active");});
+    if(!was){
       card.classList.add("expanded","active");
-      var idx = parseInt(card.dataset.index);
-      var ph  = allPhysicians[idx];
-      if (ph && ph.lat && ph.lng && markers[idx]) {
-        map.setView([ph.lat, ph.lng], 16);
-        markers[idx].openPopup();
-      }
+      var idx2=parseInt(card.dataset.index);
+      var ph=allPhysicians[idx2];
+      if(ph&&ph.lat&&ph.lng&&markers[idx2]){map.setView([ph.lat,ph.lng],16);markers[idx2].openPopup();}
     }
   });
-
   col.appendChild(card);
 }
 
-function appendLoadMore(col) {
-  var existing = col.querySelector(".load-more-wrap");
-  if (existing) existing.remove();
-  var shown = (currentPage+1) * MAX_PAGE;
-  if (shown >= allPhysicians.length && allPhysicians.length >= totalFound) return;
-
-  var wrap = document.createElement("div"); wrap.className = "load-more-wrap";
-  var btn  = document.createElement("button"); btn.className = "btn-load-more";
-
-  var remaining = totalFound - shown;
-  btn.textContent = remaining > 0
-    ? "Load more (" + remaining.toLocaleString() + " more results)"
-    : "View all " + totalFound.toLocaleString() + " results";
-
-  btn.addEventListener("click", function() {
-    if (shown >= allPhysicians.length) { openLeadModal(); return; }
-    currentPage++;
-    var newEnd = Math.min(allPhysicians.length, (currentPage+1)*MAX_PAGE);
-    for (var i=shown; i<newEnd; i++) appendCard(col, allPhysicians[i], i);
-    appendLoadMore(col);
-    document.getElementById("res-showing").textContent = newEnd;
-    col.removeChild(wrap);
+function appendLoadMore(col){
+  var old=col.querySelector(".load-more-wrap");if(old)old.remove();
+  var shown=shownCount;
+  if(shown>=totalFound)return;
+  var wrap=document.createElement("div");wrap.className="load-more-wrap";
+  var btn=document.createElement("button");btn.className="btn-lm";
+  var remaining=totalFound-shown;
+  btn.textContent="Load more \u2014 "+remaining.toLocaleString()+" more providers";
+  btn.addEventListener("click",function(){
+    if(shown<allPhysicians.length){
+      var newEnd=Math.min(allPhysicians.length,(shownCount+MAX_PAGE));
+      col.removeChild(wrap);
+      for(var i=shownCount;i<newEnd;i++)appendCard(col,allPhysicians[i],i);
+      shownCount=newEnd;
+      document.getElementById("rc-shown").textContent=shownCount;
+      appendLoadMore(col);
+    }else{openLeadModal();}
   });
-
-  wrap.appendChild(btn); col.appendChild(wrap);
+  wrap.appendChild(btn);col.appendChild(wrap);
 }
 
-/* ═══ MAP MARKERS ═══ */
-function mkPin(num) {
-  return '<div class="map-pin" id="mpin-'+(num-1)+'">'
-    +'<svg viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">'
-    +'<defs><filter id="ps'+num+'" x="-30%" y="-10%" width="160%" height="160%">'
-    +'<feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#0D1B35" flood-opacity=".4"/>'
-    +'</filter></defs>'
-    +'<path d="M15 2C7.82 2 2 7.82 2 15C2 22.5 15 38 15 38C15 38 28 22.5 28 15C28 7.82 22.18 2 15 2Z" fill="#0C7A7A" stroke="white" stroke-width="2" filter="url(#ps'+num+')"/>'
-    +'</svg>'
-    +'<div class="pn">'+num+'</div></div>';
-}
-function mkCtr() {
-  return '<div class="map-pin" style="width:36px;height:48px">'
-    +'<svg viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:48px">'
-    +'<defs><filter id="cps" x="-30%" y="-10%" width="160%" height="160%">'
-    +'<feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#141420" flood-opacity=".5"/>'
-    +'</filter></defs>'
-    +'<path d="M18 2C9.16 2 18 46 18 46C18 46 34 27 34 18C34 9.16 26.84 2 18 2Z" fill="#141420" stroke="#0FA8A8" stroke-width="2.5" filter="url(#cps)"/>'
-    +'<text x="18" y="22" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-size="13" font-weight="800" fill="white">&#10022;</text>'
-    +'</svg></div>';
-}
+/* ══ MARKERS ══ */
+function mkPin(num){return'<div class="map-pin" id="mpin-'+(num-1)+'"><svg viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg"><defs><filter id="ps'+num+'" x="-30%" y="-10%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#0D1B35" flood-opacity=".4"/></filter></defs><path d="M15 2C7.82 2 2 7.82 2 15C2 22.5 15 38 15 38C15 38 28 22.5 28 15C28 7.82 22.18 2 15 2Z" fill="#0C7A7A" stroke="white" stroke-width="2" filter="url(#ps'+num+')"/></svg><div class="pn">'+num+'</div></div>';}
+function mkCtr(){return'<div class="map-pin" style="width:36px;height:48px"><svg viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:48px"><defs><filter id="cps" x="-30%" y="-10%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#141420" flood-opacity=".5"/></filter></defs><path d="M18 2C9.16 2 2 9.16 2 18C2 27 18 46 18 46C18 46 34 27 34 18C34 9.16 26.84 2 18 2Z" fill="#141420" stroke="#0FA8A8" stroke-width="2.5" filter="url(#cps)"/><text x="18" y="22" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" font-size="13" font-weight="800" fill="white">&#10022;</text></svg></div>';}
 
-function plotMarkers() {
-  markers.forEach(function(m){ if(m) map.removeLayer(m); }); markers = [];
-  var bounds = [];
-  if (selectedLat && selectedLng) {
-    var ci = L.divIcon({html:mkCtr(), className:"", iconSize:[36,48], iconAnchor:[18,46]});
-    L.marker([selectedLat, selectedLng], {icon:ci}).addTo(map).bindPopup("<b>&#128205; Search Center</b>");
-    bounds.push([selectedLat, selectedLng]);
+function plotMarkers(){
+  markers.forEach(function(m){if(m)map.removeLayer(m);});markers=[];
+  var bounds=[];
+  if(selLat&&selLng){
+    var ci=L.divIcon({html:mkCtr(),className:"",iconSize:[36,48],iconAnchor:[18,46]});
+    L.marker([selLat,selLng],{icon:ci}).addTo(map).bindPopup("<b>&#128205; Search Center</b>");
+    bounds.push([selLat,selLng]);
   }
-  allPhysicians.forEach(function(p, i) {
-    if (!p.lat || !p.lng) { markers.push(null); return; }
-    var icon = L.divIcon({html:mkPin(i+1), className:"", iconSize:[30,40], iconAnchor:[15,40]});
-    var at   = (p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean).join("<br>") || p.taxonomy_desc || "";
-    var popup = '<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:200px;max-width:270px;padding:2px">'
+  allPhysicians.forEach(function(p,i){
+    if(!p.lat||!p.lng){markers.push(null);return;}
+    var icon=L.divIcon({html:mkPin(i+1),className:"",iconSize:[30,40],iconAnchor:[15,40]});
+    var at=(p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean).join("<br>")||p.taxonomy_desc||"";
+    var popup='<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:200px;max-width:270px;padding:2px">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
       +'<div style="background:#0C7A7A;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0">'+(i+1)+'</div>'
-      +'<div style="font-weight:700;font-size:.88rem;color:#141420;line-height:1.2">'+esc(p.name)+'</div>'
-      +'</div>'
-      +(at ? '<div style="font-size:.74rem;color:#0C7A7A;margin-bottom:4px;line-height:1.4">'+at+'</div>' : '')
+      +'<div style="font-weight:700;font-size:.88rem;color:#141420;line-height:1.2">'+esc(p.name)+'</div></div>'
+      +(at?'<div style="font-size:.74rem;color:#0C7A7A;margin-bottom:4px;line-height:1.4">'+at+'</div>':"")
       +'<div style="font-size:.74rem;color:#7A7A96;line-height:1.4">'+esc(p.address||"")+'</div>'
-      +(p.phone ? '<div style="font-size:.74rem;margin-top:4px;color:#141420">&#128222; '+esc(p.phone)+'</div>' : '')
-      +(p.distance_miles!=null ? '<div style="font-size:.7rem;color:#0C7A7A;margin-top:4px;font-weight:700">&#128205; '+p.distance_miles+' mi away</div>' : '')
-      +(p.npi ? '<div style="font-size:.67rem;color:#7A7A96;margin-top:4px;border-top:1px solid #eee;padding-top:4px">NPI: '+esc(p.npi)+'</div>' : '')
-      /* Detail link inside map popup */
-      +'<div style="margin-top:8px">'
-      +'<button onclick="openDetail(allPhysicians['+i+'])" style="background:#0C7A7A;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:.72rem;font-weight:700;cursor:pointer;width:100%">View Full Details &#8599;</button>'
-      +'</div>'
+      +(p.phone?'<div style="font-size:.74rem;margin-top:4px;color:#141420">&#128222; '+esc(p.phone)+'</div>':"")
+      +(p.distance_miles!=null?'<div style="font-size:.7rem;color:#0C7A7A;margin-top:4px;font-weight:700">&#128205; '+p.distance_miles+' mi away</div>':"")
+      +(p.npi?'<div style="font-size:.67rem;color:#7A7A96;margin-top:4px;border-top:1px solid #eee;padding-top:4px">NPI: '+esc(p.npi)+'</div>':"")
       +'</div>';
-    var marker = L.marker([p.lat, p.lng], {icon:icon}).addTo(map).bindPopup(popup, {maxWidth:280});
-    marker.on("click", function() {
-      document.querySelectorAll(".dc").forEach(function(c){ c.classList.remove("expanded","active"); });
-      var cards = document.querySelectorAll(".dc");
-      if (cards[i]) {
-        cards[i].classList.add("expanded","active");
-        cards[i].scrollIntoView({behavior:"smooth", block:"nearest"});
-      }
-      document.querySelectorAll(".map-pin").forEach(function(el){
-        el.classList.remove("active-pin");
-        if(el.querySelector("path")) el.querySelector("path").setAttribute("fill","#0C7A7A");
-      });
-      var pe = document.getElementById("mpin-"+i);
-      if (pe) pe.classList.add("active-pin");
+    var marker=L.marker([p.lat,p.lng],{icon:icon}).addTo(map).bindPopup(popup,{maxWidth:280});
+    marker.on("click",function(){
+      document.querySelectorAll(".dc").forEach(function(c){c.classList.remove("expanded","active");});
+      var cards=document.querySelectorAll(".dc");
+      if(cards[i]){cards[i].classList.add("expanded","active");cards[i].scrollIntoView({behavior:"smooth",block:"nearest"});}
+      document.querySelectorAll(".map-pin").forEach(function(el){el.classList.remove("active-pin");if(el.querySelector("path"))el.querySelector("path").setAttribute("fill","#0C7A7A");});
+      var pe=document.getElementById("mpin-"+i);if(pe)pe.classList.add("active-pin");
     });
-    markers.push(marker);
-    bounds.push([p.lat, p.lng]);
+    markers.push(marker);bounds.push([p.lat,p.lng]);
   });
-  if (bounds.length > 1) map.fitBounds(bounds, {padding:[60,60], maxZoom:15});
-  else if (bounds.length === 1) map.setView(bounds[0], 14);
+  if(bounds.length>1)map.fitBounds(bounds,{padding:[60,60],maxZoom:15});
+  else if(bounds.length===1)map.setView(bounds[0],14);
 }
 
-function focusMap(idx) {
-  var p = allPhysicians[idx];
-  if (p && p.lat && p.lng && markers[idx]) {
-    map.setView([p.lat, p.lng], 16);
-    markers[idx].openPopup();
-  }
-}
+function focusMap(idx){var p=allPhysicians[idx];if(p&&p.lat&&p.lng&&markers[idx]){map.setView([p.lat,p.lng],16);markers[idx].openPopup();}}
 
-/* ═══ MODAL ═══ */
-function openLeadModal() {
-  document.getElementById("modal-total").textContent = totalFound.toLocaleString();
-  document.getElementById("modal-form-content").style.display = "block";
-  document.getElementById("modal-success-content").style.display = "none";
+/* ══ MODAL ══ */
+function openLeadModal(){
+  document.getElementById("modal-total").textContent=totalFound.toLocaleString();
+  document.getElementById("modal-form-content").style.display="block";
+  document.getElementById("modal-success-content").style.display="none";
   document.getElementById("lead-modal").classList.add("open");
 }
-function closeModal() { document.getElementById("lead-modal").classList.remove("open"); }
-
-function submitLead(e) {
+function closeModal(){document.getElementById("lead-modal").classList.remove("open");}
+function submitLead(e){
   e.preventDefault();
-  var form = document.getElementById("lead-form");
-  var errDiv = document.getElementById("lead-error");
-  var btn = document.getElementById("lead-submit");
-  var payload = {
-    first_name: form.first_name.value.trim(), last_name: form.last_name.value.trim(),
-    email: form.email.value.trim(),
-    phone: form.phone ? form.phone.value.trim() : "",
-    title: form.title ? form.title.value.trim() : "",
-    company: form.company ? form.company.value.trim() : "",
-    search_context: Object.assign({}, currentSearch, {total_results:totalFound, timestamp:new Date().toISOString()})
-  };
-  errDiv.style.display = "none";
-  if (!payload.first_name||!payload.last_name) { errDiv.textContent="First and last name are required."; errDiv.style.display="block"; return; }
-  if (!payload.email||payload.email.indexOf("@")===-1) { errDiv.textContent="A valid email is required."; errDiv.style.display="block"; return; }
-  btn.disabled = true; btn.textContent = "Submitting...";
-  fetch(BACKEND_URL + "/api/leads", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)})
-    .then(function(r){ return r.json(); })
-    .then(function(data) {
-      if (data.success) {
-        document.getElementById("modal-form-content").style.display = "none";
-        document.getElementById("modal-success-content").style.display = "block";
-      } else { errDiv.textContent = data.error||"Submission failed."; errDiv.style.display = "block"; }
-    })
-    .catch(function(){ errDiv.textContent = "Network error. Please try again."; errDiv.style.display = "block"; })
-    .finally(function(){ btn.disabled=false; btn.textContent="Request Full Access \u2192"; });
+  var form=document.getElementById("lead-form"),errDiv=document.getElementById("lead-error"),btn=document.getElementById("lead-submit");
+  var payload={first_name:form.first_name.value.trim(),last_name:form.last_name.value.trim(),email:form.email.value.trim(),
+    phone:form.phone?form.phone.value.trim():"",title:form.title?form.title.value.trim():"",company:form.company?form.company.value.trim():"",
+    search_context:Object.assign({},currentSearch,{total_results:totalFound,timestamp:new Date().toISOString()})};
+  errDiv.style.display="none";
+  if(!payload.first_name||!payload.last_name){errDiv.textContent="First and last name are required.";errDiv.style.display="block";return;}
+  if(!payload.email||payload.email.indexOf("@")===-1){errDiv.textContent="A valid email is required.";errDiv.style.display="block";return;}
+  btn.disabled=true;btn.textContent="Submitting...";
+  fetch(BACKEND_URL+"/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.success){document.getElementById("modal-form-content").style.display="none";document.getElementById("modal-success-content").style.display="block";}
+      else{errDiv.textContent=data.error||"Submission failed.";errDiv.style.display="block";}
+    }).catch(function(){errDiv.textContent="Network error.";errDiv.style.display="block";})
+    .finally(function(){btn.disabled=false;btn.textContent="Request Full Access \u2192";});
 }
 
-/* ═══ UTILS ═══ */
-function setLoading(on) {
-  document.getElementById("spinner").classList.toggle("show", on);
-  document.getElementById("search-btn").disabled = on;
-}
-function showToast(msg, type) {
-  document.getElementById("toast-msg").textContent = msg;
-  var t = document.getElementById("toast");
-  t.className = "toast" + (type ? " "+type : "");
-  t.classList.add("show");
-  setTimeout(function(){ t.classList.remove("show"); }, 4500);
-}
-function esc(str) {
-  return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
+/* ══ UTILS ══ */
+function showSpin(list){list.innerHTML='<div class="ac-spin"><div class="ac-spin-d"></div><div class="ac-spin-d"></div><div class="ac-spin-d"></div></div>';list.classList.add("open");}
+function setLoading(on){document.getElementById("spinner").classList.toggle("show",on);var b=document.getElementById("search-btn");if(b)b.disabled=on;}
+function showToast(msg,type){document.getElementById("toast-msg").textContent=msg;var t=document.getElementById("toast");t.className="toast"+(type?" "+type:"");t.classList.add("show");setTimeout(function(){t.classList.remove("show");},4500);}
+function esc(str){return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 </script>
 </body>
 </html>
