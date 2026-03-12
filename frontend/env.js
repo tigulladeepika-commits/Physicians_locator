@@ -1,0 +1,5 @@
+window.ENV = {
+  MAPQUEST_API_KEY:"Ykpe3tfSmVqKRYujfcgRw8ddU79yLJ5j",
+  GEOAPIFY_API_KEY:"42cab9d714b14886b76726e5532aaead",
+  BACKEND_URL:  "http://localhost:5000"   // local Render backend
+};

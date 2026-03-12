@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "physician-locator",
+  "buildCommand": "bash build.sh",
+  "outputDirectory": ".",
+  "routes": [
+    { "src": "/env.js", "dest": "/env.js" },
+    { "src": "/(.*)",   "dest": "/index.html" }
+  ]
+}

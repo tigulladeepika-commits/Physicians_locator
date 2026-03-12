@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: physician-locator-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT
+    plan: free           # change to 'starter' or higher for production
+    autoDeploy: true     # auto-deploy on git push
+
+    envVars:
+      - key: MAPQUEST_API_KEY
+        sync: false      # set manually in Render dashboard
+      - key: GEOAPIFY_API_KEY
+        sync: false      # set manually in Render dashboard
+      - key: FRONTEND_URL
+        sync: false      # e.g. https://physician-locator.vercel.app
+      - key: PYTHON_VERSION
+        value: 3.11.0
