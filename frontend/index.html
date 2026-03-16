@@ -172,91 +172,66 @@ body::after{
 .res-tag{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 10px;border-radius:100px}
 
 /* ── Physician Cards ── */
-/* ══ PHYSICIAN GRID — 3-col cards ══ */
+/* ══ PHYSICIAN GRID — 3-col clean cards ══ */
 .cards-list{
   width:100%;max-width:var(--content);
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:16px;
+  gap:14px;
   margin-bottom:1.5rem;
-  align-items:start;
+  align-items:stretch;
 }
-/* Each card is a compact "button card" style */
 .dc{
-  background:rgba(255,255,255,.95);
+  background:rgba(255,255,255,.97);
   border-radius:16px;
-  border:1.5px solid rgba(0,174,239,.12);
-  box-shadow:0 4px 20px rgba(0,80,150,.07);
+  border:1.5px solid rgba(0,174,239,.1);
+  box-shadow:0 3px 16px rgba(0,80,150,.06);
   cursor:pointer;
   transition:box-shadow .2s,border-color .2s,transform .18s;
-  overflow:hidden;
   display:flex;flex-direction:column;
-  position:relative;
+  position:relative;overflow:hidden;
 }
-.dc::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+.dc::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
   background:linear-gradient(90deg,#00AEEF,#0C7A7A);
-  opacity:0;transition:opacity .2s;
+  opacity:0;transition:opacity .2s;border-radius:16px 16px 0 0;
 }
-.dc:hover{box-shadow:0 12px 40px rgba(0,100,180,.14);border-color:rgba(0,174,239,.3);transform:translateY(-3px)}
-.dc:hover::before{opacity:1}
-.dc.active{border-color:#00AEEF;box-shadow:0 0 0 3px rgba(0,174,239,.15),0 12px 40px rgba(0,100,180,.14)}
-.dc.active::before{opacity:1}
+.dc:hover{box-shadow:0 10px 36px rgba(0,100,180,.15);border-color:rgba(0,174,239,.35);transform:translateY(-4px)}
+.dc:hover::after{opacity:1}
 
-/* Top section: avatar + num badge */
-.dc-head{padding:1.1rem 1.1rem .75rem;display:flex;align-items:flex-start;gap:11px}
+/* Avatar row */
+.dc-head{padding:1.2rem 1.2rem .8rem;display:flex;align-items:center;gap:12px}
 .dav{
-  width:44px;height:44px;border-radius:12px;
+  width:48px;height:48px;border-radius:13px;flex-shrink:0;
   background:linear-gradient(135deg,#0F2044 0%,#0076B6 100%);
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--w);
-  flex-shrink:0;position:relative;overflow:hidden;
+  font-family:var(--fd);font-size:1.1rem;font-weight:700;color:#fff;
+  position:relative;overflow:hidden;
 }
-.dav::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,174,239,.35),transparent)}
+.dav::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,174,239,.3),transparent)}
 .dc-main{flex:1;min-width:0}
-.dc-name{font-weight:700;font-size:.86rem;color:var(--ink);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical}
-.dc-spec{font-size:.7rem;color:#0076B6;font-weight:600;margin-top:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;line-height:1.4}
-.dc-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
-.dc-num{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--w);font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.dc-dist{font-size:.62rem;font-weight:700;color:#0076B6;background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.2);padding:2px 7px;border-radius:100px;white-space:nowrap}
+.dc-name{font-weight:700;font-size:.88rem;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dc-spec{font-size:.7rem;color:#0076B6;font-weight:600;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
+.dc-num{width:22px;height:22px;border-radius:50%;background:#0F2044;color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:flex-start}
 
-/* Info strip */
-.dc-info{padding:0 1.1rem .75rem;display:flex;flex-direction:column;gap:4px;flex:1}
-.dc-info-row{display:flex;align-items:flex-start;gap:6px;font-size:.72rem;color:var(--ink3);line-height:1.4}
-.dc-info-row svg{width:11px;height:11px;flex-shrink:0;margin-top:1px;color:#00AEEF}
-.dc-info-row span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-
-/* NPI badge */
-.dc-npi{display:inline-flex;align-items:center;gap:4px;font-family:var(--fm);font-size:.6rem;color:var(--ink3);background:var(--cream2);padding:2px 7px;border-radius:4px;border:1px solid var(--cream3);margin:0 1.1rem .6rem}
-
-/* Action buttons row */
-.dc-acts{
-  display:grid;grid-template-columns:1fr 1fr;
-  gap:6px;padding:.75rem 1.1rem;
+/* Distance + view detail row at bottom */
+.dc-foot{
+  margin-top:auto;
+  padding:.7rem 1.2rem .9rem;
+  display:flex;align-items:center;justify-content:space-between;
   border-top:1px solid rgba(0,174,239,.08);
-  background:rgba(0,174,239,.02);
 }
-.dbt{
-  padding:7px 6px;border-radius:8px;font-size:.7rem;font-weight:700;
-  cursor:pointer;border:none;
-  transition:all .15s;
-  display:flex;align-items:center;justify-content:center;gap:4px;
-  white-space:nowrap;
+.dc-dist{font-size:.68rem;font-weight:700;color:#0076B6;background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.18);padding:3px 10px;border-radius:100px}
+.dc-arrow{
+  display:flex;align-items:center;gap:5px;
+  font-size:.72rem;font-weight:700;color:#0076B6;
+  background:rgba(0,174,239,.07);border:1.5px solid rgba(0,174,239,.2);
+  padding:4px 12px;border-radius:8px;transition:all .15s;
 }
-.dbt:active{transform:scale(.96)}
-.dbt svg{width:11px;height:11px;flex-shrink:0}
-.dbt-p{background:linear-gradient(135deg,#0076B6,#00AEEF);color:#fff;box-shadow:0 3px 10px rgba(0,118,182,.25)}
-.dbt-p:hover{box-shadow:0 5px 16px rgba(0,118,182,.38);transform:translateY(-1px)}
-.dbt-s{background:#fff;color:#0076B6;border:1.5px solid rgba(0,174,239,.25)}
-.dbt-s:hover{background:rgba(0,174,239,.06);border-color:#00AEEF}
-.dbt-d{background:var(--ink);color:var(--w)}
-.dbt-d:hover{background:#0F2044}
-
-/* Expand panel — still works on click, slides down */
-.dc-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
-.dc.expanded .dc-body{max-height:200px}
-.dc-body-inner{padding:.75rem 1.1rem .9rem;border-top:1px solid rgba(0,174,239,.1);background:rgba(0,174,239,.02);font-size:.75rem;color:var(--ink2)}
-.dc-chevron{display:none}
+.dc:hover .dc-arrow{background:#00AEEF;color:#fff;border-color:#00AEEF}
+.dc-arrow svg{width:12px;height:12px}
+/* hide old unused elements */
+.dc-info,.dc-npi,.dc-acts,.dc-body,.dc-chevron,.dbt{display:none}
 
 /* ── Empty State ── */
 .empty-state{
@@ -423,9 +398,101 @@ body::after{
 .toast.error{background:var(--coral)}.toast.success{background:var(--teal)}
 
 /* ══ RESPONSIVE ══ */
-@media(max-width:1100px){
-  .cards-list{grid-template-columns:repeat(3,1fr)}
+/* ══ DETAIL PAGE OVERLAY ══ */
+.detail-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(10,25,55,.55);
+  backdrop-filter:blur(6px);
+  display:none;align-items:flex-start;justify-content:center;
+  padding:0;overflow-y:auto;
+  animation:fadeIn .2s ease;
 }
+.detail-overlay.open{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.detail-panel{
+  background:#fff;
+  width:100%;max-width:720px;
+  min-height:100vh;
+  margin:0 auto;
+  position:relative;
+  animation:slideUp .28s cubic-bezier(.34,1.3,.64,1);
+  box-shadow:-8px 0 60px rgba(0,40,120,.2);
+}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Detail header */
+.dp-hdr{
+  background:linear-gradient(135deg,#0F2044 0%,#0076B6 100%);
+  padding:1.5rem 2rem 2rem;
+  position:relative;
+}
+.dp-back{
+  display:inline-flex;align-items:center;gap:6px;
+  color:rgba(255,255,255,.7);font-size:.76rem;font-weight:600;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  padding:5px 12px;border-radius:100px;cursor:pointer;
+  transition:all .15s;margin-bottom:1.25rem;
+  letter-spacing:.03em;
+}
+.dp-back:hover{background:rgba(255,255,255,.2);color:#fff}
+.dp-back svg{width:13px;height:13px}
+.dp-avatar-row{display:flex;align-items:flex-end;gap:1.25rem}
+.dp-avatar{
+  width:72px;height:72px;border-radius:18px;
+  background:rgba(255,255,255,.15);border:2.5px solid rgba(255,255,255,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:1.8rem;font-weight:700;color:#fff;
+  flex-shrink:0;
+}
+.dp-title-block{flex:1;min-width:0}
+.dp-name{font-family:var(--fd);font-size:1.5rem;font-weight:700;color:#fff;line-height:1.2;margin-bottom:.3rem}
+.dp-spec-badges{display:flex;flex-wrap:wrap;gap:6px}
+.dp-spec-badge{font-size:.68rem;font-weight:700;color:#fff;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:3px 10px;border-radius:100px}
+.dp-num-badge{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);
+  color:#fff;font-size:.8rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* Detail body */
+.dp-body{padding:1.75rem 2rem 3rem}
+.dp-section{margin-bottom:1.75rem}
+.dp-section-title{
+  font-size:.62rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:#0076B6;margin-bottom:.9rem;
+  display:flex;align-items:center;gap:7px;
+}
+.dp-section-title::after{content:'';flex:1;height:1px;background:rgba(0,174,239,.15)}
+.dp-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.dp-field{
+  background:#F5FAFF;border-radius:10px;padding:.85rem 1rem;
+  border:1px solid rgba(0,174,239,.12);
+}
+.dp-field-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#0076B6;margin-bottom:4px}
+.dp-field-val{font-size:.85rem;font-weight:600;color:var(--ink);line-height:1.4}
+.dp-field-val.mono{font-family:var(--fm);font-size:.78rem;color:var(--ink2)}
+.dp-field.full{grid-column:1/-1}
+/* Specialty tags */
+.dp-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:.25rem}
+.dp-tag{font-size:.72rem;font-weight:600;color:#0076B6;background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.2);padding:4px 12px;border-radius:100px}
+/* Action buttons */
+.dp-actions{display:flex;gap:10px;margin-top:1.5rem}
+.dp-btn{
+  flex:1;padding:12px 16px;border-radius:12px;font-family:var(--f);font-size:.85rem;font-weight:700;
+  cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:all .18s;
+}
+.dp-btn svg{width:15px;height:15px}
+.dp-btn-primary{background:linear-gradient(135deg,#0F2044,#0076B6);color:#fff;box-shadow:0 6px 20px rgba(0,118,182,.3)}
+.dp-btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,118,182,.4)}
+.dp-btn-secondary{background:#fff;color:#0076B6;border:2px solid rgba(0,174,239,.3)}
+.dp-btn-secondary:hover{background:rgba(0,174,239,.06);border-color:#00AEEF}
+/* Map embed in detail */
+.dp-map{border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,174,239,.15);margin-top:.75rem}
+#dp-map{width:100%;height:240px}
+
+@media(max-width:1100px){.cards-list{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){
   :root{--content:100%}
   .mp-inner{grid-template-columns:1fr 1fr}
@@ -433,6 +500,7 @@ body::after{
   #map{height:360px}
   .srch-banner{border-radius:0 0 12px 12px}
   .cards-list{grid-template-columns:repeat(2,1fr)}
+  .dp-grid{grid-template-columns:1fr}
 }
 @media(max-width:580px){
   .search-card{padding:1.75rem 1.25rem}
@@ -442,6 +510,10 @@ body::after{
   .sb-pill-val{max-width:110px}
   .mfr{grid-template-columns:1fr}
   .cards-list{grid-template-columns:1fr}
+  .detail-panel{min-height:100vh}
+  .dp-body{padding:1.25rem 1.25rem 3rem}
+  .dp-hdr{padding:1.25rem 1.25rem 1.75rem}
+  .dp-actions{flex-direction:column}
 }
 </style>
 </head>
@@ -645,6 +717,73 @@ body::after{
   </div>
 </div>
 
+<!-- ══ DETAIL OVERLAY ══ -->
+<div class="detail-overlay" id="detail-overlay">
+  <div class="detail-panel" id="detail-panel">
+    <!-- Header -->
+    <div class="dp-hdr" id="dp-hdr">
+      <div class="dp-back" onclick="closeDetail()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+        Back to Results
+      </div>
+      <div class="dp-avatar-row">
+        <div class="dp-avatar" id="dp-avatar">?</div>
+        <div class="dp-title-block">
+          <div class="dp-name" id="dp-name">—</div>
+          <div class="dp-spec-badges" id="dp-spec-badges"></div>
+        </div>
+        <div class="dp-num-badge" id="dp-num">—</div>
+      </div>
+    </div>
+    <!-- Body -->
+    <div class="dp-body">
+      <div class="dp-section">
+        <div class="dp-section-title">Provider Information</div>
+        <div class="dp-grid">
+          <div class="dp-field">
+            <div class="dp-field-label">NPI Number</div>
+            <div class="dp-field-val mono" id="dp-npi">—</div>
+          </div>
+          <div class="dp-field">
+            <div class="dp-field-label">Distance</div>
+            <div class="dp-field-val" id="dp-dist">—</div>
+          </div>
+          <div class="dp-field full">
+            <div class="dp-field-label">Address</div>
+            <div class="dp-field-val" id="dp-address">—</div>
+          </div>
+          <div class="dp-field">
+            <div class="dp-field-label">Phone</div>
+            <div class="dp-field-val" id="dp-phone">—</div>
+          </div>
+          <div class="dp-field">
+            <div class="dp-field-label">Entity Type</div>
+            <div class="dp-field-val" id="dp-entity">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="dp-section">
+        <div class="dp-section-title">Specialties & Taxonomy</div>
+        <div class="dp-tags" id="dp-tags"></div>
+      </div>
+      <div class="dp-section" id="dp-map-section">
+        <div class="dp-section-title">Location</div>
+        <div class="dp-map"><div id="dp-map"></div></div>
+      </div>
+      <div class="dp-actions">
+        <button class="dp-btn dp-btn-primary" onclick="openLeadModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg>
+          Contact Provider
+        </button>
+        <button class="dp-btn dp-btn-secondary" id="dp-map-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          View on Main Map
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><span id="toast-msg"></span></div>
 
 <script>
@@ -678,8 +817,11 @@ window.addEventListener("DOMContentLoaded",function(){
   document.getElementById("modal-close").addEventListener("click",closeModal);
   document.getElementById("lead-modal").addEventListener("click",function(e){if(e.target===document.getElementById("lead-modal"))closeModal();});
   document.getElementById("lead-form").addEventListener("submit",submitLead);
-  document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeModal();closeModifyPanel();}});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeModal();closeModifyPanel();closeDetail();}});
   checkTaxSt();
+  document.getElementById("detail-overlay").addEventListener("click",function(e){
+    if(e.target===document.getElementById("detail-overlay"))closeDetail();
+  });
 });
 
 /* ══ MAP ══ */
@@ -973,55 +1115,24 @@ function appendCard(col,p,i){
   var name=p.name||"Unknown Provider";
   var ini=name.split(" ").slice(0,2).map(function(w){return w[0]||"";}).join("").toUpperCase();
   var at=(p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean);
-  var spec=at.length>1?at.slice(0,2).join(" \u00b7 "):(p.taxonomy_desc||"Provider");
-  var distTxt=p.distance_miles!=null?"\uD83D\uDCCD "+p.distance_miles+" mi":"";
+  var spec=at.length?at.slice(0,2).join(" \u00b7 "):(p.taxonomy_desc||"Provider");
 
   var card=document.createElement("div");card.className="dc";card.dataset.index=i;
   card.innerHTML=
-    /* HEAD: avatar + info + num/dist */
     '<div class="dc-head">'
     +'<div class="dav">'+ini+'</div>'
-    +'<div class="dc-main"><div class="dc-name">'+esc(name)+'</div><div class="dc-spec">'+esc(spec)+'</div></div>'
-    +'<div class="dc-right">'
+    +'<div class="dc-main">'
+    +'<div class="dc-name">'+esc(name)+'</div>'
+    +'<div class="dc-spec">'+esc(spec)+'</div>'
+    +'</div>'
     +'<div class="dc-num">'+(i+1)+'</div>'
-    +(p.distance_miles!=null?'<div class="dc-dist">\uD83D\uDCCD '+p.distance_miles+' mi</div>':"")+
-    '</div></div>'
-
-    /* INFO: address + phone inline */
-    +'<div class="dc-info">'
-    +(p.address?'<div class="dc-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg><span>'+esc(p.address)+'</span></div>':"")
-    +(p.phone?'<div class="dc-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg><span>'+esc(p.phone)+'</span></div>':"")
     +'</div>'
+    +'<div class="dc-foot">'
+    +(p.distance_miles!=null?'<span class="dc-dist">\uD83D\uDCCD '+p.distance_miles+' mi</span>':'<span></span>')
+    +'<span class="dc-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>View Details</span>'
+    +'</div>';
 
-    /* NPI */
-    +(p.npi?'<div class="dc-npi">NPI \u00a0'+esc(p.npi)+'</div>':"")
-
-    /* ACTIONS: 2-col grid buttons */
-    +'<div class="dc-acts">'
-    +'<button class="dbt dbt-p" onclick="openLeadModal();event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg> Contact</button>'
-    +'<button class="dbt dbt-s" onclick="focusMap('+i+');event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> View Map</button>'
-    +'</div>'
-
-    /* Hidden expand body for extra details */
-    +'<div class="dc-body"><div class="dc-body-inner">'
-    +(at.length>2?'<div style="font-size:.74rem;color:#0076B6;font-weight:600;margin-bottom:4px">All Specialties</div><div style="font-size:.74rem;color:var(--ink2);">'+esc(at.join(" \u00b7 "))+'</div>':"")
-    +'</div></div>';
-
-  /* Click card body (not buttons) to expand extra info */
-  card.addEventListener("click",function(e){
-    if(e.target.closest("button"))return;
-    var was=card.classList.contains("expanded");
-    document.querySelectorAll(".dc.expanded").forEach(function(c){c.classList.remove("expanded","active");});
-    if(!was){
-      card.classList.add("expanded","active");
-      var idx2=parseInt(card.dataset.index);
-      var ph=allPhysicians[idx2];
-      if(ph&&ph.lat&&ph.lng&&markers[idx2]){
-        document.getElementById("map-section").scrollIntoView({behavior:"smooth",block:"nearest"});
-        setTimeout(function(){map.setView([ph.lat,ph.lng],16);markers[idx2].openPopup();},400);
-      }
-    }
-  });
+  card.addEventListener("click",function(){openDetail(i);});
   col.appendChild(card);
 }
 
@@ -1121,6 +1232,78 @@ function submitLead(e){
       else{errDiv.textContent=data.error||"Submission failed.";errDiv.style.display="block";}
     }).catch(function(){errDiv.textContent="Network error.";errDiv.style.display="block";})
     .finally(function(){btn.disabled=false;btn.textContent="Request Full Access \u2192";});
+}
+
+/* ══ DETAIL PAGE ══ */
+var dpMap=null,dpMapInited=false;
+
+function openDetail(idx){
+  var p=allPhysicians[idx];
+  if(!p)return;
+  var name=p.name||"Unknown Provider";
+  var ini=name.split(" ").slice(0,2).map(function(w){return w[0]||"";}).join("").toUpperCase();
+  var at=(p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean);
+
+  // populate fields
+  document.getElementById("dp-avatar").textContent=ini;
+  document.getElementById("dp-name").textContent=name;
+  document.getElementById("dp-num").textContent=idx+1;
+  document.getElementById("dp-npi").textContent=p.npi||"—";
+  document.getElementById("dp-dist").textContent=p.distance_miles!=null?p.distance_miles+" miles away":"—";
+  document.getElementById("dp-address").textContent=p.address||"—";
+  document.getElementById("dp-phone").textContent=p.phone||"—";
+  document.getElementById("dp-entity").textContent=p.entity_type||"Individual";
+
+  // specialty badges in header
+  var specBadges=document.getElementById("dp-spec-badges");
+  specBadges.innerHTML="";
+  (at.length?at:[p.taxonomy_desc||"Provider"]).forEach(function(s){
+    var b=document.createElement("span");b.className="dp-spec-badge";b.textContent=s;specBadges.appendChild(b);
+  });
+
+  // specialty tags in body
+  var tagsEl=document.getElementById("dp-tags");
+  tagsEl.innerHTML="";
+  (at.length?at:[p.taxonomy_desc||"Provider"]).forEach(function(s){
+    var t=document.createElement("span");t.className="dp-tag";t.textContent=s;tagsEl.appendChild(t);
+  });
+
+  // View on Main Map button
+  document.getElementById("dp-map-btn").onclick=function(){
+    closeDetail();
+    setTimeout(function(){focusMap(idx);},200);
+  };
+
+  // open overlay
+  var ov=document.getElementById("detail-overlay");
+  ov.classList.add("open");
+  ov.scrollTop=0;
+  document.body.style.overflow="hidden";
+
+  // mini map in detail panel
+  if(p.lat&&p.lng){
+    document.getElementById("dp-map-section").style.display="block";
+    setTimeout(function(){
+      if(!dpMapInited){
+        dpMapInited=true;
+        L.mapquest.key=MAPQUEST_KEY;
+        dpMap=L.mapquest.map("dp-map",{center:[p.lat,p.lng],layers:L.mapquest.tileLayer("map"),zoom:15,zoomControl:true});
+      } else {
+        dpMap.setView([p.lat,p.lng],15);
+        dpMap.eachLayer(function(l){if(l instanceof L.Marker)dpMap.removeLayer(l);});
+      }
+      var icon=L.divIcon({html:'<div style="background:#0076B6;width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',className:"",iconSize:[14,14],iconAnchor:[7,7]});
+      L.marker([p.lat,p.lng],{icon:icon}).addTo(dpMap).bindPopup("<b>"+esc(name)+"</b><br>"+esc(p.address||"")).openPopup();
+      dpMap.invalidateSize();
+    },120);
+  } else {
+    document.getElementById("dp-map-section").style.display="none";
+  }
+}
+
+function closeDetail(){
+  document.getElementById("detail-overlay").classList.remove("open");
+  document.body.style.overflow="";
 }
 
 /* ══ UTILS ══ */
