@@ -267,17 +267,18 @@ body::after{
 .empty-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,118,182,.4)}
 
 /* ── Load More ── */
-.load-more-wrap{width:100%;max-width:var(--content);padding:0 0 .5rem}
+.load-more-wrap{width:100%;max-width:var(--content);padding:0 0 .5rem;display:flex;justify-content:flex-end}
 .btn-lm{
-  width:100%;padding:13px;
-  background:var(--w);border:2px dashed var(--cream3);
-  border-radius:12px;
-  color:var(--teal);font-family:var(--f);font-size:.85rem;font-weight:700;
-  cursor:pointer;transition:border-color .15s,background .15s,transform .1s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:auto;padding:10px 22px;
+  background:var(--w);border:2px solid rgba(0,174,239,.25);
+  border-radius:100px;
+  color:#0076B6;font-family:var(--f);font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;gap:7px;
+  box-shadow:0 2px 12px rgba(0,118,182,.08);
 }
-.btn-lm:hover{border-color:var(--teal);background:var(--tg);transform:translateY(-1px)}
-.btn-lm svg{width:15px;height:15px}
+.btn-lm:hover{border-color:#00AEEF;background:rgba(0,174,239,.06);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,118,182,.15)}
+.btn-lm svg{width:14px;height:14px}
 
 /* ── Map Section ── */
 .map-section{
