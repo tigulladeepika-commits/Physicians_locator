@@ -267,18 +267,31 @@ body::after{
 .empty-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,118,182,.4)}
 
 /* ── Load More ── */
-.load-more-wrap{width:100%;max-width:var(--content);padding:0 0 .5rem;display:flex;justify-content:flex-end}
-.btn-lm{
-  width:auto;padding:10px 22px;
-  background:var(--w);border:2px solid rgba(0,174,239,.25);
-  border-radius:100px;
-  color:#0076B6;font-family:var(--f);font-size:.82rem;font-weight:700;
-  cursor:pointer;transition:all .18s;
-  display:flex;align-items:center;gap:7px;
-  box-shadow:0 2px 12px rgba(0,118,182,.08);
+/* load-more sits as a grid cell — plain text link style */
+.load-more-wrap{
+  background:rgba(255,255,255,.6);
+  border-radius:16px;
+  border:1.5px dashed rgba(0,174,239,.2);
+  display:flex;align-items:center;justify-content:center;
+  min-height:120px;
 }
-.btn-lm:hover{border-color:#00AEEF;background:rgba(0,174,239,.06);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,118,182,.15)}
-.btn-lm svg{width:14px;height:14px}
+.btn-lm{
+  background:none;border:none;padding:0;
+  color:#0076B6;font-family:var(--f);font-size:.88rem;font-weight:700;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;
+  transition:color .15s;
+}
+.btn-lm:hover{color:#00AEEF}
+.btn-lm .lm-icon{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(0,174,239,.08);border:1.5px solid rgba(0,174,239,.2);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.btn-lm:hover .lm-icon{background:rgba(0,174,239,.15)}
+.btn-lm svg{width:16px;height:16px}
+.btn-lm .lm-label{font-size:.78rem;font-weight:700;color:inherit}
+.btn-lm .lm-sub{font-size:.68rem;font-weight:500;color:var(--ink3)}
 
 /* ── Map Section ── */
 .map-section{
@@ -791,7 +804,7 @@ body::after{
 /* ══ CONFIG ══ */
 var MAPQUEST_KEY=(window.ENV&&window.ENV.MAPQUEST_KEY)?window.ENV.MAPQUEST_KEY:"";
 var BACKEND_URL=(window.ENV&&window.ENV.BACKEND_URL)?window.ENV.BACKEND_URL:"";
-var MAX_PAGE=10;
+var MAX_PAGE=9;
 if(!MAPQUEST_KEY)console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
 if(!BACKEND_URL)console.warn("[PhysicianLocator] BACKEND_URL not set");
 
@@ -1141,10 +1154,13 @@ function appendLoadMore(col){
   var old=col.querySelector(".load-more-wrap");if(old)old.remove();
   var shown=shownCount;
   if(shown>=totalFound)return;
+  var remaining=totalFound-shown;
   var wrap=document.createElement("div");wrap.className="load-more-wrap";
   var btn=document.createElement("button");btn.className="btn-lm";
-  var remaining=totalFound-shown;
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Load more &mdash; '+remaining.toLocaleString()+' more providers';
+  btn.innerHTML=
+    '<div class="lm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>'
+    +'<span class="lm-label">Load more</span>'
+    +'<span class="lm-sub">'+remaining.toLocaleString()+' more providers</span>';
   btn.addEventListener("click",function(){
     if(shown<allPhysicians.length){
       var newEnd=Math.min(allPhysicians.length,(shownCount+MAX_PAGE));
