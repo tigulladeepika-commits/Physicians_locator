@@ -14,112 +14,135 @@
   --w:#FFFFFF;--cream:#FAF8F4;--cream2:#F3EFE7;--cream3:#E8E2D8;
   --ink:#141420;--ink2:#3A3A52;--ink3:#7A7A96;
   --teal:#0C7A7A;--teal2:#0FA8A8;--tg:rgba(12,122,122,.10);--tb:rgba(12,122,122,.22);
-  --coral:#D95F4B;--gold:#C4993A;
+  --coral:#D95F4B;--gold:#C4993A;--navy:#0F2044;
   --s1:0 2px 8px rgba(20,20,32,.06);--s2:0 8px 28px rgba(20,20,32,.10);--s3:0 20px 60px rgba(20,20,32,.14);
   --r:10px;--tr:0.18s cubic-bezier(.4,0,.2,1);
   --f:'Plus Jakarta Sans',system-ui,sans-serif;
   --fd:'Cormorant Garamond',Georgia,serif;
   --fm:'DM Mono',monospace;
   --hdr:64px;
-  --sbar:68px;
+  --content:860px;
 }
-html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--ink);font-size:15px;line-height:1.6;overflow-x:hidden}
+html,body{font-family:var(--f);color:var(--ink);font-size:15px;line-height:1.6;overflow-x:hidden}
+body{
+  background:linear-gradient(145deg,#E8F4FD 0%,#EDF7F6 35%,#F0F5FF 65%,#E6F3FB 100%);
+  position:relative;min-height:100vh;
+}
+/* Floating orbs - ambient medical blue glow */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 55% 45% at 8% 15%, rgba(0,174,239,.18) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 55% at 92% 85%, rgba(12,122,122,.14) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 35% at 75% 12%, rgba(0,118,182,.10) 0%, transparent 50%),
+    radial-gradient(ellipse 35% 45% at 20% 88%, rgba(15,32,68,.08) 0%, transparent 50%),
+    radial-gradient(ellipse 30% 30% at 50% 50%, rgba(0,174,239,.04) 0%, transparent 60%);
+  animation:bgBreath 14s ease-in-out infinite alternate;
+}
+@keyframes bgBreath{
+  0%{transform:scale(1) translate(0,0)}
+  33%{transform:scale(1.02) translate(8px,-6px)}
+  66%{transform:scale(.98) translate(-6px,8px)}
+  100%{transform:scale(1) translate(0,0)}
+}
+/* Subtle dot grid */
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(circle, rgba(0,118,182,.12) 1px, transparent 1px);
+  background-size:32px 32px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+.hdr,.phase-search,.phase-results,.sw,.mbg,.toast{position:relative;z-index:1}
 
 /* ══ HEADER ══ */
-.hdr{background:var(--w);border-bottom:1px solid var(--cream3);padding:0 clamp(1rem,4vw,2.5rem);height:var(--hdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:var(--s1)}
-.logo{display:flex;align-items:center;gap:11px;text-decoration:none;cursor:pointer}
-.logo-mark{width:36px;height:36px;background:var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden}
-.logo-mark::before{content:'';position:absolute;width:16px;height:16px;border:2px solid var(--teal2);border-radius:50%;top:7px;left:50%;transform:translateX(-50%)}
-.logo-mark::after{content:'';position:absolute;width:2px;height:9px;background:var(--teal2);bottom:5px;left:50%;transform:translateX(-50%);border-radius:1px}
-.logo-name{font-family:var(--fd);font-size:1.25rem;font-weight:700;color:var(--ink);letter-spacing:-.01em;line-height:1}
-.logo-name em{color:var(--teal);font-style:normal}
-.logo-sub{font-size:.62rem;font-weight:500;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
-.hdr-badge{display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:600;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:5px 13px;border-radius:100px}
-.hdr-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2.2s ease infinite}
+.hdr{background:rgba(255,255,255,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,174,239,.12);padding:0 clamp(1rem,4vw,2.5rem);height:var(--hdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 20px rgba(0,118,182,.08)}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer}
+.logo-mark{width:42px;height:42px;flex-shrink:0}
+.logo-name{font-family:var(--fd);font-size:1.3rem;font-weight:700;color:var(--ink);letter-spacing:-.01em;line-height:1}
+.logo-name em{color:#00AEEF;font-style:normal;font-weight:800}
+.logo-sub{font-size:.6rem;font-weight:600;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.hdr-badge{display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:700;color:#0076B6;background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.22);padding:6px 14px;border-radius:100px;letter-spacing:.04em}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:#00AEEF;animation:blink 2.2s ease infinite;box-shadow:0 0 6px rgba(0,174,239,.6)}
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
 
 /* ══ PHASE 1: SEARCH CARD ══ */
 .phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--hdr));padding:2rem 1rem}
-.search-card{background:var(--w);border-radius:20px;box-shadow:var(--s3);padding:2.5rem 2.25rem;width:100%;max-width:580px;border:1px solid var(--cream2)}
-.sc-eye{font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:.5rem}
-.sc-title{font-family:var(--fd);font-size:2rem;font-weight:700;color:var(--ink);line-height:1.15;letter-spacing:-.02em;margin-bottom:.35rem}
+.search-card{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:28px;box-shadow:0 32px 100px rgba(0,60,120,.16),0 0 0 1.5px rgba(0,174,239,.18),inset 0 1px 0 rgba(255,255,255,.8);padding:3rem 3rem 2.5rem;width:100%;max-width:740px;border:1px solid rgba(0,174,239,.15);position:relative;overflow:hidden}
+.search-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00AEEF,#0C7A7A,#00AEEF);background-size:200% 100%;animation:shimmer 3s linear infinite;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sc-eye{font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#0076B6;margin-bottom:.5rem}
+.sc-title{font-family:var(--fd);font-size:2.4rem;font-weight:700;color:var(--ink);line-height:1.12;letter-spacing:-.02em;margin-bottom:.4rem}
 .sc-title em{font-style:italic;color:var(--teal)}
 .sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
 
-/* ══ STICKY SEARCH BAR — IRCTC style ══ */
-.sbar{
-  background:#0F2044;
-  padding:0 clamp(1rem,3vw,2rem);
-  height:var(--sbar);
-  display:none;align-items:center;gap:8px;
-  position:sticky;top:var(--hdr);z-index:200;
-  box-shadow:0 4px 20px rgba(10,18,40,.55);
-  overflow-x:auto;overflow-y:hidden;
-  border-bottom:3px solid #0C7A7A;
-}
-.sbar.show{display:flex}
-/* Each field looks like a white-background input box — IRCTC style */
-.sbar-field{
-  display:flex;flex-direction:column;flex-shrink:0;
-  background:#fff;
-  border-radius:6px;
-  padding:5px 13px 5px 11px;
-  min-width:110px;
-  cursor:default;
-  border:1.5px solid #ddd;
-  transition:border-color .15s;
+/* ══ PHASE 2: RESULTS PAGE (new vertical centered layout) ══ */
+.phase-results{display:none;flex-direction:column;align-items:center;padding:0 1rem 4rem;min-height:calc(100vh - var(--hdr))}
+
+/* ── Search Criteria Banner ── */
+.srch-banner{
+  width:100%;max-width:var(--content);
+  background:var(--navy);
+  border-radius:0 0 16px 16px;
+  padding:1.1rem 1.75rem;
+  display:flex;align-items:center;flex-wrap:wrap;gap:12px;
+  box-shadow:0 8px 32px rgba(15,32,68,.22);
+  border-bottom:3px solid var(--teal);
+  margin-bottom:1.75rem;
   position:relative;
 }
-.sbar-field:hover{border-color:#0C7A7A;}
-/* small icon prefix on first field */
-.sbar-field.has-icon{padding-left:30px}
-.sbar-field-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#0C7A7A;width:13px;height:13px;flex-shrink:0}
-.sbar-label{font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:1px;line-height:1}
-.sbar-val{font-size:.84rem;font-weight:700;color:#111;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
-.sbar-val.teal{color:#0C7A7A}
-.sbar-val.green{color:#1a7a4a}
-/* separator arrow between fields — like IRCTC swap arrow */
-.sbar-sep{
-  display:flex;align-items:center;justify-content:center;
-  width:22px;height:22px;border-radius:50%;
-  background:#0F2044;border:1.5px solid rgba(255,255,255,.18);
-  flex-shrink:0;color:rgba(255,255,255,.5);
-  font-size:.7rem;
+.sb-fields{display:flex;align-items:center;flex-wrap:wrap;gap:8px;flex:1}
+.sb-pill{
+  display:flex;flex-direction:column;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  padding:5px 14px;
+  min-width:90px;
 }
-.sbar-chips{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;align-items:center;max-width:240px}
-.sbar-chips::-webkit-scrollbar{display:none}
-.sbar-chip{font-size:.68rem;font-weight:700;color:#0C7A7A;background:rgba(12,122,122,.1);border:1.5px solid rgba(12,122,122,.3);padding:2px 8px;border-radius:100px;white-space:nowrap;flex-shrink:0}
-/* Right-side buttons */
-.sbar-btn{
-  margin-left:auto;flex-shrink:0;
+.sb-pill-label{font-size:.52rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.4);line-height:1;margin-bottom:2px}
+.sb-pill-val{font-size:.82rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;line-height:1.3}
+.sb-pill-val.accent{color:var(--teal2)}
+.sb-chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.sb-chip{font-size:.68rem;font-weight:700;color:var(--teal2);background:rgba(15,168,168,.12);border:1px solid rgba(15,168,168,.3);padding:2px 9px;border-radius:100px;white-space:nowrap}
+.sb-divider{width:1px;height:28px;background:rgba(255,255,255,.12);flex-shrink:0}
+.sb-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.sb-new-btn{
   display:flex;align-items:center;gap:6px;
-  padding:9px 15px;
+  padding:8px 16px;
   background:rgba(255,255,255,.08);
   border:1.5px solid rgba(255,255,255,.18);
-  border-radius:6px;
-  font-family:var(--f);font-size:.78rem;font-weight:700;color:rgba(255,255,255,.75);
-  cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;
+  border-radius:7px;
+  font-family:var(--f);font-size:.76rem;font-weight:700;color:rgba(255,255,255,.8);
+  cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;
 }
-.sbar-btn:hover{background:rgba(255,255,255,.16);color:#fff}
-.sbar-btn svg{width:13px;height:13px}
-/* Modify Search — orange like IRCTC */
-.sbar-modify{
-  display:flex;align-items:center;gap:7px;
-  padding:9px 18px;
+.sb-new-btn:hover{background:rgba(255,255,255,.16);color:#fff}
+.sb-new-btn svg{width:13px;height:13px}
+.sb-modify-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 16px;
   background:#E8730A;
-  border:none;border-radius:6px;
-  font-family:var(--f);font-size:.82rem;font-weight:700;color:#fff;
-  cursor:pointer;transition:background .15s,transform .1s;
-  white-space:nowrap;flex-shrink:0;
-  box-shadow:0 2px 8px rgba(232,115,10,.4);
+  border:none;border-radius:7px;
+  font-family:var(--f);font-size:.76rem;font-weight:700;color:#fff;
+  cursor:pointer;white-space:nowrap;transition:background .15s;
+  box-shadow:0 2px 8px rgba(232,115,10,.35);
 }
-.sbar-modify:hover{background:#F08020;transform:translateY(-1px)}
-.sbar-modify svg{width:13px;height:13px}
+.sb-modify-btn:hover{background:#F08020}
+.sb-modify-btn svg{width:13px;height:13px}
 
-/* ══ MODIFY PANEL (inline dropdown from sbar) ══ */
-.modify-panel{display:none;background:var(--ink);border-top:1px solid rgba(255,255,255,.1);padding:1rem clamp(1rem,3vw,2rem);position:sticky;top:calc(var(--hdr) + var(--sbar));z-index:190;box-shadow:0 8px 24px rgba(20,20,32,.3)}
+/* ── Modify Panel ── */
+.modify-panel{
+  width:100%;max-width:var(--content);
+  display:none;background:var(--navy);
+  border-radius:12px;
+  padding:1.25rem 1.75rem;
+  margin-top:-1rem;
+  margin-bottom:1.5rem;
+  box-shadow:0 8px 32px rgba(15,32,68,.25);
+  border:1px solid rgba(255,255,255,.08);
+}
 .modify-panel.show{display:block}
-.mp-inner{display:grid;grid-template-columns:1fr 120px 160px 1fr auto;gap:.75rem;align-items:end;max-width:1200px}
+.mp-inner{display:grid;grid-template-columns:1fr 140px 1fr auto;gap:.75rem;align-items:end}
 .mp-field{display:flex;flex-direction:column;gap:4px}
 .mp-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)}
 .mp-inp{width:100%;padding:9px 12px;font-family:var(--f);font-size:.85rem;color:var(--ink);background:rgba(255,255,255,.92);border:1.5px solid transparent;border-radius:8px;outline:none;transition:border-color .15s;appearance:none}
@@ -136,7 +159,127 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
 .mp-apply{padding:9px 20px;background:var(--teal2);color:var(--w);border:none;border-radius:8px;font-family:var(--f);font-size:.85rem;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;height:40px}
 .mp-apply:hover{background:var(--teal)}
 
-/* shared dropdowns */
+/* ── Results header bar ── */
+.res-meta{
+  width:100%;max-width:var(--content);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  margin-bottom:1rem;
+  padding:0 2px;
+}
+.res-count{font-size:.82rem;font-weight:700;color:var(--ink3);letter-spacing:.04em}
+.res-count strong{color:var(--teal);font-size:.96rem}
+.res-tags{display:flex;gap:6px;flex-wrap:wrap}
+.res-tag{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 10px;border-radius:100px}
+
+/* ── Physician Cards ── */
+.cards-list{width:100%;max-width:var(--content);display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem}
+
+.dc{
+  background:var(--w);
+  border-radius:14px;
+  border:1.5px solid var(--cream2);
+  box-shadow:var(--s1);
+  cursor:pointer;
+  transition:box-shadow .18s,border-color .18s,transform .15s;
+  overflow:hidden;
+}
+.dc:hover{box-shadow:var(--s2);border-color:var(--tb);transform:translateY(-1px)}
+.dc.active{border-color:var(--teal);box-shadow:0 0 0 3px var(--tg),var(--s2)}
+.dc-head{padding:1rem 1.4rem;display:flex;align-items:center;gap:13px}
+.dav{
+  width:46px;height:46px;border-radius:11px;
+  background:linear-gradient(135deg,var(--ink) 0%,var(--ink2) 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--w);
+  flex-shrink:0;position:relative;overflow:hidden;
+}
+.dav::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(12,122,122,.45),transparent)}
+.dc-main{flex:1;min-width:0}
+.dc-name{font-weight:700;font-size:.92rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.dc-spec{font-size:.74rem;color:var(--teal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.dc-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.dc-dist{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:3px 9px;border-radius:100px}
+.dc-num{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--w);font-size:.66rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dc-chevron{width:16px;height:16px;color:var(--ink3);transition:transform .22s ease;flex-shrink:0}
+.dc.expanded .dc-chevron{transform:rotate(180deg)}
+
+/* Expandable body */
+.dc-body{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--cream)}
+.dc.expanded .dc-body{max-height:380px}
+.dc-body-inner{padding:.85rem 1.4rem 1rem;border-top:1px solid var(--cream2)}
+.dc-row{display:flex;align-items:flex-start;gap:9px;margin-bottom:.55rem;font-size:.81rem;color:var(--ink2);line-height:1.45}
+.dc-row svg{width:13px;height:13px;color:var(--ink3);flex-shrink:0;margin-top:2px}
+.dc-npi{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:.67rem;color:var(--ink3);background:var(--cream2);padding:3px 9px;border-radius:5px;border:1px solid var(--cream3);margin-bottom:.8rem}
+.dc-acts{display:flex;gap:7px}
+.dbt{flex:1;padding:8px 10px;border-radius:8px;font-size:.74rem;font-weight:700;cursor:pointer;border:none;transition:background .12s,transform .1s;display:flex;align-items:center;justify-content:center;gap:5px}
+.dbt:active{transform:scale(.97)}
+.dbt-p{background:var(--teal);color:var(--w)}.dbt-p:hover{background:var(--teal2)}
+.dbt-s{background:var(--cream2);color:var(--ink2);border:1px solid var(--cream3)}.dbt-s:hover{background:var(--cream3)}
+.dbt-d{background:var(--ink);color:var(--w)}.dbt-d:hover{background:var(--ink2)}
+.dbt svg{width:12px;height:12px}
+
+/* ── Load More ── */
+.load-more-wrap{width:100%;max-width:var(--content);padding:0 0 .5rem}
+.btn-lm{
+  width:100%;padding:13px;
+  background:var(--w);border:2px dashed var(--cream3);
+  border-radius:12px;
+  color:var(--teal);font-family:var(--f);font-size:.85rem;font-weight:700;
+  cursor:pointer;transition:border-color .15s,background .15s,transform .1s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-lm:hover{border-color:var(--teal);background:var(--tg);transform:translateY(-1px)}
+.btn-lm svg{width:15px;height:15px}
+
+/* ── Map Section ── */
+.map-section{
+  width:100%;max-width:var(--content);
+  margin-top:2rem;
+}
+.map-title-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.85rem;padding:0 2px;
+}
+.map-title{
+  display:flex;align-items:center;gap:9px;
+  font-size:.82rem;font-weight:700;color:var(--ink2);letter-spacing:.05em;text-transform:uppercase;
+}
+.map-title svg{color:var(--teal);width:15px;height:15px}
+.map-count-badge{font-size:.7rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 10px;border-radius:100px}
+.map-wrap{
+  background:var(--w);
+  border-radius:16px;
+  border:1.5px solid var(--cream2);
+  box-shadow:var(--s2);
+  overflow:hidden;
+}
+#map{width:100%;height:480px}
+
+/* ══ SHARED FORM FIELDS ══ */
+.field{margin-bottom:.9rem;position:relative}
+.field:last-child{margin-bottom:0}
+.lbl{display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
+.lbl .req{color:var(--coral)}
+.inp{width:100%;padding:13px 16px;font-family:var(--f);font-size:.92rem;color:var(--ink);background:#F5FAFF;border:1.5px solid #D0E8F5;border-radius:12px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s;appearance:none}
+.inp::placeholder{color:var(--ink3)}
+.inp:focus{background:#fff;border-color:#00AEEF;box-shadow:0 0 0 4px rgba(0,174,239,.12)}
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.tag-box{min-height:50px;padding:6px 10px;background:#F5FAFF;border:1.5px solid #D0E8F5;border-radius:12px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .18s,box-shadow .18s}
+.tag-box:focus-within{background:#fff;border-color:#00AEEF;box-shadow:0 0 0 4px rgba(0,174,239,.12)}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:var(--w);font-size:.72rem;font-weight:600;padding:3px 8px 3px 10px;border-radius:100px;white-space:nowrap;max-width:220px;animation:chipPop .15s ease}
+.chip span{overflow:hidden;text-overflow:ellipsis}
+.chip-x{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:.9rem;padding:0;line-height:1;display:flex;align-items:center;flex-shrink:0;transition:color .1s}
+.chip-x:hover{color:var(--w)}
+.chip-input{border:none;outline:none;font-family:var(--f);font-size:.875rem;color:var(--ink);background:transparent;min-width:110px;flex:1;padding:2px 4px}
+.chip-input::placeholder{color:var(--ink3)}
+.fhint{font-size:.67rem;color:var(--ink3);margin-top:4px;font-style:italic}
+.tax-st{font-size:.67rem;color:var(--ink3);margin-top:4px;transition:opacity .5s}
+.btn-s{width:100%;padding:14px 16px;background:linear-gradient(135deg,#0F2044 0%,#0076B6 60%,#00AEEF 100%);color:var(--w);border:none;border-radius:14px;font-family:var(--f);font-size:.95rem;font-weight:700;letter-spacing:.05em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .2s;margin-top:1rem;box-shadow:0 6px 24px rgba(0,118,182,.35);background-size:200% 100%;background-position:right center}
+.btn-s:hover{background-position:left center;transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,118,182,.45)}
+.btn-s:disabled{background:var(--cream3);cursor:not-allowed;transform:none;box-shadow:none;color:var(--ink3)}
+.btn-s svg{width:16px;height:16px;flex-shrink:0}
+
+/* ══ SHARED DROPDOWNS ══ */
 .ac-list,.tax-list,.mp-ac-list,.mp-tax-list{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--w);border:1.5px solid var(--tb);border-radius:var(--r);box-shadow:var(--s3);z-index:600;max-height:230px;overflow-y:auto;display:none;scrollbar-width:thin;scrollbar-color:var(--cream3) transparent}
 .ac-list.open,.tax-list.open,.mp-ac-list.open,.mp-tax-list.open{display:block}
 .ac-item,.mp-ac-item{padding:9px 14px;font-size:.84rem;color:var(--ink2);cursor:pointer;border-bottom:1px solid var(--cream);display:flex;align-items:flex-start;gap:8px;transition:background .08s}
@@ -155,82 +298,7 @@ html,body{height:100%;font-family:var(--f);background:var(--cream);color:var(--i
 .ac-spin-d:nth-child(2){animation-delay:.15s}.ac-spin-d:nth-child(3){animation-delay:.3s}
 @keyframes ldot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 
-/* ══ SHARED FORM FIELDS ══ */
-.field{margin-bottom:.9rem;position:relative}
-.field:last-child{margin-bottom:0}
-.lbl{display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
-.lbl .req{color:var(--coral)}
-.inp{width:100%;padding:11px 14px;font-family:var(--f);font-size:.9rem;color:var(--ink);background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);outline:none;transition:border-color .15s,box-shadow .15s;appearance:none}
-.inp::placeholder{color:var(--ink3)}
-.inp:focus{background:var(--w);border-color:var(--teal);box-shadow:0 0 0 3px var(--tg)}
-.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-.tag-box{min-height:46px;padding:5px 9px;background:var(--cream);border:1.5px solid var(--cream3);border-radius:var(--r);display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .15s,box-shadow .15s}
-.tag-box:focus-within{background:var(--w);border-color:var(--teal);box-shadow:0 0 0 3px var(--tg)}
-.chip{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:var(--w);font-size:.72rem;font-weight:600;padding:3px 8px 3px 10px;border-radius:100px;white-space:nowrap;max-width:220px;animation:chipPop .15s ease}
-.chip span{overflow:hidden;text-overflow:ellipsis}
-.chip-x{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:.9rem;padding:0;line-height:1;display:flex;align-items:center;flex-shrink:0;transition:color .1s}
-.chip-x:hover{color:var(--w)}
-.chip-input{border:none;outline:none;font-family:var(--f);font-size:.875rem;color:var(--ink);background:transparent;min-width:110px;flex:1;padding:2px 4px}
-.chip-input::placeholder{color:var(--ink3)}
-.fhint{font-size:.67rem;color:var(--ink3);margin-top:4px;font-style:italic}
-.tax-st{font-size:.67rem;color:var(--ink3);margin-top:4px;transition:opacity .5s}
-.btn-s{width:100%;padding:12px 16px;background:var(--ink);color:var(--w);border:none;border-radius:var(--r);font-family:var(--f);font-size:.9rem;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s,transform .12s,box-shadow .15s;margin-top:.75rem}
-.btn-s:hover{background:var(--teal);transform:translateY(-1px);box-shadow:var(--s2)}
-.btn-s:disabled{background:var(--cream3);cursor:not-allowed;transform:none;box-shadow:none;color:var(--ink3)}
-.btn-s svg{width:16px;height:16px;flex-shrink:0}
-
-/* ══ RESULTS LAYOUT ══ */
-.phase-results{display:none;flex-direction:column}
-.res-count-bar{background:var(--cream);border-bottom:1px solid var(--cream2);padding:.6rem clamp(1rem,3vw,2rem);display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
-.rc-txt{font-size:.78rem;font-weight:700;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase}
-.rc-txt strong{color:var(--teal);font-size:.92rem}
-.rc-chips{display:flex;gap:5px;flex-wrap:wrap}
-.rc-chip{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 9px;border-radius:100px}
-
-.res-body{display:grid;grid-template-columns:440px 1fr}
-.res-list-col{background:var(--w);border-right:1px solid var(--cream2);overflow-y:auto;height:calc(100vh - var(--hdr) - var(--sbar) - 38px);scrollbar-width:thin;scrollbar-color:var(--cream3) transparent}
-.res-list-col::-webkit-scrollbar{width:5px}
-.res-list-col::-webkit-scrollbar-thumb{background:var(--cream3);border-radius:3px}
-.res-map-col{position:relative}
-#map{width:100%;height:calc(100vh - var(--hdr) - var(--sbar) - 38px);position:sticky;top:calc(var(--hdr) + var(--sbar) + 38px)}
-
-/* dynamic sticky offset when modify panel open */
-body.mp-open .res-list-col{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px)}
-body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);top:calc(var(--hdr) + var(--sbar) + 38px + 70px)}
-
-/* ══ PHYSICIAN CARDS ══ */
-.dc{border-bottom:1px solid var(--cream2);cursor:pointer;transition:background .1s;position:relative}
-.dc:hover{background:#F7F9FF}
-.dc.active{background:var(--tg);border-left:3px solid var(--teal)}
-.dc-head{padding:.9rem 1.4rem;display:flex;align-items:center;gap:11px}
-.dav{width:42px;height:42px;border-radius:10px;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--w);flex-shrink:0;position:relative;overflow:hidden}
-.dav::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(12,122,122,.5),transparent)}
-.dc-main{flex:1;min-width:0}
-.dc-name{font-weight:700;font-size:.88rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
-.dc-spec{font-size:.73rem;color:var(--teal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.dc-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
-.dc-dist{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 7px;border-radius:100px}
-.dc-num{width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--w);font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center}
-.dc-chevron{width:16px;height:16px;color:var(--ink3);transition:transform .22s ease;flex-shrink:0;margin-left:2px}
-.dc.expanded .dc-chevron{transform:rotate(180deg)}
-.dc-body{max-height:0;overflow:hidden;transition:max-height .28s ease;background:var(--cream)}
-.dc.expanded .dc-body{max-height:360px}
-.dc-body-inner{padding:.8rem 1.4rem .95rem}
-.dc-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:.5rem;font-size:.8rem;color:var(--ink2);line-height:1.45}
-.dc-row svg{width:13px;height:13px;color:var(--ink3);flex-shrink:0;margin-top:2px}
-.dc-npi{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:.67rem;color:var(--ink3);background:var(--cream2);padding:3px 9px;border-radius:5px;border:1px solid var(--cream3);margin-bottom:.7rem}
-.dc-acts{display:flex;gap:7px;margin-top:.1rem}
-.dbt{flex:1;padding:7px 10px;border-radius:7px;font-size:.74rem;font-weight:700;cursor:pointer;border:none;transition:background .12s;display:flex;align-items:center;justify-content:center;gap:5px}
-.dbt-p{background:var(--ink);color:var(--w)}.dbt-p:hover{background:var(--teal)}
-.dbt-s{background:var(--cream2);color:var(--ink2);border:1px solid var(--cream3)}.dbt-s:hover{background:var(--cream3)}
-.dbt svg{width:12px;height:12px}
-
-/* load more */
-.load-more-wrap{padding:1rem 1.4rem}
-.btn-lm{width:100%;padding:11px;background:var(--w);border:2px dashed var(--cream3);border-radius:var(--r);color:var(--teal);font-family:var(--f);font-size:.84rem;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s;text-align:center}
-.btn-lm:hover{border-color:var(--teal);background:var(--tg)}
-
-/* PINS */
+/* MAP PINS */
 .map-pin{position:relative;width:30px;height:40px;cursor:pointer}
 .map-pin svg{width:30px;height:40px;overflow:visible;transition:transform .15s}
 .map-pin:hover svg{transform:scale(1.2) translateY(-3px)}
@@ -246,7 +314,7 @@ body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);to
 @keyframes spin{to{transform:rotate(360deg)}}
 .sb2 p{font-size:.82rem;color:var(--ink3);font-weight:500}
 
-/* MODAL */
+/* ══ MODAL ══ */
 .mbg{position:fixed;inset:0;background:rgba(13,27,53,.55);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem}
 .mbg.open{display:flex}
 .modal{background:var(--w);border-radius:20px;box-shadow:var(--s3);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;padding:2.25rem;position:relative;animation:mIn .25s cubic-bezier(.34,1.56,.64,1)}
@@ -281,18 +349,23 @@ body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);to
 .toast.show{transform:none;opacity:1}
 .toast.error{background:var(--coral)}.toast.success{background:var(--teal)}
 
+/* ══ RESPONSIVE ══ */
 @media(max-width:900px){
-  .res-body{grid-template-columns:1fr}
-  .res-list-col{height:auto;max-height:55vh}
-  #map{height:380px;position:static}
+  :root{--content:100%}
   .mp-inner{grid-template-columns:1fr 1fr}
   .mp-apply{grid-column:1/-1}
+  #map{height:360px}
+  .srch-banner{border-radius:0 0 12px 12px}
 }
-@media(max-width:520px){
+@media(max-width:640px){
   .search-card{padding:1.75rem 1.25rem}
   .sc-title{font-size:1.6rem}
   .inp-row{grid-template-columns:1fr}
-  .sbar{gap:6px}
+  .sb-fields{gap:6px}
+  .sb-pill{min-width:70px}
+  .sb-pill-val{max-width:110px}
+  .dc-acts{flex-wrap:wrap}
+  .mfr{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -301,7 +374,34 @@ body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);to
 <!-- HEADER -->
 <header class="hdr">
   <a class="logo" onclick="resetToSearch();return false;" href="#">
-    <div class="logo-mark"></div>
+    <!-- Logo: Location pin with medical cross — physician locator identity -->
+    <svg class="logo-mark" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lgbg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#0F2044"/>
+          <stop offset="100%" stop-color="#1A3A6E"/>
+        </linearGradient>
+        <linearGradient id="lgpin" x1="22" y1="4" x2="22" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#00AEEF"/>
+          <stop offset="100%" stop-color="#0076B6"/>
+        </linearGradient>
+        <filter id="lglow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+      </defs>
+      <!-- Background rounded square -->
+      <rect width="44" height="44" rx="11" fill="url(#lgbg)"/>
+      <!-- Location pin body -->
+      <path d="M22 5C16.48 5 12 9.48 12 15C12 22.5 22 39 22 39C22 39 32 22.5 32 15C32 9.48 27.52 5 22 5Z" fill="url(#lgpin)" filter="url(#lglow)"/>
+      <!-- Medical cross inside pin -->
+      <rect x="19.5" y="10.5" width="5" height="9" rx="1.5" fill="white"/>
+      <rect x="16.5" y="13.5" width="11" height="3" rx="1.5" fill="white"/>
+      <!-- Pin dot at bottom -->
+      <circle cx="22" cy="37" r="1.5" fill="#00AEEF" opacity="0.6"/>
+      <!-- Subtle shine on pin -->
+      <ellipse cx="19" cy="11" rx="2" ry="3" fill="rgba(255,255,255,0.2)" transform="rotate(-10 19 11)"/>
+    </svg>
     <div>
       <div class="logo-name">Aquar<em>ient</em></div>
       <div class="logo-sub">Physician Locator</div>
@@ -309,96 +409,6 @@ body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);to
   </a>
   <div class="hdr-badge"><div class="hdr-dot"></div>NPPES Registry</div>
 </header>
-
-<!-- ══ STICKY SEARCH BAR — IRCTC style ══ -->
-<div class="sbar" id="sbar">
-
-  <!-- Location field with pin icon -->
-  <div class="sbar-field has-icon">
-    <svg class="sbar-field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-    <div class="sbar-label">Location</div>
-    <div class="sbar-val" id="sb-loc">—</div>
-  </div>
-
-  <!-- arrow separator -->
-  <div class="sbar-sep">›</div>
-
-  <!-- Radius -->
-  <div class="sbar-field has-icon">
-    <svg class="sbar-field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-    <div class="sbar-label">Radius</div>
-    <div class="sbar-val teal" id="sb-radius">—</div>
-  </div>
-
-  <!-- arrow separator -->
-  <div class="sbar-sep">›</div>
-
-  <!-- Tax Code -->
-  <div class="sbar-field has-icon">
-    <svg class="sbar-field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <div class="sbar-label">Tax. Code</div>
-    <div class="sbar-val" id="sb-code">—</div>
-  </div>
-
-  <!-- arrow separator -->
-  <div class="sbar-sep">›</div>
-
-  <!-- Specialties -->
-  <div class="sbar-field has-icon" style="min-width:160px">
-    <svg class="sbar-field-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    <div class="sbar-label">Specialties</div>
-    <div class="sbar-chips" id="sb-chips"></div>
-  </div>
-
-  <!-- Modify Search — orange IRCTC button -->
-  <button class="sbar-modify" id="sbar-modify-btn" onclick="toggleModifyPanel()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-    Modify Search
-  </button>
-
-  <!-- New Search -->
-  <button class="sbar-btn" onclick="resetToSearch()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
-    New Search
-  </button>
-
-</div>
-
-<!-- ══ MODIFY PANEL ══ -->
-<div class="modify-panel" id="modify-panel">
-  <div class="mp-inner">
-    <div class="mp-field" id="mp-addr-group">
-      <div class="mp-label">Address / Location</div>
-      <input type="text" id="mp-address" class="mp-inp" placeholder="City, ZIP or address..." autocomplete="off"/>
-      <div class="mp-ac-list" id="mp-ac-list"></div>
-    </div>
-    <div class="mp-field">
-      <div class="mp-label">Radius</div>
-      <select id="mp-radius" class="mp-inp">
-        <option value="5">5 miles</option>
-        <option value="10">10 miles</option>
-        <option value="25">25 miles</option>
-        <option value="50">50 miles</option>
-        <option value="100">100 miles</option>
-      </select>
-    </div>
-    <div class="mp-field">
-      <div class="mp-label">Tax. Code</div>
-      <input type="text" id="mp-taxcode" class="mp-inp" placeholder="207Q00000X"/>
-    </div>
-    <div class="mp-field" id="mp-tax-field">
-      <div class="mp-label">Specialties</div>
-      <div class="mp-tag-box" id="mp-tags-box" onclick="document.getElementById('mp-tax-inp').focus()">
-        <input type="text" class="mp-chip-input" id="mp-tax-inp" placeholder="Search specialties..." autocomplete="off"/>
-      </div>
-      <div class="mp-tax-list" id="mp-tax-list"></div>
-    </div>
-    <button class="mp-apply" onclick="applyModify()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      Apply
-    </button>
-  </div>
-</div>
 
 <!-- ══ PHASE 1: SEARCH ══ -->
 <div class="phase-search" id="phase-search">
@@ -412,16 +422,11 @@ body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);to
       <input type="text" id="address-input" class="inp" placeholder="Enter city, ZIP, or street address..." autocomplete="off"/>
       <div class="ac-list" id="autocomplete-list"></div>
     </div>
-    <div class="inp-row">
-      <div class="field">
-        <div class="lbl">Search Radius</div>
-        <select id="radius-input" class="inp"><option value="5">5 miles</option><option value="10" selected>10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select>
-      </div>
-      <div class="field">
-        <div class="lbl">Taxonomy Code</div>
-        <input type="text" id="taxonomy-code" class="inp" placeholder="e.g. 207Q00000X"/>
-      </div>
+    <div class="field">
+      <div class="lbl">Search Radius</div>
+      <select id="radius-input" class="inp"><option value="5">5 miles</option><option value="10" selected>10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select>
     </div>
+    <input type="hidden" id="taxonomy-code" value=""/>
     <div class="field" id="tax-field">
       <div class="lbl"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Description / Specialty</div>
       <div class="tag-box" id="tax-tags-box" onclick="document.getElementById('taxonomy-desc').focus()">
@@ -438,16 +443,95 @@ body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);to
   </div>
 </div>
 
-<!-- ══ PHASE 2: RESULTS ══ -->
+<!-- ══ PHASE 2: RESULTS (new centered vertical layout) ══ -->
 <div class="phase-results" id="phase-results">
-  <div class="res-count-bar">
-    <div class="rc-txt">Showing <strong id="rc-shown">0</strong> of <strong id="rc-total">0</strong> providers</div>
-    <div class="rc-chips" id="rc-chips"></div>
+
+  <!-- Search Criteria Banner -->
+  <div class="srch-banner" id="srch-banner">
+    <div class="sb-fields">
+      <div class="sb-pill">
+        <div class="sb-pill-label">Location</div>
+        <div class="sb-pill-val" id="sb-loc">—</div>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-pill">
+        <div class="sb-pill-label">Radius</div>
+        <div class="sb-pill-val accent" id="sb-radius">—</div>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-pill" style="min-width:140px">
+        <div class="sb-pill-label">Specialties</div>
+        <div class="sb-chips" id="sb-chips"></div>
+      </div>
+    </div>
+    <div class="sb-actions">
+      <button class="sb-modify-btn" id="sb-modify-btn" onclick="toggleModifyPanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Modify Search
+      </button>
+      <button class="sb-new-btn" onclick="resetToSearch()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+        New Search
+      </button>
+    </div>
   </div>
-  <div class="res-body">
-    <div class="res-list-col" id="results-list"></div>
-    <div class="res-map-col"><div id="map"></div></div>
+
+  <!-- Modify Panel -->
+  <div class="modify-panel" id="modify-panel">
+    <div class="mp-inner">
+      <div class="mp-field" id="mp-addr-group">
+        <div class="mp-label">Address / Location</div>
+        <input type="text" id="mp-address" class="mp-inp" placeholder="City, ZIP or address..." autocomplete="off"/>
+        <div class="mp-ac-list" id="mp-ac-list"></div>
+      </div>
+      <div class="mp-field">
+        <div class="mp-label">Radius</div>
+        <select id="mp-radius" class="mp-inp">
+          <option value="5">5 miles</option>
+          <option value="10">10 miles</option>
+          <option value="25">25 miles</option>
+          <option value="50">50 miles</option>
+          <option value="100">100 miles</option>
+        </select>
+      </div>
+      <input type="hidden" id="mp-taxcode" value=""/>
+      <div class="mp-field" id="mp-tax-field">
+        <div class="mp-label">Specialties</div>
+        <div class="mp-tag-box" id="mp-tags-box" onclick="document.getElementById('mp-tax-inp').focus()">
+          <input type="text" class="mp-chip-input" id="mp-tax-inp" placeholder="Search specialties..." autocomplete="off"/>
+        </div>
+        <div class="mp-tax-list" id="mp-tax-list"></div>
+      </div>
+      <button class="mp-apply" onclick="applyModify()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Apply
+      </button>
+    </div>
   </div>
+
+  <!-- Results meta row -->
+  <div class="res-meta" id="res-meta">
+    <div class="res-count">Showing <strong id="rc-shown">0</strong> of <strong id="rc-total">0</strong> providers</div>
+    <div class="res-tags" id="rc-chips"></div>
+  </div>
+
+  <!-- Physician Cards -->
+  <div class="cards-list" id="results-list"></div>
+
+  <!-- Map Section -->
+  <div class="map-section" id="map-section">
+    <div class="map-title-row">
+      <div class="map-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        Provider Map
+      </div>
+      <div class="map-count-badge" id="map-count-badge">0 pins</div>
+    </div>
+    <div class="map-wrap">
+      <div id="map"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- SPINNER -->
@@ -460,7 +544,7 @@ body.mp-open #map{height:calc(100vh - var(--hdr) - var(--sbar) - 38px - 70px);to
     <div id="modal-form-content">
       <div class="mey">Unlock Full Access</div>
       <h2 class="mtitle">View All Results</h2>
-      <div class="msub">We found <strong id="modal-total">many</strong> physicians. Leave your details and an Aquarient specialist will send the complete list.</div>
+      <div class="msub">We found <strong id="modal-total">many</strong> physicians matching your search. Leave your details and an Aquarient specialist will send you the complete list.</div>
       <form id="lead-form" novalidate>
         <div class="mfr">
           <div class="mff"><label class="mfl">First Name <span class="req">*</span></label><input type="text" class="mfi" name="first_name" placeholder="Jane" required/></div>
@@ -499,7 +583,7 @@ if(!BACKEND_URL)console.warn("[PhysicianLocator] BACKEND_URL not set");
 var map=null,markers=[],mapInited=false;
 var allPhysicians=[],totalFound=0,shownCount=0;
 var selLat=null,selLng=null,selCity="",selState="";
-var mpLat=null,mpLng=null,mpCity="",mpState=""; // modify panel coords
+var mpLat=null,mpLng=null,mpCity="",mpState="";
 var acTimer=null,taxTimer=null,mpAcTimer=null,mpTaxTimer=null;
 var currentSearch={},taxTags=[],mpTaxTags=[];
 
@@ -534,13 +618,11 @@ function initMap(){
 function showResultsPhase(){
   document.getElementById("phase-search").style.display="none";
   document.getElementById("phase-results").style.display="flex";
-  document.getElementById("sbar").classList.add("show");
   initMap();
-  setTimeout(function(){if(map)map.invalidateSize();},120);
+  setTimeout(function(){if(map)map.invalidateSize();},180);
 }
 function resetToSearch(){
   document.getElementById("phase-results").style.display="none";
-  document.getElementById("sbar").classList.remove("show");
   closeModifyPanel();
   document.getElementById("phase-search").style.display="flex";
   allPhysicians=[];totalFound=0;shownCount=0;
@@ -549,25 +631,22 @@ function resetToSearch(){
   if(map){markers.forEach(function(m){if(m)map.removeLayer(m);});markers=[];}
 }
 
-/* ══ STICKY BAR UPDATE ══ */
+/* ══ BANNER UPDATE ══ */
 function updateSbar(){
   document.getElementById("sb-loc").textContent=currentSearch.address||"—";
   document.getElementById("sb-radius").textContent=(currentSearch.radius||"—")+" miles";
-  document.getElementById("sb-code").textContent=currentSearch.taxonomy_code||"—";
   var chipsEl=document.getElementById("sb-chips");
   chipsEl.innerHTML="";
   var labels=currentSearch.descriptions||[];
-  if(!labels.length){chipsEl.innerHTML='<span style="font-size:.78rem;color:rgba(255,255,255,.4)">None</span>';return;}
-  labels.forEach(function(d){var s=document.createElement("span");s.className="sbar-chip";s.textContent=d;chipsEl.appendChild(s);});
+  if(!labels.length){chipsEl.innerHTML='<span style="font-size:.75rem;color:rgba(255,255,255,.35);font-weight:500">None</span>';return;}
+  labels.forEach(function(d){var s=document.createElement("span");s.className="sb-chip";s.textContent=d;chipsEl.appendChild(s);});
 }
 
 /* ══ MODIFY PANEL ══ */
 function toggleModifyPanel(){
   var panel=document.getElementById("modify-panel");
   var open=panel.classList.toggle("show");
-  document.body.classList.toggle("mp-open",open);
   if(open){
-    // Pre-fill from current search
     document.getElementById("mp-address").value=currentSearch.address||"";
     document.getElementById("mp-radius").value=currentSearch.radius||"10";
     document.getElementById("mp-taxcode").value=currentSearch.taxonomy_code||"";
@@ -579,7 +658,6 @@ function toggleModifyPanel(){
 }
 function closeModifyPanel(){
   document.getElementById("modify-panel").classList.remove("show");
-  document.body.classList.remove("mp-open");
   setTimeout(function(){if(map)map.invalidateSize();},100);
 }
 function applyModify(){
@@ -591,7 +669,6 @@ function applyModify(){
   if(partial.length>=2&&descs.indexOf(partial)===-1)descs.push(partial);
   if(!addr){showToast("Please enter a location.","error");return;}
   if(!taxCode&&descs.length===0){showToast("Please enter a taxonomy code or specialty.","error");return;}
-  // Sync back to main state
   document.getElementById("address-input").value=addr;
   document.getElementById("radius-input").value=radius;
   document.getElementById("taxonomy-code").value=taxCode;
@@ -786,7 +863,10 @@ function renderCountBar(){
   document.getElementById("rc-total").textContent=totalFound.toLocaleString();
   var chips=document.getElementById("rc-chips");chips.innerHTML="";
   var labels=currentSearch.taxonomy_code?[currentSearch.taxonomy_code]:(currentSearch.descriptions||[]);
-  labels.forEach(function(d){var s=document.createElement("span");s.className="rc-chip";s.textContent=d;chips.appendChild(s);});
+  labels.forEach(function(d){var s=document.createElement("span");s.className="res-tag";s.textContent=d;chips.appendChild(s);});
+  // update map badge
+  var badge=document.getElementById("map-count-badge");
+  if(badge)badge.textContent=Math.min(allPhysicians.length,MAX_PAGE)+" pins";
 }
 
 /* ══ CARDS ══ */
@@ -810,7 +890,7 @@ function appendCard(col,p,i){
     '<div class="dc-head">'
     +'<div class="dav">'+ini+'</div>'
     +'<div class="dc-main"><div class="dc-name">'+esc(name)+'</div><div class="dc-spec">'+esc(spec)+'</div></div>'
-    +'<div class="dc-right"><div class="dc-num">'+(i+1)+'</div>'+distHtml+'</div>'
+    +'<div class="dc-right">'+distHtml+'<div class="dc-num">'+(i+1)+'</div></div>'
     +'<svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'
     +'</div>'
     +'<div class="dc-body"><div class="dc-body-inner">'
@@ -821,6 +901,7 @@ function appendCard(col,p,i){
     +'<div class="dc-acts">'
     +'<button class="dbt dbt-p" onclick="openLeadModal();event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg> Contact</button>'
     +'<button class="dbt dbt-s" onclick="focusMap('+i+');event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> View Map</button>'
+    +'<button class="dbt dbt-d" onclick="openLeadModal();event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Details</button>'
     +'</div></div></div>';
 
   card.addEventListener("click",function(e){
@@ -831,7 +912,11 @@ function appendCard(col,p,i){
       card.classList.add("expanded","active");
       var idx2=parseInt(card.dataset.index);
       var ph=allPhysicians[idx2];
-      if(ph&&ph.lat&&ph.lng&&markers[idx2]){map.setView([ph.lat,ph.lng],16);markers[idx2].openPopup();}
+      if(ph&&ph.lat&&ph.lng&&markers[idx2]){
+        // scroll map into view + open popup
+        document.getElementById("map-section").scrollIntoView({behavior:"smooth",block:"nearest"});
+        setTimeout(function(){map.setView([ph.lat,ph.lng],16);markers[idx2].openPopup();},400);
+      }
     }
   });
   col.appendChild(card);
@@ -844,7 +929,7 @@ function appendLoadMore(col){
   var wrap=document.createElement("div");wrap.className="load-more-wrap";
   var btn=document.createElement("button");btn.className="btn-lm";
   var remaining=totalFound-shown;
-  btn.textContent="Load more \u2014 "+remaining.toLocaleString()+" more providers";
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Load more &mdash; '+remaining.toLocaleString()+' more providers';
   btn.addEventListener("click",function(){
     if(shown<allPhysicians.length){
       var newEnd=Math.min(allPhysicians.length,(shownCount+MAX_PAGE));
@@ -896,9 +981,17 @@ function plotMarkers(){
   });
   if(bounds.length>1)map.fitBounds(bounds,{padding:[60,60],maxZoom:15});
   else if(bounds.length===1)map.setView(bounds[0],14);
+  // Invalidate after map section renders
+  setTimeout(function(){if(map)map.invalidateSize();},300);
 }
 
-function focusMap(idx){var p=allPhysicians[idx];if(p&&p.lat&&p.lng&&markers[idx]){map.setView([p.lat,p.lng],16);markers[idx].openPopup();}}
+function focusMap(idx){
+  var p=allPhysicians[idx];
+  if(p&&p.lat&&p.lng&&markers[idx]){
+    document.getElementById("map-section").scrollIntoView({behavior:"smooth",block:"start"});
+    setTimeout(function(){map.setView([p.lat,p.lng],16);markers[idx].openPopup();},400);
+  }
+}
 
 /* ══ MODAL ══ */
 function openLeadModal(){
