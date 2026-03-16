@@ -172,51 +172,91 @@ body::after{
 .res-tag{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 10px;border-radius:100px}
 
 /* ── Physician Cards ── */
-.cards-list{width:100%;max-width:var(--content);display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem}
-
-.dc{
-  background:var(--w);
-  border-radius:14px;
-  border:1.5px solid var(--cream2);
-  box-shadow:var(--s1);
-  cursor:pointer;
-  transition:box-shadow .18s,border-color .18s,transform .15s;
-  overflow:hidden;
+/* ══ PHYSICIAN GRID — 3-col cards ══ */
+.cards-list{
+  width:100%;max-width:var(--content);
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-bottom:1.5rem;
+  align-items:start;
 }
-.dc:hover{box-shadow:var(--s2);border-color:var(--tb);transform:translateY(-1px)}
-.dc.active{border-color:var(--teal);box-shadow:0 0 0 3px var(--tg),var(--s2)}
-.dc-head{padding:1rem 1.4rem;display:flex;align-items:center;gap:13px}
+/* Each card is a compact "button card" style */
+.dc{
+  background:rgba(255,255,255,.95);
+  border-radius:16px;
+  border:1.5px solid rgba(0,174,239,.12);
+  box-shadow:0 4px 20px rgba(0,80,150,.07);
+  cursor:pointer;
+  transition:box-shadow .2s,border-color .2s,transform .18s;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  position:relative;
+}
+.dc::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,#00AEEF,#0C7A7A);
+  opacity:0;transition:opacity .2s;
+}
+.dc:hover{box-shadow:0 12px 40px rgba(0,100,180,.14);border-color:rgba(0,174,239,.3);transform:translateY(-3px)}
+.dc:hover::before{opacity:1}
+.dc.active{border-color:#00AEEF;box-shadow:0 0 0 3px rgba(0,174,239,.15),0 12px 40px rgba(0,100,180,.14)}
+.dc.active::before{opacity:1}
+
+/* Top section: avatar + num badge */
+.dc-head{padding:1.1rem 1.1rem .75rem;display:flex;align-items:flex-start;gap:11px}
 .dav{
-  width:46px;height:46px;border-radius:11px;
-  background:linear-gradient(135deg,var(--ink) 0%,var(--ink2) 100%);
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,#0F2044 0%,#0076B6 100%);
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--fd);font-size:1.1rem;font-weight:700;color:var(--w);
+  font-family:var(--fd);font-size:1.05rem;font-weight:700;color:var(--w);
   flex-shrink:0;position:relative;overflow:hidden;
 }
-.dav::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(12,122,122,.45),transparent)}
+.dav::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,174,239,.35),transparent)}
 .dc-main{flex:1;min-width:0}
-.dc-name{font-weight:700;font-size:.92rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
-.dc-spec{font-size:.74rem;color:var(--teal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.dc-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.dc-dist{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:3px 9px;border-radius:100px}
-.dc-num{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--w);font-size:.66rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.dc-chevron{width:16px;height:16px;color:var(--ink3);transition:transform .22s ease;flex-shrink:0}
-.dc.expanded .dc-chevron{transform:rotate(180deg)}
+.dc-name{font-weight:700;font-size:.86rem;color:var(--ink);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.dc-spec{font-size:.7rem;color:#0076B6;font-weight:600;margin-top:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.4}
+.dc-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.dc-num{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--w);font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dc-dist{font-size:.62rem;font-weight:700;color:#0076B6;background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.2);padding:2px 7px;border-radius:100px;white-space:nowrap}
 
-/* Expandable body */
-.dc-body{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--cream)}
-.dc.expanded .dc-body{max-height:380px}
-.dc-body-inner{padding:.85rem 1.4rem 1rem;border-top:1px solid var(--cream2)}
-.dc-row{display:flex;align-items:flex-start;gap:9px;margin-bottom:.55rem;font-size:.81rem;color:var(--ink2);line-height:1.45}
-.dc-row svg{width:13px;height:13px;color:var(--ink3);flex-shrink:0;margin-top:2px}
-.dc-npi{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:.67rem;color:var(--ink3);background:var(--cream2);padding:3px 9px;border-radius:5px;border:1px solid var(--cream3);margin-bottom:.8rem}
-.dc-acts{display:flex;gap:7px}
-.dbt{flex:1;padding:8px 10px;border-radius:8px;font-size:.74rem;font-weight:700;cursor:pointer;border:none;transition:background .12s,transform .1s;display:flex;align-items:center;justify-content:center;gap:5px}
-.dbt:active{transform:scale(.97)}
-.dbt-p{background:var(--teal);color:var(--w)}.dbt-p:hover{background:var(--teal2)}
-.dbt-s{background:var(--cream2);color:var(--ink2);border:1px solid var(--cream3)}.dbt-s:hover{background:var(--cream3)}
-.dbt-d{background:var(--ink);color:var(--w)}.dbt-d:hover{background:var(--ink2)}
-.dbt svg{width:12px;height:12px}
+/* Info strip */
+.dc-info{padding:0 1.1rem .75rem;display:flex;flex-direction:column;gap:4px;flex:1}
+.dc-info-row{display:flex;align-items:flex-start;gap:6px;font-size:.72rem;color:var(--ink3);line-height:1.4}
+.dc-info-row svg{width:11px;height:11px;flex-shrink:0;margin-top:1px;color:#00AEEF}
+.dc-info-row span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+/* NPI badge */
+.dc-npi{display:inline-flex;align-items:center;gap:4px;font-family:var(--fm);font-size:.6rem;color:var(--ink3);background:var(--cream2);padding:2px 7px;border-radius:4px;border:1px solid var(--cream3);margin:0 1.1rem .6rem}
+
+/* Action buttons row */
+.dc-acts{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:6px;padding:.75rem 1.1rem;
+  border-top:1px solid rgba(0,174,239,.08);
+  background:rgba(0,174,239,.02);
+}
+.dbt{
+  padding:7px 6px;border-radius:8px;font-size:.7rem;font-weight:700;
+  cursor:pointer;border:none;
+  transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  white-space:nowrap;
+}
+.dbt:active{transform:scale(.96)}
+.dbt svg{width:11px;height:11px;flex-shrink:0}
+.dbt-p{background:linear-gradient(135deg,#0076B6,#00AEEF);color:#fff;box-shadow:0 3px 10px rgba(0,118,182,.25)}
+.dbt-p:hover{box-shadow:0 5px 16px rgba(0,118,182,.38);transform:translateY(-1px)}
+.dbt-s{background:#fff;color:#0076B6;border:1.5px solid rgba(0,174,239,.25)}
+.dbt-s:hover{background:rgba(0,174,239,.06);border-color:#00AEEF}
+.dbt-d{background:var(--ink);color:var(--w)}
+.dbt-d:hover{background:#0F2044}
+
+/* Expand panel — still works on click, slides down */
+.dc-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.dc.expanded .dc-body{max-height:200px}
+.dc-body-inner{padding:.75rem 1.1rem .9rem;border-top:1px solid rgba(0,174,239,.1);background:rgba(0,174,239,.02);font-size:.75rem;color:var(--ink2)}
+.dc-chevron{display:none}
 
 /* ── Load More ── */
 .load-more-wrap{width:100%;max-width:var(--content);padding:0 0 .5rem}
@@ -350,22 +390,25 @@ body::after{
 .toast.error{background:var(--coral)}.toast.success{background:var(--teal)}
 
 /* ══ RESPONSIVE ══ */
+@media(max-width:1100px){
+  .cards-list{grid-template-columns:repeat(3,1fr)}
+}
 @media(max-width:900px){
   :root{--content:100%}
   .mp-inner{grid-template-columns:1fr 1fr}
   .mp-apply{grid-column:1/-1}
   #map{height:360px}
   .srch-banner{border-radius:0 0 12px 12px}
+  .cards-list{grid-template-columns:repeat(2,1fr)}
 }
-@media(max-width:640px){
+@media(max-width:580px){
   .search-card{padding:1.75rem 1.25rem}
   .sc-title{font-size:1.6rem}
-  .inp-row{grid-template-columns:1fr}
   .sb-fields{gap:6px}
   .sb-pill{min-width:70px}
   .sb-pill-val{max-width:110px}
-  .dc-acts{flex-wrap:wrap}
   .mfr{grid-template-columns:1fr}
+  .cards-list{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -883,27 +926,40 @@ function appendCard(col,p,i){
   var ini=name.split(" ").slice(0,2).map(function(w){return w[0]||"";}).join("").toUpperCase();
   var at=(p.all_taxonomies||[]).map(function(t){return t.desc;}).filter(Boolean);
   var spec=at.length>1?at.slice(0,2).join(" \u00b7 "):(p.taxonomy_desc||"Provider");
-  var distHtml=p.distance_miles!=null?'<span class="dc-dist">&#128205; '+p.distance_miles+' mi</span>':"";
+  var distTxt=p.distance_miles!=null?"\uD83D\uDCCD "+p.distance_miles+" mi":"";
 
   var card=document.createElement("div");card.className="dc";card.dataset.index=i;
   card.innerHTML=
+    /* HEAD: avatar + info + num/dist */
     '<div class="dc-head">'
     +'<div class="dav">'+ini+'</div>'
     +'<div class="dc-main"><div class="dc-name">'+esc(name)+'</div><div class="dc-spec">'+esc(spec)+'</div></div>'
-    +'<div class="dc-right">'+distHtml+'<div class="dc-num">'+(i+1)+'</div></div>'
-    +'<svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'
+    +'<div class="dc-right">'
+    +'<div class="dc-num">'+(i+1)+'</div>'
+    +(p.distance_miles!=null?'<div class="dc-dist">\uD83D\uDCCD '+p.distance_miles+' mi</div>':"")+
+    '</div></div>'
+
+    /* INFO: address + phone inline */
+    +'<div class="dc-info">'
+    +(p.address?'<div class="dc-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg><span>'+esc(p.address)+'</span></div>':"")
+    +(p.phone?'<div class="dc-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg><span>'+esc(p.phone)+'</span></div>':"")
     +'</div>'
-    +'<div class="dc-body"><div class="dc-body-inner">'
-    +(p.address?'<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg><span>'+esc(p.address)+'</span></div>':"")
-    +(p.phone?'<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg><span>'+esc(p.phone)+'</span></div>':"")
-    +(at.length>2?'<div class="dc-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>'+esc(at.join(", "))+'</span></div>':"")
-    +(p.npi?'<div class="dc-npi">NPI &nbsp;'+esc(p.npi)+'</div>':"")
+
+    /* NPI */
+    +(p.npi?'<div class="dc-npi">NPI \u00a0'+esc(p.npi)+'</div>':"")
+
+    /* ACTIONS: 2-col grid buttons */
     +'<div class="dc-acts">'
     +'<button class="dbt dbt-p" onclick="openLeadModal();event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg> Contact</button>'
     +'<button class="dbt dbt-s" onclick="focusMap('+i+');event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> View Map</button>'
-    +'<button class="dbt dbt-d" onclick="openLeadModal();event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Details</button>'
-    +'</div></div></div>';
+    +'</div>'
 
+    /* Hidden expand body for extra details */
+    +'<div class="dc-body"><div class="dc-body-inner">'
+    +(at.length>2?'<div style="font-size:.74rem;color:#0076B6;font-weight:600;margin-bottom:4px">All Specialties</div><div style="font-size:.74rem;color:var(--ink2);">'+esc(at.join(" \u00b7 "))+'</div>':"")
+    +'</div></div>';
+
+  /* Click card body (not buttons) to expand extra info */
   card.addEventListener("click",function(e){
     if(e.target.closest("button"))return;
     var was=card.classList.contains("expanded");
@@ -913,7 +969,6 @@ function appendCard(col,p,i){
       var idx2=parseInt(card.dataset.index);
       var ph=allPhysicians[idx2];
       if(ph&&ph.lat&&ph.lng&&markers[idx2]){
-        // scroll map into view + open popup
         document.getElementById("map-section").scrollIntoView({behavior:"smooth",block:"nearest"});
         setTimeout(function(){map.setView([ph.lat,ph.lng],16);markers[idx2].openPopup();},400);
       }
