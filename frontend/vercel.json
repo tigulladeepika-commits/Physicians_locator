@@ -3,6 +3,21 @@
   "name": "physician-locator",
   "buildCommand": "bash build.sh",
   "outputDirectory": ".",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOW-FROM https://page-agility-3850.my.site.com"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://page-agility-3850.my.site.com"
+        }
+      ]
+    }
+  ],
   "routes": [
     { "src": "/env.js", "dest": "/env.js" },
     { "src": "/(.*)",   "dest": "/index.html" }
