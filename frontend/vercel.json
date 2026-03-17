@@ -9,11 +9,11 @@
       "headers": [
         {
           "key": "X-Frame-Options",
-          "value": "ALLOW-FROM https://page-agility-3850.my.site.com"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://page-agility-3850.my.site.com"
+          "value": "frame-ancestors * "
         }
       ]
     }
