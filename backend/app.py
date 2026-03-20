@@ -20,9 +20,6 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# ── CORS: allow requests from Vercel frontend ─────────────────────────────────
-# Set FRONTEND_URL env var on Render to your Vercel deployment URL
-# e.g.  FRONTEND_URL=https://physician-locator.vercel.app
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "*")
 CORS(app, origins=[FRONTEND_URL] if FRONTEND_URL != "*" else "*",
      methods=["GET","POST","OPTIONS"],
@@ -39,8 +36,6 @@ logger.info(f"Geoapify: {'SET' if GEOAPIFY_API_KEY else 'NOT SET'}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  ZIP CODE → LAT/LNG CENTROID DATABASE
-#  We use GeoNames US ZIP database — no API call needed per provider.
-#  Every NPPES record includes a ZIP, so every provider gets coordinates.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _zip_db: dict = {}
@@ -380,19 +375,10 @@ def taxonomy_status():
 
 @app.route("/api/search")
 def search_physicians():
-    """
-    Architecture:
-    1. Geocode the search address → center lat/lng (one Geoapify call, done in frontend)
-    2. Find all ZIPs within radius using local ZIP centroid DB (no API, instant)
-    3. Query NPPES by ZIP + taxonomy_description (exact NUCC term)
-    4. Assign coords to each provider from ZIP centroid DB (no per-provider API call)
-    5. Haversine-filter and sort by distance
-    """
     lat           = request.args.get("lat",         type=float)
     lng           = request.args.get("lng",         type=float)
     radius        = request.args.get("radius", 10,  type=float)
     taxonomy_code = request.args.get("taxonomy_code", "").strip()
-    # Accept either a single 'description' param (legacy) or 'descriptions' JSON array (new)
     descriptions_raw = request.args.get("descriptions", "")
     description_single = request.args.get("description", "").strip()
     search_city   = request.args.get("city",   "").strip()
@@ -401,7 +387,6 @@ def search_physicians():
     if lat is None or lng is None:
         return jsonify({"error": "lat and lng are required"}), 400
 
-    # Parse descriptions list
     descriptions: list = []
     if descriptions_raw:
         try:
@@ -413,9 +398,6 @@ def search_physicians():
         descriptions = [description_single]
 
     try:
-        # ── Build taxonomy filter params for each description ─────────────
-        # Each description is resolved to the best NUCC match, then queried
-        # separately in NPPES so results are merged (OR logic across conditions).
         tax_param_sets = []
         if taxonomy_code:
             tax_param_sets = [{"taxonomy_description": taxonomy_code}]
@@ -426,15 +408,13 @@ def search_physicians():
                 logger.info(f"Taxonomy resolved: '{desc}' → '{best}'")
                 tax_param_sets.append({"taxonomy_description": best})
         else:
-            tax_param_sets = [{}]  # no taxonomy filter — search all
+            tax_param_sets = [{}]
 
-        logger.info(f"Running {len(tax_param_sets)} taxonomy queries: {[t.get('taxonomy_description','all') for t in tax_param_sets]}")
+        logger.info(f"Running {len(tax_param_sets)} taxonomy queries")
 
-        # Find ZIPs in radius using local DB (fast, no API)
         zips_in_radius = _find_zips_in_radius(lat, lng, radius)
         logger.info(f"ZIPs in {radius}mi radius: {len(zips_in_radius)}")
 
-        # Fetch from NPPES — run each taxonomy param set, merge all results
         seen_npis, all_raw = set(), []
 
         def add(rows):
@@ -445,18 +425,14 @@ def search_physicians():
                     all_raw.append(r)
 
         for tax_params in tax_param_sets:
-            # Primary: query by ZIP
             for z in zips_in_radius[:30]:
                 rows, _ = _nppes_fetch({"postal_code": z, **tax_params})
                 add(rows)
-
-            # Secondary: city+state
             if search_city and search_state:
                 rows, _ = _nppes_fetch({"city": search_city.title(),
                                         "state": search_state.upper(), **tax_params})
                 add(rows)
 
-        # Fallback: state-wide if nothing found at all
         if not all_raw and search_state:
             logger.info("No ZIP/city results — trying state fallback")
             for tax_params in tax_param_sets:
@@ -465,7 +441,6 @@ def search_physicians():
 
         logger.info(f"NPPES unique records: {len(all_raw)}")
 
-        # Parse all records
         physicians = []
         for raw in all_raw:
             try:
@@ -475,20 +450,10 @@ def search_physicians():
             except Exception as pe:
                 logger.debug(f"Parse error: {pe}")
 
-        # ── Coordinate assignment strategy ────────────────────────────────
-        # Priority 1: Geocode the full street address (cached — same address = one API call)
-        # Priority 2: ZIP centroid + small random jitter so markers spread out
-        #
-        # We geocode only the first MAX_DISPLAY providers to stay within rate limits,
-        # since only those will be shown on the map anyway.
-        # The remaining providers still get ZIP centroids for radius filtering.
-
-        # Step A: assign ZIP centroids to ALL providers first (for radius filter)
         for p in physicians:
             if p.get("zip"):
                 p["lat"], p["lng"] = get_zip_coords(p["zip"])
 
-        # Step B: radius filter using ZIP centroids
         in_radius = []
         for p in physicians:
             if p.get("lat") and p.get("lng"):
@@ -499,7 +464,6 @@ def search_physicians():
 
         in_radius.sort(key=lambda x: x.get("distance_miles", 9999))
 
-        # Include providers without coords at the end
         no_coords = [p for p in physicians if not p.get("lat")]
         for p in no_coords[:5]:
             p["distance_miles"] = None
@@ -508,13 +472,7 @@ def search_physicians():
         total = len(in_radius)
         shown = in_radius[:MAX_DISPLAY]
 
-        # Step C: geocode the displayed providers' FULL STREET ADDRESS
-        # This gives precise per-building coords instead of ZIP centroid.
-        # Uses a cache so repeated addresses don't burn API quota.
         _geocode_batch_for_display(shown)
-
-        # Step D: apply tiny jitter to any providers that still share
-        # the exact same coordinates (e.g. multiple doctors at same building).
         _apply_coord_jitter(shown)
 
         logger.info(f"Returning {len(shown)} of {total} physicians")
@@ -558,7 +516,6 @@ def capture_lead():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _find_zips_in_radius(center_lat, center_lng, radius_miles):
-    """Pure-Python scan of ZIP centroid DB — no API call."""
     deg_lat = radius_miles / 69.0
     deg_lng = radius_miles / (69.0 * math.cos(math.radians(center_lat)) + 1e-6)
     min_lat, max_lat = center_lat - deg_lat, center_lat + deg_lat
@@ -579,14 +536,12 @@ def _nppes_fetch(params: dict) -> tuple:
     clean = {k: str(v).strip() for k, v in params.items() if v and str(v).strip()}
     query = {"version": "2.1", "enumeration_type": "NPI-1",
              "limit": 200, "skip": 0, "country_code": "US", **clean}
-    logger.debug(f"NPPES: {clean}")
     try:
         resp = requests.get(NPPES_BASE_URL, params=query, timeout=20)
         resp.raise_for_status()
         d = resp.json()
         rows  = d.get("results") or []
         total = int(d.get("result_count") or 0)
-        logger.debug(f"NPPES returned {len(rows)} rows (total={total})")
         return rows, total
     except Exception as e:
         logger.warning(f"NPPES fetch failed: {e} | params={clean}")
@@ -638,28 +593,19 @@ def _parse_physician(result: dict):
     }
 
 
-# ── Address-level geocode cache ───────────────────────────────────────────────
-# Key: normalised address string  →  Value: (lat, lng)
 _addr_geocode_cache: dict = {}
 _addr_cache_lock = threading.Lock()
 
 
 def _geocode_address_cached(addr1: str, city: str, state: str, zipcode: str) -> tuple:
-    """
-    Geocode a full street address via Geoapify, with in-memory caching.
-    Returns (lat, lng) or (None, None) on failure.
-    Falls back to ZIP centroid if geocoding fails.
-    """
     if not GEOAPIFY_API_KEY:
         return get_zip_coords(zipcode)
 
-    # Build a canonical cache key from the address components
     key = f"{addr1.lower().strip()},{city.lower().strip()},{state.upper().strip()},{zipcode[:5]}"
     with _addr_cache_lock:
         if key in _addr_geocode_cache:
             return _addr_geocode_cache[key]
 
-    # Build query string — use full address for best accuracy
     query = ", ".join(p for p in [addr1, city, state, zipcode[:5], "US"] if p.strip())
     try:
         resp = requests.get(
@@ -671,14 +617,13 @@ def _geocode_address_cached(addr1: str, city: str, state: str, zipcode: str) -> 
         features = resp.json().get("features", [])
         if features:
             coords = features[0]["geometry"]["coordinates"]
-            result = (coords[1], coords[0])  # (lat, lng)
+            result = (coords[1], coords[0])
             with _addr_cache_lock:
                 _addr_geocode_cache[key] = result
             return result
     except Exception as e:
         logger.debug(f"Addr geocode failed '{query}': {e}")
 
-    # Fallback to ZIP centroid
     fallback = get_zip_coords(zipcode)
     with _addr_cache_lock:
         _addr_geocode_cache[key] = fallback
@@ -686,12 +631,6 @@ def _geocode_address_cached(addr1: str, city: str, state: str, zipcode: str) -> 
 
 
 def _geocode_batch_for_display(physicians: list):
-    """
-    Geocode the full street address for each displayed physician IN PARALLEL
-    using threads. Updates lat/lng in-place on each dict.
-    Only geocodes providers whose coords are currently a ZIP centroid
-    (i.e. they may share coords with others in the same ZIP).
-    """
     import concurrent.futures
 
     def geocode_one(p):
@@ -700,26 +639,18 @@ def _geocode_batch_for_display(physicians: list):
         state   = p.get("state", "")
         zipcode = p.get("zip", "")
         if not addr1:
-            return  # No street — keep ZIP centroid
+            return
         lat, lng = _geocode_address_cached(addr1, city, state, zipcode)
         if lat and lng:
             p["lat"] = lat
             p["lng"] = lng
 
-    # Run up to 10 geocode calls in parallel (max_display = 10)
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         list(executor.map(geocode_one, physicians))
 
 
 def _apply_coord_jitter(physicians: list):
-    """
-    If two or more physicians share the exact same (lat, lng) — e.g. they are
-    all at the same building — apply a tiny random offset so their markers
-    don't overlap perfectly on the map.
-    Jitter radius: ~10 metres (0.0001 degrees ≈ 11m).
-    """
-    import random
-    seen: dict = {}  # (lat, lng) → count
+    seen: dict = {}
     for p in physicians:
         lat = p.get("lat")
         lng = p.get("lng")
@@ -727,10 +658,9 @@ def _apply_coord_jitter(physicians: list):
             continue
         key = (round(lat, 6), round(lng, 6))
         if key in seen:
-            # Apply jitter proportional to how many share this spot
             count = seen[key]
-            angle  = (count * 137.5) % 360  # golden angle spread
-            radius = 0.00008 * math.ceil(count / 4)  # ~9m per ring
+            angle  = (count * 137.5) % 360
+            radius = 0.00008 * math.ceil(count / 4)
             p["lat"] = lat + radius * math.cos(math.radians(angle))
             p["lng"] = lng + radius * math.sin(math.radians(angle))
             seen[key] += 1
@@ -739,37 +669,38 @@ def _apply_coord_jitter(physicians: list):
 
 
 def _save_lead(lead: dict):
-    # Save to leads.json (existing)
-    leads_file = "leads.json"
-    leads = []
-    if os.path.exists(leads_file):
-        try:
-            with open(leads_file) as f: leads = json.load(f)
-        except Exception: leads = []
-    leads.append(lead)
-    with open(leads_file, "w") as f:
-        json.dump(leads, f, indent=2)
-
-    # Push to Salesforce Web-to-Lead
+    # PRIMARY — Push to Salesforce Web-to-Lead
     try:
-        sf_data = {
-            'oid':         '00DHs00000P5yok',
-            'retURL':      'https://physicians-locator-tigulladeepika12-9621s-projects.vercel.app',
-            'first_name':  lead.get('first_name', ''),
-            'last_name':   lead.get('last_name',  ''),
-            'email':       lead.get('email',       ''),
-            'phone':       lead.get('phone',       ''),
-            'company':     lead.get('company',     'Unknown'),
-            'lead_source': 'Physician Locator',
-        }
-        requests.post(
+        response = requests.post(
             'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
-            data=sf_data,
+            data={
+                'oid':         '00DHs00000P5yok',
+                'retURL':      'https://physicians-locator-tigulladeepika12-9621s-projects.vercel.app',
+                'first_name':  lead.get('first_name', ''),
+                'last_name':   lead.get('last_name',  ''),
+                'email':       lead.get('email',      ''),
+                'phone':       lead.get('phone',      ''),
+                'company':     lead.get('company',    'Unknown'),
+                'lead_source': 'Physician Locator',
+            },
             timeout=10
         )
-        logger.info(f"Lead pushed to Salesforce: {lead.get('email')}")
+        logger.info(f"SF Web-to-Lead status: {response.status_code} | {lead.get('email')}")
     except Exception as e:
-        logger.error(f"Salesforce Web-to-Lead failed: {e}")
+        logger.error(f"Salesforce Web-to-Lead FAILED: {e}")
+
+    # BACKUP — Save to leads.json
+    try:
+        leads_file = "leads.json"
+        leads = []
+        if os.path.exists(leads_file):
+            with open(leads_file) as f:
+                leads = json.load(f)
+        leads.append(lead)
+        with open(leads_file, "w") as f:
+            json.dump(leads, f, indent=2)
+    except Exception as e:
+        logger.error(f"leads.json backup failed: {e}")
 
 
 if __name__ == "__main__":
