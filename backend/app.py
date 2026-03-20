@@ -682,6 +682,8 @@ def _save_lead(lead: dict):
                 'phone':       lead.get('phone',      ''),
                 'company':     lead.get('company',    'Unknown'),
                 'lead_source': 'Physician Locator',
+                'debug':       '1',
+                'debugEmail':  'deepika.tigulla@aquarient.com'
             },
             timeout=10
         )
