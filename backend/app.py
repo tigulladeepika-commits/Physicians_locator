@@ -739,22 +739,7 @@ def _apply_coord_jitter(physicians: list):
 
 
 def _save_lead(lead: dict):
-    """
-    ── SALESFORCE INTEGRATION POINT ──────────────────────────────────────────
-    Replace the JSON write below with:
-
-        sf_url = "https://<instance>.salesforce.com/services/data/v57.0/sobjects/Lead/"
-        headers = {"Authorization": f"Bearer {SF_ACCESS_TOKEN}", "Content-Type": "application/json"}
-        payload = {
-            "FirstName": lead["first_name"], "LastName": lead["last_name"],
-            "Email": lead["email"], "Company": lead.get("company") or "Not Provided",
-            "Phone": lead.get("phone",""), "Title": lead.get("title",""),
-            "LeadSource": "PhysicianLocator",
-            "Description": str(lead.get("search_context", {})),
-        }
-        requests.post(sf_url, json=payload, headers=headers, timeout=10)
-    ──────────────────────────────────────────────────────────────────────────
-    """
+    # Save to leads.json (existing)
     leads_file = "leads.json"
     leads = []
     if os.path.exists(leads_file):
@@ -764,6 +749,27 @@ def _save_lead(lead: dict):
     leads.append(lead)
     with open(leads_file, "w") as f:
         json.dump(leads, f, indent=2)
+
+    # Push to Salesforce Web-to-Lead
+    try:
+        sf_data = {
+            'oid':         '00DHs00000P5yok',
+            'retURL':      'https://physicians-locator-tigulladeepika12-9621s-projects.vercel.app',
+            'first_name':  lead.get('first_name', ''),
+            'last_name':   lead.get('last_name',  ''),
+            'email':       lead.get('email',       ''),
+            'phone':       lead.get('phone',       ''),
+            'company':     lead.get('company',     'Unknown'),
+            'lead_source': 'Physician Locator',
+        }
+        requests.post(
+            'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
+            data=sf_data,
+            timeout=10
+        )
+        logger.info(f"Lead pushed to Salesforce: {lead.get('email')}")
+    except Exception as e:
+        logger.error(f"Salesforce Web-to-Lead failed: {e}")
 
 
 if __name__ == "__main__":
