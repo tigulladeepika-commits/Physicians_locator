@@ -22,16 +22,13 @@ services:
         value: "https://physicians-locator-tigulladeepika12-9621s-projects.vercel.app"
       - key: SF_DEBUG_EMAIL
         value: "deepika.tigulla@aquarient.com"
-      # ── Email debug notifications ──────────────────────────
-      # Fill these in Render dashboard (Environment tab)
-      # to receive email alerts on every lead submission
+      - key: NOTIFY_EMAIL
+        value: "deepika.tigulla@aquarient.com"
       - key: SMTP_HOST
-        sync: false        # e.g. smtp.gmail.com
+        sync: false
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
-        sync: false        # e.g. yourapp@gmail.com
+        sync: false
       - key: SMTP_PASS
-        sync: false        # Gmail: use App Password, not account password
-      - key: NOTIFY_EMAIL
-        value: "deepika.tigulla@aquarient.com"
+        sync: false
