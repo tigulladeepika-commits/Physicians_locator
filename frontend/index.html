@@ -106,11 +106,12 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   border-radius:28px;
   box-shadow:0 32px 100px rgba(0,60,120,.16),0 0 0 1.5px rgba(0,174,239,.18),inset 0 1px 0 rgba(255,255,255,.8);
   padding:3rem 3rem 2.5rem;width:100%;max-width:760px;
-  border:1px solid rgba(0,174,239,.15);position:relative;
-  /* NO overflow:hidden — would clip the dropdown */
-  overflow:visible;
+  border:1px solid rgba(0,174,239,.15);
+  position:relative;
+  z-index:10; /* ensure card contents stack above page bg elements */
+  overflow:visible; /* allow dropdowns to extend outside card bounds */
 }
-/* The shimmer bar still needs clipping — target it directly */
+/* Shimmer bar clipped to card top edge */
 .search-card::before{clip-path:inset(0 0 0 0 round 28px 28px 0 0)}
 .search-card::before{
   content:"";position:absolute;top:0;left:0;right:0;height:3px;
@@ -254,8 +255,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 #map{width:100%;height:480px}
 
 /* ══ SHARED FORM FIELDS ══════════════════════════════════════ */
-.field{margin-bottom:.9rem;position:relative;z-index:0}
-.field:focus-within{z-index:10}
+.field{margin-bottom:.9rem;position:relative}
 .field:last-child{margin-bottom:0}
 .lbl{display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
 .lbl .req{color:var(--coral)}
@@ -301,7 +301,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   border-top:1.5px solid #00AEEF;
   border-radius:0 0 12px 12px;
   box-shadow:0 8px 24px rgba(0,80,150,.12);
-  z-index:600;max-height:280px;overflow-y:auto;display:none;
+  z-index:1000;max-height:300px;overflow-y:auto;display:none;
   scrollbar-width:thin;scrollbar-color:#D0E8F5 transparent;
 }
 .ac-list.open,.tax-list.open,.mp-ac-list.open,.mp-tax-list.open{display:block}
@@ -504,7 +504,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
     <h1 class="sc-title">Find a <em>specialist</em> near you</h1>
     <p class="sc-desc">Search 6M+ licensed providers across all 50 states using the official NPPES registry.</p>
 
-    <div class="field" id="addr-group">
+    <div class="field" id="addr-group" style="z-index:20">
       <label class="lbl" for="address-input">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
         Address / Location <span class="req" aria-label="required">*</span>
@@ -530,7 +530,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
     <input type="hidden" id="taxonomy-code" value=""/>
 
-    <div class="field" id="tax-field">
+    <div class="field" id="tax-field" style="z-index:15">
       <label class="lbl" for="taxonomy-desc">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
         Description / Specialty <span class="req" aria-label="required">*</span>
