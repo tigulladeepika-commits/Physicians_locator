@@ -81,6 +81,10 @@ for key, label in [(cfg.MAPQUEST_API_KEY, "MAPQUEST_API_KEY"),
     if not key:
         logger.warning("Environment variable %s is not set", label)
 
+# Log SF config on startup so it's visible in Render logs
+logger.info("SF_OID configured: %s", bool(cfg.SF_OID))
+logger.info("SF_DEBUG_EMAIL: %s", cfg.SF_DEBUG_EMAIL or "NOT SET")
+
 
 # ─────────────────────────────────────────────
 #  FLASK APP + CORS + SECURITY HEADERS
@@ -724,6 +728,77 @@ def health():
     })
 
 
+@app.route("/api/lead-debug", methods=["POST"])
+def lead_debug():
+    """
+    Test endpoint — sends a dummy lead through the full pipeline
+    and returns a JSON report of what happened.
+    POST /api/lead-debug   (no body needed)
+    """
+    dummy_lead = {
+        "id":             "debug_test_" + datetime.utcnow().strftime("%Y%m%d%H%M%S"),
+        "first_name":     "Debug",
+        "last_name":      "Test",
+        "email":          cfg.SF_DEBUG_EMAIL or "test@test.com",
+        "phone":          "5550000000",
+        "company":        "Aquarient Test",
+        "title":          "Debug",
+        "search_context": {"address": "Test City, CA", "descriptions": ["Cardiology"],
+                           "radius": "10", "total_results": 0},
+        "created_at":     datetime.utcnow().isoformat(),
+        "source":         "PhysicianLocator-DEBUG",
+        "status":         "Test",
+    }
+
+    sf_ok, sf_status, sf_snippet, sf_error   = _push_to_salesforce(dummy_lead)
+    file_ok, file_path, file_error           = _save_lead_to_file(dummy_lead)
+
+    # Also fire the debug email
+    try:
+        subject, html_body = _build_lead_email(
+            dummy_lead, sf_ok, sf_status, sf_snippet, sf_error, file_ok, file_path, file_error
+        )
+        email_sent = _send_debug_email(subject, html_body)
+    except Exception as e:
+        email_sent = False
+        logger.error("Debug email failed: %s", e)
+
+    report = {
+        "lead_id":           dummy_lead["id"],
+        "salesforce": {
+            "success":       sf_ok,
+            "http_status":   sf_status,
+            "oid_configured": bool(cfg.SF_OID),
+            "oid_value":     cfg.SF_OID[:8] + "..." if cfg.SF_OID else "NOT SET",
+            "debug_email":   cfg.SF_DEBUG_EMAIL or "NOT SET",
+            "response_snippet": sf_snippet[:300] if sf_snippet else "",
+            "error":         sf_error,
+        },
+        "file_backup": {
+            "success":   file_ok,
+            "path":      file_path,
+            "error":     file_error,
+        },
+        "email_notification": {
+            "sent":          email_sent,
+            "smtp_host":     email_cfg.SMTP_HOST or "NOT SET",
+            "smtp_user":     email_cfg.SMTP_USER or "NOT SET",
+            "notify_email":  email_cfg.NOTIFY_EMAIL or "NOT SET",
+        },
+        "env_vars": {
+            "SF_OID":        "SET" if cfg.SF_OID else "MISSING",
+            "SF_RET_URL":    "SET" if cfg.SF_RET_URL else "MISSING",
+            "SF_DEBUG_EMAIL":"SET" if cfg.SF_DEBUG_EMAIL else "MISSING",
+            "SMTP_HOST":     "SET" if email_cfg.SMTP_HOST else "MISSING",
+            "SMTP_USER":     "SET" if email_cfg.SMTP_USER else "MISSING",
+            "SMTP_PASS":     "SET" if email_cfg.SMTP_PASS else "MISSING",
+            "NOTIFY_EMAIL":  "SET" if email_cfg.NOTIFY_EMAIL else "MISSING",
+        }
+    }
+    logger.info("Lead debug test complete: SF=%s file=%s email=%s", sf_ok, file_ok, email_sent)
+    return jsonify(report)
+
+
 @app.route("/api/autocomplete")
 @rate_limit(limit=cfg.RATE_LIMIT_AC)
 def autocomplete():
@@ -960,13 +1035,42 @@ def capture_lead():
         "status":         "New",
     }
 
-    sf_ok   = _push_to_salesforce(lead)
-    file_ok = _save_lead_to_file(lead)
+    # ── Push to Salesforce ──────────────────────────────────
+    sf_ok, sf_status, sf_snippet, sf_error = _push_to_salesforce(lead)
 
+    # ── Save to local file backup ────────────────────────────
+    file_ok, file_path, file_error = _save_lead_to_file(lead)
+
+    # ── Send debug/status email notification ─────────────────
+    try:
+        subject, html_body = _build_lead_email(
+            lead         = lead,
+            sf_ok        = sf_ok,
+            sf_status    = sf_status,
+            sf_response_snippet = sf_snippet,
+            sf_error     = sf_error,
+            file_ok      = file_ok,
+            file_path    = file_path,
+            file_error   = file_error,
+        )
+        # Send in background thread so it doesn't slow down the API response
+        threading.Thread(
+            target=_send_debug_email,
+            args=(subject, html_body),
+            daemon=True,
+            name="lead-email-notify",
+        ).start()
+    except Exception as e:
+        logger.error("Failed to build/send debug email: %s", e)
+
+    # ── Return response ───────────────────────────────────────
     if not sf_ok and not file_ok:
-        logger.error("Lead lost — both SF and file backup failed for %s", email)
+        logger.error("Lead LOST — both SF and file failed | email=%s | sf_err=%s | file_err=%s",
+                     email, sf_error, file_error)
         return jsonify({"error": "Could not save your request. Please try again."}), 500
 
+    logger.info("Lead captured | id=%s | sf=%s | file=%s | email=%s",
+                lead["id"], sf_ok, file_ok, email)
     return jsonify({
         "success":  True,
         "lead_id":  lead["id"],
@@ -975,59 +1079,248 @@ def capture_lead():
 
 
 # ─────────────────────────────────────────────
+#  EMAIL NOTIFICATION  (SMTP via env vars)
+# ─────────────────────────────────────────────
+#
+#  Required env vars for email debug notifications:
+#    SMTP_HOST     e.g. smtp.gmail.com
+#    SMTP_PORT     e.g. 587
+#    SMTP_USER     e.g. yourapp@gmail.com
+#    SMTP_PASS     app password (not your login password)
+#    NOTIFY_EMAIL  who receives the debug/status emails
+#
+#  All are optional — if not set, email is skipped silently.
+# ─────────────────────────────────────────────
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+
+class EmailConfig:
+    SMTP_HOST:    str = os.environ.get("SMTP_HOST",    "")
+    SMTP_PORT:    int = int(os.environ.get("SMTP_PORT", "587"))
+    SMTP_USER:    str = os.environ.get("SMTP_USER",    "")
+    SMTP_PASS:    str = os.environ.get("SMTP_PASS",    "")
+    NOTIFY_EMAIL: str = os.environ.get("NOTIFY_EMAIL", cfg.SF_DEBUG_EMAIL)
+
+email_cfg = EmailConfig()
+
+
+def _send_debug_email(subject: str, html_body: str) -> bool:
+    """Send an HTML email via SMTP. Returns True on success, False if skipped/failed."""
+    if not all([email_cfg.SMTP_HOST, email_cfg.SMTP_USER,
+                email_cfg.SMTP_PASS, email_cfg.NOTIFY_EMAIL]):
+        logger.debug("Email debug skipped — SMTP not fully configured")
+        return False
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"]    = f"Physician Locator <{email_cfg.SMTP_USER}>"
+        msg["To"]      = email_cfg.NOTIFY_EMAIL
+        msg.attach(MIMEText(html_body, "html"))
+
+        with smtplib.SMTP(email_cfg.SMTP_HOST, email_cfg.SMTP_PORT, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(email_cfg.SMTP_USER, email_cfg.SMTP_PASS)
+            server.sendmail(email_cfg.SMTP_USER, email_cfg.NOTIFY_EMAIL, msg.as_string())
+
+        logger.info("Debug email sent to %s | subject: %s", email_cfg.NOTIFY_EMAIL, subject)
+        return True
+    except Exception as e:
+        logger.error("Debug email failed: %s", e)
+        return False
+
+
+def _build_lead_email(lead: dict, sf_ok: bool, sf_status: int,
+                       sf_response_snippet: str, sf_error: str,
+                       file_ok: bool, file_path: str,
+                       file_error: str) -> tuple[str, str]:
+    """Build subject + HTML body for the lead debug notification email."""
+    ts     = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    name   = f"{lead.get('first_name','')} {lead.get('last_name','')}".strip()
+    email  = lead.get("email", "")
+    ctx    = lead.get("search_context", {})
+
+    # Overall status
+    if sf_ok and file_ok:
+        status_color = "#16a34a"   # green
+        status_text  = "✅ SUCCESS — Saved to Salesforce + local backup"
+    elif sf_ok:
+        status_color = "#2563eb"   # blue
+        status_text  = "✅ SALESFORCE OK — Local file backup failed"
+    elif file_ok:
+        status_color = "#d97706"   # amber
+        status_text  = "⚠️ SALESFORCE FAILED — Saved to local backup only"
+    else:
+        status_color = "#dc2626"   # red
+        status_text  = "❌ COMPLETE FAILURE — Both Salesforce and file backup failed"
+
+    sf_row_color  = "#dcfce7" if sf_ok  else "#fee2e2"
+    sf_icon       = "✅" if sf_ok  else "❌"
+    file_row_color = "#dcfce7" if file_ok else "#fee2e2"
+    file_icon      = "✅" if file_ok else "❌"
+
+    subject = f"[PhysicianLocator] Lead {sf_icon} — {name} ({email})"
+
+    html = f"""
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/></head>
+<body style="font-family:Arial,sans-serif;font-size:14px;color:#1f2937;background:#f9fafb;padding:0;margin:0">
+<div style="max-width:640px;margin:24px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+
+  <!-- Header -->
+  <div style="background:#0F2044;padding:24px 28px">
+    <div style="font-size:20px;font-weight:700;color:#fff">Physician Locator — Lead Alert</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">{ts}</div>
+  </div>
+
+  <!-- Status Banner -->
+  <div style="background:{status_color};padding:14px 28px">
+    <div style="font-size:15px;font-weight:700;color:#fff">{status_text}</div>
+  </div>
+
+  <!-- Lead Details -->
+  <div style="padding:24px 28px">
+    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:12px">Lead Information</div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600;width:140px">Lead ID</td><td style="padding:8px 12px;font-family:monospace;font-size:12px">{lead.get('id','—')}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Name</td><td style="padding:8px 12px">{name or '—'}</td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Email</td><td style="padding:8px 12px"><a href="mailto:{email}" style="color:#0F2044">{email}</a></td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Phone</td><td style="padding:8px 12px">{lead.get('phone','—') or '—'}</td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Company</td><td style="padding:8px 12px">{lead.get('company','—') or '—'}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Title</td><td style="padding:8px 12px">{lead.get('title','—') or '—'}</td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Submitted</td><td style="padding:8px 12px">{lead.get('created_at','—')}</td></tr>
+    </table>
+
+    <!-- Search Context -->
+    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Search Context</div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600;width:140px">Location</td><td style="padding:8px 12px">{ctx.get('address','—')}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Radius</td><td style="padding:8px 12px">{ctx.get('radius','—')} miles</td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Specialties</td><td style="padding:8px 12px">{', '.join(ctx.get('descriptions', [])) or ctx.get('taxonomy_code','—')}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Total Results</td><td style="padding:8px 12px">{ctx.get('total_results','—')}</td></tr>
+    </table>
+
+    <!-- Salesforce Status -->
+    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Salesforce Web-to-Lead Status</div>
+    <div style="background:{sf_row_color};border-radius:8px;padding:16px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">{sf_icon} {'SUCCESS' if sf_ok else 'FAILED'}</div>
+      <div style="font-size:13px;color:#374151"><b>HTTP Status:</b> {sf_status if sf_status else 'N/A'}</div>
+      {'<div style="font-size:13px;color:#374151;margin-top:4px"><b>SF OID used:</b> ' + cfg.SF_OID + '</div>' if cfg.SF_OID else '<div style="font-size:13px;color:#dc2626;font-weight:600;margin-top:4px">⚠️ SF_OID env var is NOT SET</div>'}
+      {'<div style="font-size:13px;color:#374151;margin-top:4px;word-break:break-all"><b>SF Response (first 300 chars):</b><br><code style=\'font-size:11px\'>' + sf_response_snippet[:300] + '</code></div>' if sf_response_snippet else ''}
+      {'<div style="font-size:13px;color:#dc2626;margin-top:6px"><b>Error:</b> ' + sf_error + '</div>' if sf_error else ''}
+    </div>
+
+    <!-- File Backup Status -->
+    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Local File Backup Status</div>
+    <div style="background:{file_row_color};border-radius:8px;padding:16px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">{file_icon} {'SUCCESS' if file_ok else 'FAILED'}</div>
+      {'<div style="font-size:13px;color:#374151"><b>Saved to:</b> <code>' + file_path + '</code></div>' if file_ok else ''}
+      {'<div style="font-size:13px;color:#dc2626;margin-top:4px"><b>Error:</b> ' + file_error + '</div>' if file_error else ''}
+    </div>
+
+    <!-- Troubleshooting -->
+    {'<div style=\"background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:16px;margin-top:20px\"><div style=\"font-weight:700;color:#92400e;margin-bottom:8px\">🔧 Troubleshooting Tips</div><ul style=\"margin:0;padding-left:18px;color:#78350f;font-size:13px\"><li>Verify SF_OID env var is set in Render dashboard</li><li>Check that your SF org Web-to-Lead is enabled: Setup → Web-to-Lead</li><li>Ensure the OID matches your SF org (Settings → Company → Company Information)</li><li>Lead Source \"Web\" must exist in your SF Lead Source picklist</li><li>Try the SF debug=1 mode — SF will email field mapping errors to SF_DEBUG_EMAIL</li></ul></div>' if not sf_ok else ''}
+
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#f3f4f6;padding:16px 28px;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb">
+    Physician Locator — Aquarient · Automated debug notification · {ts}
+  </div>
+</div>
+</body>
+</html>
+    """
+    return subject, html
+
+
+# ─────────────────────────────────────────────
 #  LEAD PERSISTENCE
 # ─────────────────────────────────────────────
 
-def _push_to_salesforce(lead: dict) -> bool:
+def _push_to_salesforce(lead: dict) -> tuple[bool, int, str, str]:
+    """
+    Push lead to Salesforce Web-to-Lead.
+    Returns (success, http_status, response_snippet, error_message)
+    """
     if not cfg.SF_OID:
-        logger.warning("SF_OID not configured — skipping Salesforce push")
-        return False
+        msg = "SF_OID env var is not set — cannot push to Salesforce"
+        logger.warning(msg)
+        return False, 0, "", msg
+
+    sf_payload = {
+        "oid":         cfg.SF_OID,
+        "retURL":      cfg.SF_RET_URL or "https://www.aquarient.com",
+        "first_name":  lead.get("first_name", ""),
+        "last_name":   lead.get("last_name",  ""),
+        "email":       lead.get("email",       ""),
+        "phone":       lead.get("phone",       ""),
+        "company":     lead.get("company") or "N/A",
+        "title":       lead.get("title",       ""),
+        "lead_source": "Web",
+        "description": "Physician Locator search — "
+                       + f"Location: {lead.get('search_context',{}).get('address','')} | "
+                       + f"Specialty: {', '.join(lead.get('search_context',{}).get('descriptions',[]))} | "
+                       + f"Results: {lead.get('search_context',{}).get('total_results','')}",
+    }
+    # Always enable SF debug mode so SF emails field errors to SF_DEBUG_EMAIL
+    if cfg.SF_DEBUG_EMAIL:
+        sf_payload["debug"]      = "1"
+        sf_payload["debugEmail"] = cfg.SF_DEBUG_EMAIL
+
+    logger.info("Pushing to SF Web-to-Lead | OID=%s | email=%s", cfg.SF_OID, lead["email"])
+    logger.debug("SF payload: %s", sf_payload)
+
     try:
-        # Salesforce Web-to-Lead required fields
-        payload = {
-            "oid":         cfg.SF_OID,
-            "retURL":      cfg.SF_RET_URL or "https://www.aquarient.com",
-            "first_name":  lead.get("first_name", ""),
-            "last_name":   lead.get("last_name",  ""),
-            "email":       lead.get("email",       ""),
-            "phone":       lead.get("phone",       ""),
-            # 'company' maps to SF Lead.Company — must not be blank
-            "company":     lead.get("company") or "N/A",
-            "title":       lead.get("title",       ""),
-            "lead_source": "Web",
-            # Custom description field with search context
-            "description": "Physician Locator search: " + str(lead.get("search_context", {})),
-        }
-        # Send debug email only in non-prod (helps diagnose SF mapping issues)
-        if cfg.SF_DEBUG_EMAIL:
-            payload["debug"]      = "1"
-            payload["debugEmail"] = cfg.SF_DEBUG_EMAIL
         resp = _http.post(
             "https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8",
-            data=payload,
+            data=sf_payload,
             timeout=cfg.REQUEST_TIMEOUT,
-            allow_redirects=True,   # SF Web-to-Lead sends a redirect on success
+            allow_redirects=True,
         )
-        logger.info("SF Web-to-Lead status: %d | email=%s", resp.status_code, lead["email"])
-        # SF Web-to-Lead returns 200 even on error; check for known failure strings
-        if resp.text and "error" in resp.text.lower() and "debugEmail" not in resp.text:
-            logger.warning("SF response may indicate error: %.200s", resp.text)
-        return resp.status_code in (200, 301, 302)
+        snippet = (resp.text or "")[:500]
+        logger.info("SF HTTP status: %d | email=%s", resp.status_code, lead["email"])
+        logger.debug("SF response body: %.500s", snippet)
+
+        # SF returns 200 even on failure — check body for error indicators
+        body_lower = snippet.lower()
+        has_error = ("error" in body_lower and "debugEmail" not in snippet
+                     and "successfully" not in body_lower)
+        if has_error:
+            logger.warning("SF response suggests failure: %.300s", snippet)
+
+        success = resp.status_code in (200, 301, 302) and not has_error
+        return success, resp.status_code, snippet, ""
+
+    except requests.Timeout:
+        msg = f"SF request timed out after {cfg.REQUEST_TIMEOUT}s"
+        logger.error(msg)
+        return False, 0, "", msg
     except Exception as e:
-        logger.error("Salesforce push failed: %s", e)
-        return False
+        msg = f"{type(e).__name__}: {e}"
+        logger.error("SF push exception: %s", msg)
+        return False, 0, "", msg
 
 
-def _save_lead_to_file(lead: dict) -> bool:
-    """Append lead to NDJSON file (one JSON object per line — safer than rewriting full array)."""
-    leads_file = "leads.ndjson"
+def _save_lead_to_file(lead: dict) -> tuple[bool, str, str]:
+    """
+    Append lead to NDJSON file.
+    Returns (success, file_path, error_message)
+    """
+    leads_file = os.path.abspath("leads.ndjson")
     try:
-        with open(leads_file, "a") as f:
+        with open(leads_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(lead) + "\n")
-        return True
+        logger.info("Lead saved to file: %s | id=%s", leads_file, lead["id"])
+        return True, leads_file, ""
     except Exception as e:
-        logger.error("leads.ndjson write failed: %s", e)
-        return False
+        msg = f"{type(e).__name__}: {e}"
+        logger.error("leads.ndjson write failed: %s", msg)
+        return False, leads_file, msg
 
 
 # ─────────────────────────────────────────────
