@@ -100,14 +100,18 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box
 button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
 /* ══ PHASE 1: SEARCH CARD ════════════════════════════════════ */
-.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--hdr));padding:2rem 1rem}
+.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--hdr));padding:2rem 1rem;overflow:visible}
 .search-card{
   background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-radius:28px;
   box-shadow:0 32px 100px rgba(0,60,120,.16),0 0 0 1.5px rgba(0,174,239,.18),inset 0 1px 0 rgba(255,255,255,.8);
-  padding:3rem 3rem 2.5rem;width:100%;max-width:740px;
-  border:1px solid rgba(0,174,239,.15);position:relative;overflow:hidden;
+  padding:3rem 3rem 2.5rem;width:100%;max-width:760px;
+  border:1px solid rgba(0,174,239,.15);position:relative;
+  /* NO overflow:hidden — would clip the dropdown */
+  overflow:visible;
 }
+/* The shimmer bar still needs clipping — target it directly */
+.search-card::before{clip-path:inset(0 0 0 0 round 28px 28px 0 0)}
 .search-card::before{
   content:"";position:absolute;top:0;left:0;right:0;height:3px;
   background:linear-gradient(90deg,#00AEEF,#0C7A7A,#00AEEF);background-size:200% 100%;
@@ -250,7 +254,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 #map{width:100%;height:480px}
 
 /* ══ SHARED FORM FIELDS ══════════════════════════════════════ */
-.field{margin-bottom:.9rem;position:relative}
+.field{margin-bottom:.9rem;position:relative;z-index:0}
+.field:focus-within{z-index:10}
 .field:last-child{margin-bottom:0}
 .lbl{display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
 .lbl .req{color:var(--coral)}
@@ -259,7 +264,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .inp:focus{background:#fff;border-color:#00AEEF;box-shadow:0 0 0 3px rgba(0,174,239,.18)}
 .inp[aria-invalid="true"]{border-color:var(--coral)}
 /* tag-box matches .inp exactly — same height, padding, border, radius */
-.tag-box{min-height:50px;padding:8px 14px;background:#F5FAFF;border:1.5px solid #D0E8F5;border-radius:12px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .18s,box-shadow .18s,background .18s}
+.tag-box{min-height:54px;padding:10px 14px;background:#F5FAFF;border:1.5px solid #D0E8F5;border-radius:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;cursor:text;transition:border-color .18s,box-shadow .18s,background .18s}
 /* Only border/bg change on focus — NO extra box-shadow so there's no double ring */
 .tag-box:focus-within{background:#fff;border-color:#00AEEF;box-shadow:0 0 0 3px rgba(0,174,239,.18)}
 /* The inner chip-input must never show its own focus ring */

@@ -1036,3 +1036,10 @@ def _save_lead_to_file(lead: dict) -> bool:
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=cfg.PORT, debug=False)
+
+# ─────────────────────────────────────────────
+#  GUNICORN CONFIG (used when started via gunicorn cli)
+#  Set timeout high enough for NPPES multi-ZIP queries
+# ─────────────────────────────────────────────
+# Run with: gunicorn app:app --timeout 120 --workers 2 --threads 4
+# Or set env var: GUNICORN_TIMEOUT=120
