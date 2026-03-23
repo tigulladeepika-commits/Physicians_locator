@@ -95,7 +95,9 @@ body::after{
 
 /* ── Global focus ring ────────────────────────────────────── */
 :focus-visible{outline:2px solid #00AEEF;outline-offset:2px}
-button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{box-shadow:var(--focus-ring)}
+/* inputs handle their own focus ring via border+shadow — no extra outline needed */
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box-shadow:none}
+button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
 /* ══ PHASE 1: SEARCH CARD ════════════════════════════════════ */
 .phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--hdr));padding:2rem 1rem}
@@ -127,7 +129,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{bo
   border-radius:0 0 16px 16px;padding:1.1rem 1.75rem;
   display:flex;align-items:center;flex-wrap:wrap;gap:12px;
   box-shadow:0 8px 32px rgba(15,32,68,.22);border-bottom:3px solid var(--teal);
-  margin-bottom:1.75rem;
+  margin-bottom:1.5rem;
 }
 .sb-fields{display:flex;align-items:center;flex-wrap:wrap;gap:8px;flex:1}
 .sb-pill{display:flex;flex-direction:column;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:5px 14px;min-width:90px}
@@ -171,7 +173,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{bo
 .mp-apply:hover,.mp-apply:focus-visible{background:var(--teal)}
 
 /* ── Results meta ────────────────────────────────────────── */
-.res-meta{width:100%;max-width:var(--content);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem;padding:0 2px}
+.res-meta{
+  width:100%;max-width:var(--content);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;
+  margin-bottom:.75rem;
+  padding:0 4px;
+}
 .res-count{font-size:.82rem;font-weight:700;color:var(--ink3);letter-spacing:.04em}
 .res-count strong{color:var(--teal);font-size:.96rem}
 .res-tags{display:flex;gap:6px;flex-wrap:wrap}
@@ -181,7 +189,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{bo
 .cards-list{
   width:100%;max-width:var(--content);
   display:grid;grid-template-columns:repeat(3,1fr);
-  gap:14px;margin-bottom:1.5rem;align-items:stretch;
+  gap:16px;margin-bottom:1rem;align-items:stretch;
+  /* Prevent cards from ever overflowing the container */
+  box-sizing:border-box;
 }
 .dc{
   background:rgba(255,255,255,.97);border-radius:16px;
@@ -246,10 +256,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{bo
 .lbl .req{color:var(--coral)}
 .inp{width:100%;padding:13px 16px;font-family:var(--f);font-size:.92rem;color:var(--ink);background:#F5FAFF;border:1.5px solid #D0E8F5;border-radius:12px;outline:none;transition:border-color .18s,box-shadow .18s,background .18s;appearance:none}
 .inp::placeholder{color:var(--ink3)}
-.inp:focus{background:#fff;border-color:#00AEEF;box-shadow:var(--focus-ring)}
+.inp:focus{background:#fff;border-color:#00AEEF;box-shadow:0 0 0 3px rgba(0,174,239,.18)}
 .inp[aria-invalid="true"]{border-color:var(--coral)}
-.tag-box{min-height:50px;padding:6px 10px;background:#F5FAFF;border:1.5px solid #D0E8F5;border-radius:12px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .18s,box-shadow .18s}
-.tag-box:focus-within{background:#fff;border-color:#00AEEF;box-shadow:var(--focus-ring)}
+/* tag-box matches .inp exactly — same height, padding, border, radius */
+.tag-box{min-height:50px;padding:8px 14px;background:#F5FAFF;border:1.5px solid #D0E8F5;border-radius:12px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;cursor:text;transition:border-color .18s,box-shadow .18s,background .18s}
+/* Only border/bg change on focus — NO extra box-shadow so there's no double ring */
+.tag-box:focus-within{background:#fff;border-color:#00AEEF;box-shadow:0 0 0 3px rgba(0,174,239,.18)}
+/* The inner chip-input must never show its own focus ring */
+.chip-input:focus{outline:none;box-shadow:none}
 .chip{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:var(--w);font-size:.72rem;font-weight:600;padding:3px 8px 3px 10px;border-radius:100px;white-space:nowrap;max-width:220px;animation:chipPop .15s ease}
 .chip span{overflow:hidden;text-overflow:ellipsis}
 .chip-x{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:.9rem;padding:0;line-height:1;display:flex;align-items:center;flex-shrink:0;transition:color .1s}
@@ -271,31 +285,48 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{bo
 .btn-s:disabled{background:#D0D0DE;cursor:not-allowed;transform:none;box-shadow:none;color:var(--ink3)}
 .btn-s svg{width:16px;height:16px;flex-shrink:0}
 
-/* ══ DROPDOWNS ═══════════════════════════════════════════════ */
+/* ══ DROPDOWNS — identical style for both Location and Specialty ══════════ */
 .ac-list,.tax-list,.mp-ac-list,.mp-tax-list{
-  position:absolute;top:calc(100% + 3px);left:0;right:0;
-  background:var(--w);border:1.5px solid var(--tb);border-radius:var(--r);
-  box-shadow:var(--s3);z-index:600;max-height:230px;overflow-y:auto;display:none;
-  scrollbar-width:thin;scrollbar-color:var(--cream3) transparent;
+  position:absolute;
+  /* Attach flush under the input — no gap */
+  top:calc(100% + 2px);
+  left:0;right:0;
+  background:#fff;
+  border:1.5px solid #D0E8F5;
+  border-top:1.5px solid #00AEEF;
+  border-radius:0 0 12px 12px;
+  box-shadow:0 8px 24px rgba(0,80,150,.12);
+  z-index:600;max-height:240px;overflow-y:auto;display:none;
+  scrollbar-width:thin;scrollbar-color:#D0E8F5 transparent;
 }
 .ac-list.open,.tax-list.open,.mp-ac-list.open,.mp-tax-list.open{display:block}
+/* When dropdown is open, square off the bottom corners of the input above it */
+.field:has(.ac-list.open) .inp,
+.field:has(.tax-list.open) .tag-box{
+  border-radius:12px 12px 0 0;
+  border-bottom-color:#00AEEF;
+  box-shadow:none; /* suppress ring while dropdown is open */
+}
 .ac-item,.mp-ac-item{
-  padding:9px 14px;font-size:.84rem;color:var(--ink2);cursor:pointer;
-  border-bottom:1px solid var(--cream);display:flex;align-items:flex-start;gap:8px;
+  padding:10px 16px;font-size:.84rem;color:var(--ink2);cursor:pointer;
+  border-bottom:1px solid #F0F6FF;display:flex;align-items:flex-start;gap:10px;
   transition:background .08s;
 }
 .ac-item:last-child,.mp-ac-item:last-child{border-bottom:none}
-.ac-item:hover,.ac-item[aria-selected="true"],.mp-ac-item:hover,.mp-ac-item[aria-selected="true"]{background:var(--tg)}
-.ac-ico{color:var(--teal);margin-top:2px;flex-shrink:0}
+.ac-item:hover,.ac-item[aria-selected="true"],.mp-ac-item:hover,.mp-ac-item[aria-selected="true"]{background:#F0F8FF}
+.ac-ico{color:#0076B6;margin-top:2px;flex-shrink:0}
 .ac-main{font-weight:600;line-height:1.3;color:var(--ink)}
 .ac-sub{font-size:.72rem;color:var(--ink3);margin-top:1px}
-.tax-item,.mp-tax-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--cream);transition:background .08s}
+.tax-item,.mp-tax-item{
+  padding:10px 16px;cursor:pointer;
+  border-bottom:1px solid #F0F6FF;transition:background .08s;
+}
 .tax-item:last-child,.mp-tax-item:last-child{border-bottom:none}
-.tax-item:hover,.tax-item[aria-selected="true"],.mp-tax-item:hover,.mp-tax-item[aria-selected="true"]{background:var(--tg)}
+.tax-item:hover,.tax-item[aria-selected="true"],.mp-tax-item:hover,.mp-tax-item[aria-selected="true"]{background:#F0F8FF}
 .tax-n{font-size:.84rem;font-weight:600;color:var(--ink)}
-.tax-c{font-size:.7rem;color:var(--ink3);margin-top:1px}
-.ac-spin{padding:10px 14px;font-size:.8rem;color:var(--ink3);display:flex;align-items:center;gap:7px}
-.ac-spin-d{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:ldot .55s ease infinite}
+.tax-c{font-size:.72rem;color:var(--ink3);margin-top:2px}
+.ac-spin{padding:12px 16px;font-size:.8rem;color:var(--ink3);display:flex;align-items:center;gap:8px}
+.ac-spin-d{width:6px;height:6px;border-radius:50%;background:#0076B6;animation:ldot .55s ease infinite}
 .ac-spin-d:nth-child(2){animation-delay:.15s}.ac-spin-d:nth-child(3){animation-delay:.3s}
 @keyframes ldot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 
@@ -734,7 +765,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{bo
 var MAPQUEST_KEY = (window.ENV && window.ENV.MAPQUEST_KEY) ? window.ENV.MAPQUEST_KEY : "";
 var BACKEND_URL  = (window.ENV && window.ENV.BACKEND_URL)  ? window.ENV.BACKEND_URL  : "";
 var MAX_PAGE     = 9;
-var FETCH_TIMEOUT_MS = 20000; // 20-second timeout for all requests
+var FETCH_TIMEOUT_MS = 45000;  // 45s for main search — NPPES can be slow
 
 if (!MAPQUEST_KEY) console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
 if (!BACKEND_URL)  console.warn("[PhysicianLocator] BACKEND_URL not set");
@@ -1173,7 +1204,7 @@ function doSearch() {
 
   if (!selLat || !selLng) {
     setLoading(true);
-    fetchWithTimeout(BACKEND_URL + "/api/geocode?address=" + encodeURIComponent(address), {}, 10000)
+    fetchWithTimeout(BACKEND_URL + "/api/geocode?address=" + encodeURIComponent(address), {}, 15000)
       .then(function(r) {
         if (r.status === 404) throw new Error("Address not found in the US");
         if (!r.ok) throw new Error("Geocoding failed (HTTP " + r.status + ")");
