@@ -296,7 +296,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   border-top:1.5px solid #00AEEF;
   border-radius:0 0 12px 12px;
   box-shadow:0 8px 24px rgba(0,80,150,.12);
-  z-index:600;max-height:240px;overflow-y:auto;display:none;
+  z-index:600;max-height:280px;overflow-y:auto;display:none;
   scrollbar-width:thin;scrollbar-color:#D0E8F5 transparent;
 }
 .ac-list.open,.tax-list.open,.mp-ac-list.open,.mp-tax-list.open{display:block}
@@ -764,7 +764,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 /* ══ CONFIG — never put secret keys here; MAPQUEST_KEY is a public map key ══ */
 var MAPQUEST_KEY = (window.ENV && window.ENV.MAPQUEST_KEY) ? window.ENV.MAPQUEST_KEY : "";
 var BACKEND_URL  = (window.ENV && window.ENV.BACKEND_URL)  ? window.ENV.BACKEND_URL  : "";
-var MAX_PAGE     = 9;
+var MAX_PAGE     = 9;   // show 9 cards; Load More always opens lead form
 var FETCH_TIMEOUT_MS = 45000;  // 45s for main search — NPPES can be slow
 
 if (!MAPQUEST_KEY) console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
@@ -938,17 +938,43 @@ function applyModify() {
   var partial = document.getElementById("mp-tax-inp").value.trim();
   var descs   = mpTaxTags.map(function(t) { return t.display; });
   if (partial.length >= 2 && descs.indexOf(partial) === -1) descs.push(partial);
+
   if (!addr) { showToast("Please enter a location.", "error"); return; }
-  if (!taxCode && descs.length === 0) { showToast("Please enter a specialty.", "error"); return; }
+  if (!taxCode && descs.length === 0) { showToast("Please add at least one specialty.", "error"); return; }
+
+  // Sync back to main search form
   document.getElementById("address-input").value = addr;
   document.getElementById("radius-input").value  = radius;
-  document.getElementById("taxonomy-code").value = taxCode;
+  document.getElementById("taxonomy-code").value  = taxCode;
   taxTags = JSON.parse(JSON.stringify(mpTaxTags));
   renderMainTags();
-  selLat = mpLat; selLng = mpLng; selCity = mpCity; selState = mpState;
-  currentSearch = { address: addr, radius: radius, taxonomy_code: taxCode, descriptions: descs };
   closeModifyPanel();
-  runSearch(addr, radius, taxCode, descs, true);
+
+  var addressChanged = (addr !== (currentSearch.address || ""));
+
+  // Re-geocode if address changed or we have no coords
+  if (addressChanged || !mpLat || !mpLng) {
+    setLoading(true);
+    fetchWithTimeout(BACKEND_URL + "/api/geocode?address=" + encodeURIComponent(addr), {}, 15000)
+      .then(function(r) {
+        if (r.status === 404) throw new Error("Address not found in the US");
+        if (!r.ok) throw new Error("Geocoding failed (HTTP " + r.status + ")");
+        return r.json();
+      })
+      .then(function(gd) {
+        if (gd.error) throw new Error(gd.error);
+        selLat = gd.lat; selLng = gd.lng; selCity = gd.city || ""; selState = gd.state || "";
+        mpLat = selLat; mpLng = selLng; mpCity = selCity; mpState = selState;
+        if (gd.formatted) { document.getElementById("address-input").value = gd.formatted; addr = gd.formatted; }
+        currentSearch = { address: addr, radius: radius, taxonomy_code: taxCode, descriptions: descs };
+        runSearch(addr, radius, taxCode, descs, true);
+      })
+      .catch(function(err) { showToast(err.message || "Could not geocode address.", "error"); setLoading(false); });
+  } else {
+    selLat = mpLat; selLng = mpLng; selCity = mpCity; selState = mpState;
+    currentSearch = { address: addr, radius: radius, taxonomy_code: taxCode, descriptions: descs };
+    runSearch(addr, radius, taxCode, descs, true);
+  }
 }
 
 
@@ -1264,7 +1290,7 @@ function runSearch(address, radius, taxCode, descs, clearExisting) {
 /* ══ COUNT BAR ══ */
 function renderCountBar() {
   var end = Math.min(allPhysicians.length, MAX_PAGE);
-  shownCount = end;
+  // shownCount is set by renderCards; only update display here
   document.getElementById("rc-shown").textContent = end;
   document.getElementById("rc-total").textContent  = totalFound.toLocaleString();
   var chips  = document.getElementById("rc-chips"); chips.innerHTML = "";
@@ -1298,8 +1324,12 @@ function renderCards() {
     return;
   }
 
+  // Always show at most MAX_PAGE (9) cards
   var end = Math.min(allPhysicians.length, MAX_PAGE);
   for (var i = 0; i < end; i++) appendCard(col, allPhysicians[i], i);
+  shownCount = end;
+  document.getElementById("rc-shown").textContent = end;
+  // Always show Load More if there are any results (leads to form)
   appendLoadMore(col);
 }
 
@@ -1344,25 +1374,18 @@ function appendCard(col, p, i) {
 
 function appendLoadMore(col) {
   var old = document.querySelector(".load-more-wrap"); if (old) old.remove();
-  if (shownCount >= totalFound) return;
+  // Only show Load More if there are results
+  if (!allPhysicians.length) return;
   var remaining = totalFound - shownCount;
   var wrap = document.createElement("div"); wrap.className = "load-more-wrap";
   var btn  = document.createElement("button"); btn.className = "btn-lm";
-  btn.setAttribute("aria-label", "Load more — " + remaining.toLocaleString() + " more providers available");
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Load more — ' + remaining.toLocaleString() + ' more providers';
-  btn.addEventListener("click", function() {
-    if (shownCount < allPhysicians.length) {
-      wrap.remove();
-      var newEnd = Math.min(allPhysicians.length, shownCount + MAX_PAGE);
-      for (var i = shownCount; i < newEnd; i++) appendCard(col, allPhysicians[i], i);
-      shownCount = newEnd;
-      document.getElementById("rc-shown").textContent = shownCount;
-      announce(shownCount + " providers now shown");
-      appendLoadMore(col);
-    } else {
-      openLeadModal();
-    }
-  });
+  var label = remaining > 0
+    ? "Load more — " + remaining.toLocaleString() + " more providers"
+    : "View full list — request access";
+  btn.setAttribute("aria-label", label);
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>' + label;
+  // ALWAYS open lead modal — never add more cards inline
+  btn.addEventListener("click", function() { openLeadModal(); });
   wrap.appendChild(btn);
   col.parentNode.insertBefore(wrap, col.nextSibling);
 }
@@ -1476,8 +1499,12 @@ function submitLead() {
   ["lf-first","lf-last","lf-email"].forEach(function(id) { document.getElementById(id).removeAttribute("aria-invalid"); });
 
   var payload = {
-    first_name: first, last_name: last, email: email,
-    phone: phone, title: title, company: company,
+    first_name: first,
+    last_name:  last,
+    email:      email,
+    phone:      phone  || "",
+    title:      title  || "",
+    company:    company || "N/A",   // SF requires non-empty company
     search_context: Object.assign({}, currentSearch, {
       total_results: totalFound,
       timestamp: new Date().toISOString(),

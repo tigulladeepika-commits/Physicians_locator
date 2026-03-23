@@ -983,25 +983,36 @@ def _push_to_salesforce(lead: dict) -> bool:
         logger.warning("SF_OID not configured — skipping Salesforce push")
         return False
     try:
+        # Salesforce Web-to-Lead required fields
         payload = {
             "oid":         cfg.SF_OID,
-            "retURL":      cfg.SF_RET_URL,
-            "first_name":  lead["first_name"],
-            "last_name":   lead["last_name"],
-            "email":       lead["email"],
-            "phone":       lead["phone"],
-            "company":     lead["company"] or "Unknown",
-            "lead_source": "Physician Locator",
+            "retURL":      cfg.SF_RET_URL or "https://www.aquarient.com",
+            "first_name":  lead.get("first_name", ""),
+            "last_name":   lead.get("last_name",  ""),
+            "email":       lead.get("email",       ""),
+            "phone":       lead.get("phone",       ""),
+            # 'company' maps to SF Lead.Company — must not be blank
+            "company":     lead.get("company") or "N/A",
+            "title":       lead.get("title",       ""),
+            "lead_source": "Web",
+            # Custom description field with search context
+            "description": "Physician Locator search: " + str(lead.get("search_context", {})),
         }
+        # Send debug email only in non-prod (helps diagnose SF mapping issues)
         if cfg.SF_DEBUG_EMAIL:
-            payload.update({"debug": "1", "debugEmail": cfg.SF_DEBUG_EMAIL})
+            payload["debug"]      = "1"
+            payload["debugEmail"] = cfg.SF_DEBUG_EMAIL
         resp = _http.post(
             "https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8",
             data=payload,
             timeout=cfg.REQUEST_TIMEOUT,
+            allow_redirects=True,   # SF Web-to-Lead sends a redirect on success
         )
-        logger.info("SF Web-to-Lead status: %d | %s", resp.status_code, lead["email"])
-        return resp.ok
+        logger.info("SF Web-to-Lead status: %d | email=%s", resp.status_code, lead["email"])
+        # SF Web-to-Lead returns 200 even on error; check for known failure strings
+        if resp.text and "error" in resp.text.lower() and "debugEmail" not in resp.text:
+            logger.warning("SF response may indicate error: %.200s", resp.text)
+        return resp.status_code in (200, 301, 302)
     except Exception as e:
         logger.error("Salesforce push failed: %s", e)
         return False
