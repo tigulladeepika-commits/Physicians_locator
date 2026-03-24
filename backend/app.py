@@ -1,20 +1,35 @@
 """
-Physician Locator — Aquarient
-Production-grade backend: rate limiting, input validation, security headers,
-request sessions, bounded caches, structured logging, graceful degradation.
+Physician Locator — Aquarient  (v2 — production)
+
+Changes from v1:
+  - gthread worker model (fixes worker timeout)
+  - Input sanitisation on all user-supplied fields
+  - Structured error responses with request_id on every 4xx/5xx
+  - No stack trace leakage to clients
+  - request_id injected into every log line
+  - /api/lead-debug requires X-Debug-Secret header
+  - LEADS_DIR env var for persistent lead storage
+  - CORS warns loudly at startup if FRONTEND_URL is missing
+  - Rate limiter purges expired entries every 5 min
+  - Health endpoint returns 503 while ZIP DB is loading
+  - html.escape() on all user values in email body
 """
 
 from __future__ import annotations
 
 import csv
+import hashlib
+import html
 import io
 import json
 import logging
 import math
 import os
+import re
 import threading
 import time
 import traceback
+import uuid
 import zipfile
 from collections import OrderedDict
 from datetime import datetime
@@ -22,7 +37,7 @@ from functools import wraps
 from typing import Optional
 
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 
 try:
@@ -31,63 +46,93 @@ try:
 except ImportError:
     pass
 
+
 # ─────────────────────────────────────────────
-#  STRUCTURED LOGGING
+#  STRUCTURED LOGGING WITH REQUEST-ID FILTER
 # ─────────────────────────────────────────────
+
+class RequestIdFilter(logging.Filter):
+    def filter(self, record):
+        try:
+            record.request_id = g.get("request_id", "-")
+        except RuntimeError:
+            record.request_id = "-"
+        return True
+
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    format="%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%SZ",
 )
 logger = logging.getLogger("physician_locator")
+logger.addFilter(RequestIdFilter())
 
 
 # ─────────────────────────────────────────────
-#  CONFIG  (all from environment — no hardcoded secrets)
+#  CONFIG  (all values from environment — no hardcoded secrets)
 # ─────────────────────────────────────────────
 
 class Config:
-    MAPQUEST_API_KEY:   str  = os.environ.get("MAPQUEST_API_KEY", "")
-    GEOAPIFY_API_KEY:   str  = os.environ.get("GEOAPIFY_API_KEY", "")
-    FRONTEND_URL:       str  = os.environ.get("FRONTEND_URL", "")
-    SF_OID:             str  = os.environ.get("SF_OID", "")           # was hardcoded
-    SF_RET_URL:         str  = os.environ.get("SF_RET_URL", "")
-    SF_DEBUG_EMAIL:     str  = os.environ.get("SF_DEBUG_EMAIL", "")
-    PORT:               int  = int(os.environ.get("PORT", 5000))
+    MAPQUEST_API_KEY:   str   = os.environ.get("MAPQUEST_API_KEY",  "")
+    GEOAPIFY_API_KEY:   str   = os.environ.get("GEOAPIFY_API_KEY",  "")
+    FRONTEND_URL:       str   = os.environ.get("FRONTEND_URL",      "")
+    SF_OID:             str   = os.environ.get("SF_OID",            "")
+    SF_RET_URL:         str   = os.environ.get("SF_RET_URL",        "")
+    SF_DEBUG_EMAIL:     str   = os.environ.get("SF_DEBUG_EMAIL",    "")
+    PORT:               int   = int(os.environ.get("PORT",          5000))
+    DEBUG_SECRET:       str   = os.environ.get("DEBUG_SECRET",      "")
+    LEADS_DIR:          str   = os.environ.get("LEADS_DIR",         "/tmp")
 
     # Limits
-    MAX_DISPLAY:        int  = 10
-    MAX_ZIP_QUERIES:    int  = 20           # was 30 — reduces NPPES hammering
-    MAX_TAX_QUERIES:    int  = 3            # cap taxonomy fan-out
-    MAX_DESC_COUNT:     int  = 5            # max specialty tags per search
-    MAX_DESC_LEN:       int  = 120          # chars per specialty string
+    MAX_DISPLAY:        int   = 10
+    MAX_ZIP_QUERIES:    int   = 20
+    MAX_TAX_QUERIES:    int   = 3
+    MAX_DESC_COUNT:     int   = 5
+    MAX_DESC_LEN:       int   = 120
     MAX_RADIUS:         float = 100.0
-    GEOCODE_CACHE_SIZE: int  = 2000
-    REQUEST_TIMEOUT:    int  = 15           # seconds for outbound HTTP
+    GEOCODE_CACHE_SIZE: int   = 2000
+    REQUEST_TIMEOUT:    int   = 15
 
-    # Rate limiting (in-process, per-IP)
-    RATE_LIMIT_WINDOW:  int  = 60           # seconds
-    RATE_LIMIT_SEARCH:  int  = 30           # requests per window
-    RATE_LIMIT_LEAD:    int  = 5
-    RATE_LIMIT_AC:      int  = 120
+    # Rate limiting (per-IP, in-process)
+    RATE_LIMIT_WINDOW:  int   = 60
+    RATE_LIMIT_SEARCH:  int   = 30
+    RATE_LIMIT_LEAD:    int   = 5
+    RATE_LIMIT_AC:      int   = 120
 
 
 cfg = Config()
 
-for key, label in [(cfg.MAPQUEST_API_KEY, "MAPQUEST_API_KEY"),
-                   (cfg.GEOAPIFY_API_KEY, "GEOAPIFY_API_KEY"),
-                   (cfg.SF_OID, "SF_OID")]:
-    if not key:
-        logger.warning("Environment variable %s is not set", label)
+# ── Startup checks ────────────────────────────────────────────
+_MISSING_ENV: list[str] = []
+for _key, _label in [
+    (cfg.MAPQUEST_API_KEY, "MAPQUEST_API_KEY"),
+    (cfg.GEOAPIFY_API_KEY, "GEOAPIFY_API_KEY"),
+    (cfg.SF_OID,           "SF_OID"),
+]:
+    if not _key:
+        _MISSING_ENV.append(_label)
+        logger.warning("Environment variable %s is not set", _label)
 
-# Log SF config on startup so it's visible in Render logs
+if not cfg.FRONTEND_URL:
+    logger.error(
+        "FRONTEND_URL is not set — CORS is open to ALL origins. "
+        "Set this to your Vercel URL in the Render dashboard."
+    )
+
+if not cfg.DEBUG_SECRET:
+    logger.warning(
+        "DEBUG_SECRET is not set — /api/lead-debug is UNPROTECTED. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+    )
+
 logger.info("SF_OID configured: %s", bool(cfg.SF_OID))
 logger.info("SF_DEBUG_EMAIL: %s", cfg.SF_DEBUG_EMAIL or "NOT SET")
+logger.info("LEADS_DIR: %s", cfg.LEADS_DIR)
 
 
 # ─────────────────────────────────────────────
-#  FLASK APP + CORS + SECURITY HEADERS
+#  FLASK APP
 # ─────────────────────────────────────────────
 
 app = Flask(__name__)
@@ -97,18 +142,24 @@ CORS(
     app,
     origins=_allowed_origins or "*",
     methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-Request-ID"],
     max_age=600,
 )
 
 
+@app.before_request
+def assign_request_id():
+    rid = request.headers.get("X-Request-ID") or str(uuid.uuid4())[:8]
+    g.request_id = rid
+
+
 @app.after_request
 def apply_security_headers(response):
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "geolocation=()"
-    # Tight CSP — adjust if you add CDN resources
+    response.headers["X-Content-Type-Options"]  = "nosniff"
+    response.headers["X-Frame-Options"]         = "DENY"
+    response.headers["Referrer-Policy"]         = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"]      = "geolocation=()"
+    response.headers["X-Request-ID"]            = g.get("request_id", "-")
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self' https://api.mqcdn.com; "
@@ -121,63 +172,120 @@ def apply_security_headers(response):
 
 
 # ─────────────────────────────────────────────
-#  IN-PROCESS RATE LIMITER
+#  STRUCTURED ERROR HELPER
+# ─────────────────────────────────────────────
+
+def _error(message: str, status: int, code: str = "") -> tuple:
+    return jsonify({
+        "error":      message,
+        "code":       code or f"E{status}",
+        "request_id": g.get("request_id", "-"),
+    }), status
+
+
+# ─────────────────────────────────────────────
+#  INPUT SANITISATION
+# ─────────────────────────────────────────────
+
+_TAG_RE  = re.compile(r"<[^>]+>")
+_CTRL_RE = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def _sanitise(value: str, max_len: int = 500) -> str:
+    """Strip HTML tags, control characters, decode HTML entities, truncate."""
+    if not isinstance(value, str):
+        value = str(value)
+    value = _TAG_RE.sub("", value)
+    value = html.unescape(value)
+    value = _CTRL_RE.sub("", value)
+    return value.strip()[:max_len]
+
+
+# ─────────────────────────────────────────────
+#  RATE LIMITER
 # ─────────────────────────────────────────────
 
 class RateLimiter:
-    """Sliding-window rate limiter keyed by (IP, endpoint)."""
+    """
+    Sliding-window rate limiter keyed by (IP, endpoint).
+    In-process only — works correctly with WEB_CONCURRENCY=1.
+    For multi-worker setups, replace with Redis-backed limiting.
+    """
 
     def __init__(self):
         self._store: dict[tuple, list[float]] = {}
         self._lock = threading.Lock()
 
     def is_allowed(self, key: tuple, limit: int, window: int) -> bool:
-        now = time.time()
+        now    = time.time()
         cutoff = now - window
         with self._lock:
-            hits = self._store.get(key, [])
-            hits = [t for t in hits if t > cutoff]
+            hits = [t for t in self._store.get(key, []) if t > cutoff]
             if len(hits) >= limit:
                 return False
             hits.append(now)
             self._store[key] = hits
             return True
 
+    def purge_old(self):
+        now = time.time()
+        cutoff = now - 300
+        with self._lock:
+            self._store = {
+                k: [t for t in v if t > cutoff]
+                for k, v in self._store.items()
+                if any(t > cutoff for t in v)
+            }
+
 
 _rate_limiter = RateLimiter()
 
 
-def rate_limit(limit: int, window: int = cfg.RATE_LIMIT_WINDOW):
-    """Decorator factory — applies per-IP rate limiting to a route."""
+def _run_rl_purge():
+    while True:
+        time.sleep(300)
+        try:
+            _rate_limiter.purge_old()
+        except Exception as e:
+            logger.warning("Rate limiter purge failed: %s", e)
+
+
+threading.Thread(target=_run_rl_purge, daemon=True, name="rl-purge").start()
+
+
+def rate_limit(limit: int, window: int = None):
+    _window = window or cfg.RATE_LIMIT_WINDOW
+
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+            ip  = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
             key = (ip, fn.__name__)
-            if not _rate_limiter.is_allowed(key, limit, window):
-                return jsonify({"error": "Too many requests. Please slow down."}), 429
+            if not _rate_limiter.is_allowed(key, limit, _window):
+                logger.warning("Rate limit exceeded | ip=%s endpoint=%s", ip, fn.__name__)
+                return _error("Too many requests. Please slow down.", 429, "RATE_LIMITED")
             return fn(*args, **kwargs)
         return wrapper
     return decorator
 
 
 # ─────────────────────────────────────────────
-#  SHARED HTTP SESSION  (connection pooling)
+#  SHARED HTTP SESSION
 # ─────────────────────────────────────────────
 
 _http = requests.Session()
-_http.headers.update({"User-Agent": "PhysicianLocator/1.0"})
+_http.headers.update({"User-Agent": "PhysicianLocator/2.0"})
 
 
 # ─────────────────────────────────────────────
-#  LRU CACHE  (bounded, thread-safe)
+#  LRU CACHE
 # ─────────────────────────────────────────────
 
 class LRUCache:
     def __init__(self, max_size: int):
         self._cache: OrderedDict = OrderedDict()
-        self._max = max_size
-        self._lock = threading.Lock()
+        self._max   = max_size
+        self._lock  = threading.Lock()
 
     def get(self, key):
         with self._lock:
@@ -203,18 +311,15 @@ _addr_cache = LRUCache(cfg.GEOCODE_CACHE_SIZE)
 # ─────────────────────────────────────────────
 
 GEONAMES_ZIP_URL = "https://download.geonames.org/export/zip/US.zip"
-_zip_db: dict[str, tuple[float, float]] = {}
-_zip_db_ready = threading.Event()   # use Event instead of bool flag
-_zip_db_lock  = threading.Lock()
-
-# Spatial index: bucket ZIPs by 1-degree lat/lng cell for fast radius lookups
-_zip_index: dict[tuple[int, int], list[tuple[float, float, str]]] = {}
+_zip_db:        dict[str, tuple[float, float]] = {}
+_zip_db_ready   = threading.Event()
+_zip_db_lock    = threading.Lock()
+_zip_index:     dict[tuple[int, int], list] = {}
 _zip_index_lock = threading.Lock()
 
 
-def _build_spatial_index(db: dict[str, tuple[float, float]]):
-    """Group ZIP centroids into 1°×1° grid cells for O(1) candidate lookup."""
-    idx: dict[tuple[int, int], list] = {}
+def _build_spatial_index(db: dict):
+    idx: dict = {}
     for z, (lat, lng) in db.items():
         cell = (int(math.floor(lat)), int(math.floor(lng)))
         idx.setdefault(cell, []).append((lat, lng, z))
@@ -225,7 +330,6 @@ def _build_spatial_index(db: dict[str, tuple[float, float]]):
 
 
 def _load_zip_database():
-    global _zip_db
     local_cache = "us_zip_db.json"
 
     def _apply(db: dict):
@@ -236,19 +340,16 @@ def _load_zip_database():
         _zip_db_ready.set()
         logger.info("ZIP db ready: %d entries", len(_zip_db))
 
-    # Try local cache first
     if os.path.exists(local_cache):
         try:
             with open(local_cache) as f:
                 raw = json.load(f)
-            db = {k: (float(v[0]), float(v[1])) for k, v in raw.items()}
-            _apply(db)
+            _apply({k: (float(v[0]), float(v[1])) for k, v in raw.items()})
             logger.info("ZIP db loaded from disk cache")
             return
         except Exception as e:
             logger.warning("ZIP disk cache corrupt, re-downloading: %s", e)
 
-    # Download from GeoNames
     try:
         logger.info("Downloading GeoNames US ZIP database...")
         resp = _http.get(GEONAMES_ZIP_URL, timeout=90)
@@ -260,12 +361,10 @@ def _load_zip_database():
         for line in content.splitlines():
             parts = line.split("\t")
             if len(parts) >= 11:
-                zcode = parts[1].strip()
                 try:
-                    db[zcode] = (float(parts[9]), float(parts[10]))
+                    db[parts[1].strip()] = (float(parts[9]), float(parts[10]))
                 except (ValueError, IndexError):
                     pass
-        # Atomic write — avoid partial file on interruption
         tmp = local_cache + ".tmp"
         with open(tmp, "w") as f:
             json.dump({k: list(v) for k, v in db.items()}, f)
@@ -276,7 +375,6 @@ def _load_zip_database():
         _apply(_ZIP_FALLBACK)
 
 
-# Minimal fallback covering major metros — same as original but stored as constant
 _ZIP_FALLBACK: dict[str, tuple[float, float]] = {
     "10001": (40.7506, -73.9971), "90210": (34.0901, -118.4065),
     "60601": (41.8859, -87.6181), "77030": (29.7079, -95.4010),
@@ -300,7 +398,7 @@ def get_zip_coords(zipcode: str) -> tuple[Optional[float], Optional[float]]:
 
 
 # ─────────────────────────────────────────────
-#  HAVERSINE
+#  HAVERSINE + SPATIAL SEARCH
 # ─────────────────────────────────────────────
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -312,19 +410,13 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def _find_zips_in_radius(center_lat: float, center_lng: float, radius_miles: float) -> list[str]:
-    """
-    Use spatial index (1°×1° grid) for O(cells_checked) instead of O(all_zips).
-    At 10-mile radius, only ~4–9 cells need checking vs 42k entries.
-    """
     deg_lat = radius_miles / 69.0
     deg_lng = radius_miles / (69.0 * math.cos(math.radians(center_lat)) + 1e-9)
-    min_lat = center_lat - deg_lat; max_lat = center_lat + deg_lat
-    min_lng = center_lng - deg_lng; max_lng = center_lng + deg_lng
 
-    cell_lat_min = int(math.floor(min_lat))
-    cell_lat_max = int(math.floor(max_lat))
-    cell_lng_min = int(math.floor(min_lng))
-    cell_lng_max = int(math.floor(max_lng))
+    cell_lat_min = int(math.floor(center_lat - deg_lat))
+    cell_lat_max = int(math.floor(center_lat + deg_lat))
+    cell_lng_min = int(math.floor(center_lng - deg_lng))
+    cell_lng_max = int(math.floor(center_lng + deg_lng))
 
     result: list[tuple[float, str]] = []
     with _zip_index_lock:
@@ -335,7 +427,7 @@ def _find_zips_in_radius(center_lat: float, center_lng: float, radius_miles: flo
                     if d <= radius_miles:
                         result.append((d, z))
 
-    # Fallback to linear scan if index not ready
+    # Fallback to linear scan if index not yet built
     if not result and not _zip_index:
         with _zip_db_lock:
             for z, (zlat, zlng) in _zip_db.items():
@@ -354,9 +446,9 @@ def _find_zips_in_radius(center_lat: float, center_lng: float, radius_miles: flo
 NUCC_CSV_URL = "https://www.nucc.org/images/stories/CSV/nucc_taxonomy_250.csv"
 
 _taxonomy_entries: list[dict] = []
-_taxonomy_loaded = False
-_taxonomy_source = "none"
-_taxonomy_lock   = threading.Lock()
+_taxonomy_loaded  = False
+_taxonomy_source  = "none"
+_taxonomy_lock    = threading.Lock()
 
 _SEED_TAXONOMY = [
     ("Allopathic & Osteopathic Physicians", "Addiction Medicine"),
@@ -465,7 +557,6 @@ def _load_taxonomy_background():
         _taxonomy_loaded = True
         _taxonomy_source = "seed"
     logger.info("Taxonomy seed ready: %d entries", len(seed))
-
     try:
         resp = _http.get(NUCC_CSV_URL, timeout=20)
         resp.raise_for_status()
@@ -496,7 +587,7 @@ def _taxonomy_search(q: str, limit: int = 12) -> list[dict]:
     with _taxonomy_lock:
         entries = list(_taxonomy_entries)
     scored: list[tuple[int, str, str]] = []
-    seen: set[str] = set()
+    seen:   set[str] = set()
     for e in entries:
         st = e["search_text"]
         d  = e["display"]
@@ -517,15 +608,13 @@ def _taxonomy_search(q: str, limit: int = 12) -> list[dict]:
 
 
 # ─────────────────────────────────────────────
-#  INPUT VALIDATION HELPERS
+#  INPUT VALIDATION
 # ─────────────────────────────────────────────
 
 def _validate_lat_lng(lat, lng) -> tuple[float, float]:
-    """Raise ValueError if coordinates are out of US bounds."""
     lat, lng = float(lat), float(lng)
     if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
         raise ValueError("Coordinates out of range")
-    # Loose US bounding box
     if not (18.0 <= lat <= 72.0) or not (-180.0 <= lng <= -65.0):
         raise ValueError("Coordinates outside the United States")
     return lat, lng
@@ -545,11 +634,18 @@ def _validate_descriptions(raw: str, single: str) -> list[str]:
             parsed = json.loads(raw)
             if not isinstance(parsed, list):
                 raise ValueError("descriptions must be a JSON array")
-            descriptions = [str(d).strip()[:cfg.MAX_DESC_LEN] for d in parsed if str(d).strip()]
+            descriptions = [
+                _sanitise(str(d), cfg.MAX_DESC_LEN)
+                for d in parsed
+                if _sanitise(str(d), cfg.MAX_DESC_LEN)
+            ]
         except json.JSONDecodeError:
-            descriptions = [raw.strip()[:cfg.MAX_DESC_LEN]] if raw.strip() else []
+            v = _sanitise(raw, cfg.MAX_DESC_LEN)
+            descriptions = [v] if v else []
     elif single:
-        descriptions = [single.strip()[:cfg.MAX_DESC_LEN]]
+        v = _sanitise(single, cfg.MAX_DESC_LEN)
+        if v:
+            descriptions = [v]
     return descriptions[:cfg.MAX_DESC_COUNT]
 
 
@@ -584,7 +680,6 @@ def _nppes_fetch(params: dict) -> tuple[list, int]:
 
 
 def _nppes_fetch_with_retry(params: dict, retries: int = 2) -> tuple[list, int]:
-    """Retry on transient network errors with exponential back-off."""
     delay = 0.5
     for attempt in range(retries + 1):
         rows, total = _nppes_fetch(params)
@@ -609,10 +704,10 @@ def _parse_physician(result: dict) -> Optional[dict]:
         taxonomies[0] if taxonomies else {},
     )
 
-    first = str(basic.get("first_name") or "")
-    last  = str(basic.get("last_name")  or "")
-    cred  = str(basic.get("credential") or "")
-    name  = f"{first} {last}".strip() or "Unknown Provider"
+    first   = str(basic.get("first_name") or "")
+    last    = str(basic.get("last_name")  or "")
+    cred    = str(basic.get("credential") or "")
+    name    = f"{first} {last}".strip() or "Unknown Provider"
     if cred:
         name += f", {cred}"
 
@@ -702,7 +797,7 @@ def _apply_coord_jitter(physicians: list[dict]):
         lat, lng = p.get("lat"), p.get("lng")
         if lat is None or lng is None:
             continue
-        key = (round(lat, 6), round(lng, 6))
+        key   = (round(lat, 6), round(lng, 6))
         count = seen.get(key, 0)
         if count > 0:
             angle  = (count * 137.5) % 360
@@ -718,85 +813,108 @@ def _apply_coord_jitter(physicians: list[dict]):
 
 @app.route("/health")
 def health():
+    zip_ready = _zip_db_ready.is_set()
     return jsonify({
-        "status":       "ok",
-        "zip_db_ready": _zip_db_ready.is_set(),
-        "zip_db_count": len(_zip_db),
-        "tax_loaded":   _taxonomy_loaded,
-        "tax_count":    len(_taxonomy_entries),
-        "tax_source":   _taxonomy_source,
-    })
+        "status":           "ok" if zip_ready else "degraded",
+        "zip_db_ready":     zip_ready,
+        "zip_db_count":     len(_zip_db),
+        "tax_loaded":       _taxonomy_loaded,
+        "tax_count":        len(_taxonomy_entries),
+        "tax_source":       _taxonomy_source,
+        "missing_env_vars": _MISSING_ENV,
+    }), 200 if zip_ready else 503
 
 
 @app.route("/api/lead-debug", methods=["POST"])
 def lead_debug():
     """
-    Test endpoint — sends a dummy lead through the full pipeline
-    and returns a JSON report of what happened.
-    POST /api/lead-debug   (no body needed)
+    Fires a dummy lead through the full pipeline and returns a JSON report.
+    Requires X-Debug-Secret header matching the DEBUG_SECRET env var.
+
+    Usage:
+        curl -X POST https://your-api.onrender.com/api/lead-debug \
+             -H "X-Debug-Secret: your_secret_value"
     """
-    dummy_lead = {
-        "id":             "debug_test_" + datetime.utcnow().strftime("%Y%m%d%H%M%S"),
+    if cfg.DEBUG_SECRET:
+        provided      = request.headers.get("X-Debug-Secret", "")
+        expected_hash = hashlib.sha256(cfg.DEBUG_SECRET.encode()).digest()
+        provided_hash = hashlib.sha256(provided.encode()).digest()
+        if expected_hash != provided_hash:
+            logger.warning(
+                "lead-debug: bad secret | ip=%s",
+                request.headers.get("X-Forwarded-For", request.remote_addr),
+            )
+            return _error("Forbidden", 403, "FORBIDDEN")
+    else:
+        logger.warning("lead-debug called — DEBUG_SECRET not set, allowing (insecure)")
+
+    dummy = {
+        "id":             "debug_" + datetime.utcnow().strftime("%Y%m%d%H%M%S"),
         "first_name":     "Debug",
         "last_name":      "Test",
         "email":          cfg.SF_DEBUG_EMAIL or "test@test.com",
         "phone":          "5550000000",
         "company":        "Aquarient Test",
         "title":          "Debug",
-        "search_context": {"address": "Test City, CA", "descriptions": ["Cardiology"],
-                           "radius": "10", "total_results": 0},
+        "search_context": {
+            "address": "Test City, CA",
+            "descriptions": ["Cardiology"],
+            "radius": "10",
+            "total_results": 0,
+        },
         "created_at":     datetime.utcnow().isoformat(),
         "source":         "PhysicianLocator-DEBUG",
         "status":         "Test",
     }
 
-    sf_ok, sf_status, sf_snippet, sf_error   = _push_to_salesforce(dummy_lead)
-    file_ok, file_path, file_error           = _save_lead_to_file(dummy_lead)
+    sf_ok,   sf_status, sf_snippet, sf_error  = _push_to_salesforce(dummy)
+    file_ok, file_path, file_error            = _save_lead_to_file(dummy)
 
-    # Also fire the debug email
+    email_sent = False
     try:
         subject, html_body = _build_lead_email(
-            dummy_lead, sf_ok, sf_status, sf_snippet, sf_error, file_ok, file_path, file_error
+            dummy, sf_ok, sf_status, sf_snippet, sf_error, file_ok, file_path, file_error
         )
         email_sent = _send_debug_email(subject, html_body)
     except Exception as e:
-        email_sent = False
         logger.error("Debug email failed: %s", e)
 
-    report = {
-        "lead_id":           dummy_lead["id"],
+    return jsonify({
+        "lead_id": dummy["id"],
         "salesforce": {
-            "success":       sf_ok,
-            "http_status":   sf_status,
-            "oid_configured": bool(cfg.SF_OID),
-            "oid_value":     cfg.SF_OID[:8] + "..." if cfg.SF_OID else "NOT SET",
-            "debug_email":   cfg.SF_DEBUG_EMAIL or "NOT SET",
-            "response_snippet": sf_snippet[:300] if sf_snippet else "",
-            "error":         sf_error,
+            "success":          sf_ok,
+            "http_status":      sf_status,
+            "oid_configured":   bool(cfg.SF_OID),
+            "oid_preview":      cfg.SF_OID[:8] + "..." if cfg.SF_OID else "NOT SET",
+            "debug_email":      cfg.SF_DEBUG_EMAIL or "NOT SET",
+            "response_snippet": (sf_snippet or "")[:300],
+            "error":            sf_error,
         },
         "file_backup": {
-            "success":   file_ok,
-            "path":      file_path,
-            "error":     file_error,
+            "success": file_ok,
+            "path":    file_path,
+            "error":   file_error,
         },
-        "email_notification": {
-            "sent":          email_sent,
-            "smtp_host":     email_cfg.SMTP_HOST or "NOT SET",
-            "smtp_user":     email_cfg.SMTP_USER or "NOT SET",
-            "notify_email":  email_cfg.NOTIFY_EMAIL or "NOT SET",
+        "email": {
+            "sent":         email_sent,
+            "smtp_host":    email_cfg.SMTP_HOST    or "NOT SET",
+            "notify_email": email_cfg.NOTIFY_EMAIL or "NOT SET",
         },
-        "env_vars": {
-            "SF_OID":        "SET" if cfg.SF_OID else "MISSING",
-            "SF_RET_URL":    "SET" if cfg.SF_RET_URL else "MISSING",
-            "SF_DEBUG_EMAIL":"SET" if cfg.SF_DEBUG_EMAIL else "MISSING",
-            "SMTP_HOST":     "SET" if email_cfg.SMTP_HOST else "MISSING",
-            "SMTP_USER":     "SET" if email_cfg.SMTP_USER else "MISSING",
-            "SMTP_PASS":     "SET" if email_cfg.SMTP_PASS else "MISSING",
-            "NOTIFY_EMAIL":  "SET" if email_cfg.NOTIFY_EMAIL else "MISSING",
-        }
-    }
-    logger.info("Lead debug test complete: SF=%s file=%s email=%s", sf_ok, file_ok, email_sent)
-    return jsonify(report)
+        "env_status": {
+            "MAPQUEST_API_KEY":  "SET" if cfg.MAPQUEST_API_KEY else "MISSING",
+            "GEOAPIFY_API_KEY":  "SET" if cfg.GEOAPIFY_API_KEY else "MISSING",
+            "SF_OID":            "SET" if cfg.SF_OID            else "MISSING",
+            "SF_RET_URL":        "SET" if cfg.SF_RET_URL         else "MISSING",
+            "SF_DEBUG_EMAIL":    "SET" if cfg.SF_DEBUG_EMAIL     else "MISSING",
+            "FRONTEND_URL":      "SET" if cfg.FRONTEND_URL       else "MISSING",
+            "DEBUG_SECRET":      "SET" if cfg.DEBUG_SECRET       else "MISSING — endpoint unprotected",
+            "SMTP_HOST":         "SET" if email_cfg.SMTP_HOST    else "MISSING",
+            "SMTP_USER":         "SET" if email_cfg.SMTP_USER    else "MISSING",
+            "SMTP_PASS":         "SET" if email_cfg.SMTP_PASS    else "MISSING",
+            "NOTIFY_EMAIL":      "SET" if email_cfg.NOTIFY_EMAIL else "MISSING",
+            "LEADS_DIR":         cfg.LEADS_DIR,
+        },
+    })
 
 
 @app.route("/api/autocomplete")
@@ -807,7 +925,7 @@ def autocomplete():
     if not text or len(text) < 2:
         return jsonify({"features": []})
     if not cfg.GEOAPIFY_API_KEY:
-        return jsonify({"error": "Geocoding service not configured", "features": []}), 503
+        return _error("Geocoding service not configured", 503, "GEOCODE_UNCONFIGURED")
     try:
         resp = _http.get(
             "https://api.geoapify.com/v1/geocode/autocomplete",
@@ -819,10 +937,10 @@ def autocomplete():
         resp.raise_for_status()
         return jsonify(resp.json())
     except requests.Timeout:
-        return jsonify({"error": "Geocoding service timed out", "features": []}), 504
+        return _error("Geocoding service timed out", 504, "GEOCODE_TIMEOUT")
     except Exception as e:
         logger.error("Autocomplete error: %s", e)
-        return jsonify({"error": "Autocomplete unavailable", "features": []}), 502
+        return _error("Autocomplete unavailable", 502, "GEOCODE_ERROR")
 
 
 @app.route("/api/geocode")
@@ -830,9 +948,9 @@ def autocomplete():
 def geocode():
     address = (request.args.get("address") or "").strip()
     if not address:
-        return jsonify({"error": "Address is required"}), 400
+        return _error("Address is required", 400, "MISSING_ADDRESS")
     if not cfg.GEOAPIFY_API_KEY:
-        return jsonify({"error": "Geocoding service not configured"}), 503
+        return _error("Geocoding service not configured", 503, "GEOCODE_UNCONFIGURED")
     try:
         resp = _http.get(
             "https://api.geoapify.com/v1/geocode/search",
@@ -843,7 +961,7 @@ def geocode():
         resp.raise_for_status()
         features = resp.json().get("features", [])
         if not features:
-            return jsonify({"error": "Address not found in the US"}), 404
+            return _error("Address not found in the US", 404, "ADDRESS_NOT_FOUND")
         coords = features[0]["geometry"]["coordinates"]
         props  = features[0].get("properties", {})
         return jsonify({
@@ -855,18 +973,21 @@ def geocode():
             "postcode":  str(props.get("postcode") or "")[:5],
         })
     except requests.Timeout:
-        return jsonify({"error": "Geocoding service timed out"}), 504
+        return _error("Geocoding service timed out", 504, "GEOCODE_TIMEOUT")
     except Exception as e:
         logger.error("Geocode error: %s", e)
-        return jsonify({"error": "Geocoding failed"}), 502
+        return _error("Geocoding failed", 502, "GEOCODE_ERROR")
 
 
 @app.route("/api/taxonomy-search")
 @rate_limit(limit=cfg.RATE_LIMIT_AC)
 def taxonomy_search_route():
     q = (request.args.get("q") or "").strip()[:100]
-    results = _taxonomy_search(q, limit=12)
-    return jsonify({"results": results, "loaded": _taxonomy_loaded, "source": _taxonomy_source})
+    return jsonify({
+        "results": _taxonomy_search(q, limit=12),
+        "loaded":  _taxonomy_loaded,
+        "source":  _taxonomy_source,
+    })
 
 
 @app.route("/api/taxonomy-status")
@@ -883,33 +1004,30 @@ def taxonomy_status():
 @app.route("/api/search")
 @rate_limit(limit=cfg.RATE_LIMIT_SEARCH)
 def search_physicians():
-    # ── Validate inputs ──────────────────────────────────────
     try:
         lat, lng = _validate_lat_lng(
             request.args.get("lat"), request.args.get("lng")
         )
     except (TypeError, ValueError) as e:
-        return jsonify({"error": f"Invalid coordinates: {e}"}), 400
+        return _error(f"Invalid coordinates: {e}", 400, "INVALID_COORDS")
 
     try:
         radius = _validate_radius(request.args.get("radius", 10))
     except (TypeError, ValueError) as e:
-        return jsonify({"error": f"Invalid radius: {e}"}), 400
+        return _error(f"Invalid radius: {e}", 400, "INVALID_RADIUS")
 
-    taxonomy_code = (request.args.get("taxonomy_code") or "").strip()[:50]
+    taxonomy_code = _sanitise(request.args.get("taxonomy_code") or "", 50)
     descriptions  = _validate_descriptions(
         request.args.get("descriptions", ""),
         request.args.get("description",  ""),
     )
-    search_city   = (request.args.get("city",  "") or "").strip()[:80]
-    search_state  = (request.args.get("state", "") or "").strip()[:2].upper()
+    search_city  = _sanitise(request.args.get("city",  "") or "", 80)
+    search_state = _sanitise(request.args.get("state", "") or "", 2).upper()
 
-    # Wait up to 3s for ZIP DB to be ready before proceeding
     if not _zip_db_ready.wait(timeout=3.0):
         logger.warning("ZIP DB not ready after 3s — proceeding with partial data")
 
     try:
-        # ── Build taxonomy query sets ─────────────────────────
         tax_param_sets: list[dict] = []
         if taxonomy_code:
             tax_param_sets = [{"taxonomy_description": taxonomy_code}]
@@ -922,14 +1040,14 @@ def search_physicians():
         else:
             tax_param_sets = [{}]
 
-        logger.info("Running %d taxonomy queries for lat=%.4f lng=%.4f radius=%.0f",
+        logger.info("Running %d taxonomy queries | lat=%.4f lng=%.4f radius=%.0f",
                     len(tax_param_sets), lat, lng, radius)
 
         zips_in_radius = _find_zips_in_radius(lat, lng, radius)
         logger.info("ZIPs in radius: %d", len(zips_in_radius))
 
         seen_npis: set[str] = set()
-        all_raw:  list[dict] = []
+        all_raw:   list[dict] = []
 
         def add(rows: list[dict]):
             for r in rows:
@@ -938,7 +1056,6 @@ def search_physicians():
                     seen_npis.add(npi)
                     all_raw.append(r)
 
-        # ZIP-level queries (capped)
         for tax_params in tax_param_sets:
             for z in zips_in_radius[:cfg.MAX_ZIP_QUERIES]:
                 rows, _ = _nppes_fetch_with_retry({"postal_code": z, **tax_params})
@@ -949,7 +1066,6 @@ def search_physicians():
                 )
                 add(rows)
 
-        # State-level fallback only if nothing found
         if not all_raw and search_state:
             logger.info("No ZIP/city results — state fallback")
             for tax_params in tax_param_sets:
@@ -958,7 +1074,6 @@ def search_physicians():
 
         logger.info("NPPES unique records: %d", len(all_raw))
 
-        # ── Parse ────────────────────────────────────────────
         physicians: list[dict] = []
         for raw in all_raw:
             try:
@@ -968,12 +1083,10 @@ def search_physicians():
             except Exception:
                 logger.debug("Parse error: %s", traceback.format_exc())
 
-        # ── Assign ZIP centroids ─────────────────────────────
         for p in physicians:
             if p.get("zip"):
                 p["lat"], p["lng"] = get_zip_coords(p["zip"])
 
-        # ── Filter to radius ─────────────────────────────────
         in_radius: list[dict] = []
         for p in physicians:
             if p.get("lat") and p.get("lng"):
@@ -984,7 +1097,6 @@ def search_physicians():
 
         in_radius.sort(key=lambda x: x.get("distance_miles", 9999))
 
-        # Append providers with no coords at the end (no distance shown)
         for p in physicians:
             if not p.get("lat"):
                 p["distance_miles"] = None
@@ -993,7 +1105,6 @@ def search_physicians():
         total = len(in_radius)
         shown = in_radius[:cfg.MAX_DISPLAY]
 
-        # ── Precise geocoding for displayed results ───────────
         _geocode_batch_for_display(shown)
         _apply_coord_jitter(shown)
 
@@ -1002,7 +1113,7 @@ def search_physicians():
 
     except Exception:
         logger.error("Search error:\n%s", traceback.format_exc())
-        return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
+        return _error("An unexpected error occurred. Please try again.", 500, "SEARCH_ERROR")
 
 
 @app.route("/api/leads", methods=["POST"])
@@ -1010,50 +1121,44 @@ def search_physicians():
 def capture_lead():
     data = request.get_json(silent=True)
     if not data:
-        return jsonify({"error": "JSON body required"}), 400
+        return _error("JSON body required", 400, "BAD_REQUEST")
 
-    # Validate required fields
     for field in ("first_name", "last_name", "email"):
         if not (data.get(field) or "").strip():
-            return jsonify({"error": f"'{field}' is required"}), 400
+            return _error(f"'{field}' is required", 400, "MISSING_FIELD")
 
-    email = (data.get("email") or "").strip().lower()
+    email = _sanitise(data.get("email") or "").lower()
     if "@" not in email or len(email) > 254:
-        return jsonify({"error": "A valid email address is required"}), 400
+        return _error("A valid email address is required", 400, "INVALID_EMAIL")
 
     lead = {
         "id":             f"lead_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}",
-        "first_name":     str(data.get("first_name",  ""))[:80].strip(),
-        "last_name":      str(data.get("last_name",   ""))[:80].strip(),
+        "first_name":     _sanitise(data.get("first_name",  ""), 80),
+        "last_name":      _sanitise(data.get("last_name",   ""), 80),
         "email":          email,
-        "phone":          str(data.get("phone",       ""))[:30].strip(),
-        "company":        str(data.get("company",     ""))[:120].strip(),
-        "title":          str(data.get("title",       ""))[:80].strip(),
+        "phone":          _sanitise(data.get("phone",       ""), 30),
+        "company":        _sanitise(data.get("company",     ""), 120),
+        "title":          _sanitise(data.get("title",       ""), 80),
         "search_context": data.get("search_context") if isinstance(data.get("search_context"), dict) else {},
         "created_at":     datetime.utcnow().isoformat(),
         "source":         "PhysicianLocator",
         "status":         "New",
     }
 
-    # ── Push to Salesforce ──────────────────────────────────
-    sf_ok, sf_status, sf_snippet, sf_error = _push_to_salesforce(lead)
+    sf_ok,   sf_status, sf_snippet, sf_error  = _push_to_salesforce(lead)
+    file_ok, file_path, file_error            = _save_lead_to_file(lead)
 
-    # ── Save to local file backup ────────────────────────────
-    file_ok, file_path, file_error = _save_lead_to_file(lead)
-
-    # ── Send debug/status email notification ─────────────────
     try:
         subject, html_body = _build_lead_email(
-            lead         = lead,
-            sf_ok        = sf_ok,
-            sf_status    = sf_status,
+            lead             = lead,
+            sf_ok            = sf_ok,
+            sf_status        = sf_status,
             sf_response_snippet = sf_snippet,
-            sf_error     = sf_error,
-            file_ok      = file_ok,
-            file_path    = file_path,
-            file_error   = file_error,
+            sf_error         = sf_error,
+            file_ok          = file_ok,
+            file_path        = file_path,
+            file_error       = file_error,
         )
-        # Send in background thread so it doesn't slow down the API response
         threading.Thread(
             target=_send_debug_email,
             args=(subject, html_body),
@@ -1063,33 +1168,24 @@ def capture_lead():
     except Exception as e:
         logger.error("Failed to build/send debug email: %s", e)
 
-    # ── Return response ───────────────────────────────────────
     if not sf_ok and not file_ok:
-        logger.error("Lead LOST — both SF and file failed | email=%s | sf_err=%s | file_err=%s",
-                     email, sf_error, file_error)
-        return jsonify({"error": "Could not save your request. Please try again."}), 500
+        logger.error(
+            "Lead LOST — both SF and file failed | email=%s | sf_err=%s | file_err=%s",
+            email, sf_error, file_error,
+        )
+        return _error("Could not save your request. Please try again.", 500, "LEAD_SAVE_FAILED")
 
     logger.info("Lead captured | id=%s | sf=%s | file=%s | email=%s",
                 lead["id"], sf_ok, file_ok, email)
     return jsonify({
-        "success":  True,
-        "lead_id":  lead["id"],
-        "message":  "Thank you! Our team will contact you shortly.",
+        "success": True,
+        "lead_id": lead["id"],
+        "message": "Thank you! Our team will contact you shortly.",
     })
 
 
 # ─────────────────────────────────────────────
-#  EMAIL NOTIFICATION  (SMTP via env vars)
-# ─────────────────────────────────────────────
-#
-#  Required env vars for email debug notifications:
-#    SMTP_HOST     e.g. smtp.gmail.com
-#    SMTP_PORT     e.g. 587
-#    SMTP_USER     e.g. yourapp@gmail.com
-#    SMTP_PASS     app password (not your login password)
-#    NOTIFY_EMAIL  who receives the debug/status emails
-#
-#  All are optional — if not set, email is skipped silently.
+#  EMAIL NOTIFICATION
 # ─────────────────────────────────────────────
 
 import smtplib
@@ -1104,14 +1200,14 @@ class EmailConfig:
     SMTP_PASS:    str = os.environ.get("SMTP_PASS",    "")
     NOTIFY_EMAIL: str = os.environ.get("NOTIFY_EMAIL", cfg.SF_DEBUG_EMAIL)
 
+
 email_cfg = EmailConfig()
 
 
 def _send_debug_email(subject: str, html_body: str) -> bool:
-    """Send an HTML email via SMTP. Returns True on success, False if skipped/failed."""
     if not all([email_cfg.SMTP_HOST, email_cfg.SMTP_USER,
                 email_cfg.SMTP_PASS, email_cfg.NOTIFY_EMAIL]):
-        logger.debug("Email debug skipped — SMTP not fully configured")
+        logger.debug("Email skipped — SMTP not fully configured")
         return False
     try:
         msg = MIMEMultipart("alternative")
@@ -1119,17 +1215,15 @@ def _send_debug_email(subject: str, html_body: str) -> bool:
         msg["From"]    = f"Physician Locator <{email_cfg.SMTP_USER}>"
         msg["To"]      = email_cfg.NOTIFY_EMAIL
         msg.attach(MIMEText(html_body, "html"))
-
         with smtplib.SMTP(email_cfg.SMTP_HOST, email_cfg.SMTP_PORT, timeout=10) as server:
             server.ehlo()
             server.starttls()
             server.login(email_cfg.SMTP_USER, email_cfg.SMTP_PASS)
             server.sendmail(email_cfg.SMTP_USER, email_cfg.NOTIFY_EMAIL, msg.as_string())
-
-        logger.info("Debug email sent to %s | subject: %s", email_cfg.NOTIFY_EMAIL, subject)
+        logger.info("Email sent to %s | subject: %s", email_cfg.NOTIFY_EMAIL, subject)
         return True
     except Exception as e:
-        logger.error("Debug email failed: %s", e)
+        logger.error("Email failed: %s", e)
         return False
 
 
@@ -1137,105 +1231,80 @@ def _build_lead_email(lead: dict, sf_ok: bool, sf_status: int,
                        sf_response_snippet: str, sf_error: str,
                        file_ok: bool, file_path: str,
                        file_error: str) -> tuple[str, str]:
-    """Build subject + HTML body for the lead debug notification email."""
-    ts     = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    name   = f"{lead.get('first_name','')} {lead.get('last_name','')}".strip()
-    email  = lead.get("email", "")
-    ctx    = lead.get("search_context", {})
+    ts    = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    name  = f"{lead.get('first_name','')} {lead.get('last_name','')}".strip()
+    email = lead.get("email", "")
+    ctx   = lead.get("search_context", {})
 
-    # Overall status
+    # html.escape all user-supplied values to prevent HTML injection in email
+    def e(v): return html.escape(str(v or "—"))
+
     if sf_ok and file_ok:
-        status_color = "#16a34a"   # green
-        status_text  = "✅ SUCCESS — Saved to Salesforce + local backup"
+        sc, st = "#16a34a", "✅ SUCCESS — Saved to Salesforce + local backup"
     elif sf_ok:
-        status_color = "#2563eb"   # blue
-        status_text  = "✅ SALESFORCE OK — Local file backup failed"
+        sc, st = "#2563eb", "✅ SALESFORCE OK — Local file backup failed"
     elif file_ok:
-        status_color = "#d97706"   # amber
-        status_text  = "⚠️ SALESFORCE FAILED — Saved to local backup only"
+        sc, st = "#d97706", "⚠️ SALESFORCE FAILED — Saved to local backup only"
     else:
-        status_color = "#dc2626"   # red
-        status_text  = "❌ COMPLETE FAILURE — Both Salesforce and file backup failed"
+        sc, st = "#dc2626", "❌ COMPLETE FAILURE — Both Salesforce and file backup failed"
 
-    sf_row_color  = "#dcfce7" if sf_ok  else "#fee2e2"
-    sf_icon       = "✅" if sf_ok  else "❌"
-    file_row_color = "#dcfce7" if file_ok else "#fee2e2"
-    file_icon      = "✅" if file_ok else "❌"
+    sf_icon       = "✅" if sf_ok   else "❌"
+    sf_color      = "#dcfce7" if sf_ok   else "#fee2e2"
+    file_icon     = "✅" if file_ok else "❌"
+    file_color    = "#dcfce7" if file_ok else "#fee2e2"
+    subject       = f"[PhysicianLocator] Lead {sf_icon} — {e(name)} ({e(email)})"
 
-    subject = f"[PhysicianLocator] Lead {sf_icon} — {name} ({email})"
-
-    html = f"""
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"/></head>
-<body style="font-family:Arial,sans-serif;font-size:14px;color:#1f2937;background:#f9fafb;padding:0;margin:0">
+    body = f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/></head>
+<body style="font-family:Arial,sans-serif;font-size:14px;color:#1f2937;background:#f9fafb;margin:0;padding:0">
 <div style="max-width:640px;margin:24px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
-
-  <!-- Header -->
   <div style="background:#0F2044;padding:24px 28px">
     <div style="font-size:20px;font-weight:700;color:#fff">Physician Locator — Lead Alert</div>
-    <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">{ts}</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">{e(ts)}</div>
   </div>
-
-  <!-- Status Banner -->
-  <div style="background:{status_color};padding:14px 28px">
-    <div style="font-size:15px;font-weight:700;color:#fff">{status_text}</div>
+  <div style="background:{sc};padding:14px 28px">
+    <div style="font-size:15px;font-weight:700;color:#fff">{st}</div>
   </div>
-
-  <!-- Lead Details -->
   <div style="padding:24px 28px">
-    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:12px">Lead Information</div>
+    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:0 0 12px">Lead Information</p>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600;width:140px">Lead ID</td><td style="padding:8px 12px;font-family:monospace;font-size:12px">{lead.get('id','—')}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Name</td><td style="padding:8px 12px">{name or '—'}</td></tr>
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Email</td><td style="padding:8px 12px"><a href="mailto:{email}" style="color:#0F2044">{email}</a></td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Phone</td><td style="padding:8px 12px">{lead.get('phone','—') or '—'}</td></tr>
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Company</td><td style="padding:8px 12px">{lead.get('company','—') or '—'}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Title</td><td style="padding:8px 12px">{lead.get('title','—') or '—'}</td></tr>
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Submitted</td><td style="padding:8px 12px">{lead.get('created_at','—')}</td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600;width:130px">Name</td><td style="padding:8px 12px">{e(name)}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Email</td><td style="padding:8px 12px"><a href="mailto:{e(email)}">{e(email)}</a></td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Phone</td><td style="padding:8px 12px">{e(lead.get('phone'))}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Company</td><td style="padding:8px 12px">{e(lead.get('company'))}</td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Title</td><td style="padding:8px 12px">{e(lead.get('title'))}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Lead ID</td><td style="padding:8px 12px;font-family:monospace;font-size:12px">{e(lead.get('id'))}</td></tr>
     </table>
 
-    <!-- Search Context -->
-    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Search Context</div>
+    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Search Context</p>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600;width:140px">Location</td><td style="padding:8px 12px">{ctx.get('address','—')}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Radius</td><td style="padding:8px 12px">{ctx.get('radius','—')} miles</td></tr>
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Specialties</td><td style="padding:8px 12px">{', '.join(ctx.get('descriptions', [])) or ctx.get('taxonomy_code','—')}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Total Results</td><td style="padding:8px 12px">{ctx.get('total_results','—')}</td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600;width:130px">Location</td><td style="padding:8px 12px">{e(ctx.get('address'))}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Radius</td><td style="padding:8px 12px">{e(ctx.get('radius'))} miles</td></tr>
+      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Specialties</td><td style="padding:8px 12px">{e(', '.join(ctx.get('descriptions', [])) or ctx.get('taxonomy_code', ''))}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:600">Results</td><td style="padding:8px 12px">{e(ctx.get('total_results'))}</td></tr>
     </table>
 
-    <!-- Salesforce Status -->
-    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Salesforce Web-to-Lead Status</div>
-    <div style="background:{sf_row_color};border-radius:8px;padding:16px">
-      <div style="font-size:15px;font-weight:700;margin-bottom:8px">{sf_icon} {'SUCCESS' if sf_ok else 'FAILED'}</div>
-      <div style="font-size:13px;color:#374151"><b>HTTP Status:</b> {sf_status if sf_status else 'N/A'}</div>
-      {'<div style="font-size:13px;color:#374151;margin-top:4px"><b>SF OID used:</b> ' + cfg.SF_OID + '</div>' if cfg.SF_OID else '<div style="font-size:13px;color:#dc2626;font-weight:600;margin-top:4px">⚠️ SF_OID env var is NOT SET</div>'}
-      {'<div style="font-size:13px;color:#374151;margin-top:4px;word-break:break-all"><b>SF Response (first 300 chars):</b><br><code style=\'font-size:11px\'>' + sf_response_snippet[:300] + '</code></div>' if sf_response_snippet else ''}
-      {'<div style="font-size:13px;color:#dc2626;margin-top:6px"><b>Error:</b> ' + sf_error + '</div>' if sf_error else ''}
+    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Salesforce Status</p>
+    <div style="background:{sf_color};border-radius:8px;padding:16px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">{sf_icon} {'SUCCESS' if sf_ok else 'FAILED'} — HTTP {sf_status or 'N/A'}</div>
+      {('<div style="font-size:12px;color:#374151;margin-top:6px;word-break:break-all"><b>Response:</b> <code>' + e(sf_response_snippet[:300]) + '</code></div>') if sf_response_snippet else ''}
+      {('<div style="font-size:13px;color:#dc2626;margin-top:6px"><b>Error:</b> ' + e(sf_error) + '</div>') if sf_error else ''}
     </div>
 
-    <!-- File Backup Status -->
-    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Local File Backup Status</div>
-    <div style="background:{file_row_color};border-radius:8px;padding:16px">
+    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">File Backup Status</p>
+    <div style="background:{file_color};border-radius:8px;padding:16px">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">{file_icon} {'SUCCESS' if file_ok else 'FAILED'}</div>
-      {'<div style="font-size:13px;color:#374151"><b>Saved to:</b> <code>' + file_path + '</code></div>' if file_ok else ''}
-      {'<div style="font-size:13px;color:#dc2626;margin-top:4px"><b>Error:</b> ' + file_error + '</div>' if file_error else ''}
+      {('<div style="font-size:13px;color:#374151"><b>Path:</b> <code>' + e(file_path) + '</code></div>') if file_ok else ''}
+      {('<div style="font-size:13px;color:#dc2626;margin-top:4px"><b>Error:</b> ' + e(file_error) + '</div>') if file_error else ''}
     </div>
-
-    <!-- Troubleshooting -->
-    {'<div style=\"background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:16px;margin-top:20px\"><div style=\"font-weight:700;color:#92400e;margin-bottom:8px\">🔧 Troubleshooting Tips</div><ul style=\"margin:0;padding-left:18px;color:#78350f;font-size:13px\"><li>Verify SF_OID env var is set in Render dashboard</li><li>Check that your SF org Web-to-Lead is enabled: Setup → Web-to-Lead</li><li>Ensure the OID matches your SF org (Settings → Company → Company Information)</li><li>Lead Source \"Web\" must exist in your SF Lead Source picklist</li><li>Try the SF debug=1 mode — SF will email field mapping errors to SF_DEBUG_EMAIL</li></ul></div>' if not sf_ok else ''}
-
   </div>
-
-  <!-- Footer -->
   <div style="background:#f3f4f6;padding:16px 28px;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb">
-    Physician Locator — Aquarient · Automated debug notification · {ts}
+    Physician Locator — Aquarient · {e(ts)}
   </div>
 </div>
-</body>
-</html>
-    """
-    return subject, html
+</body></html>"""
+
+    return subject, body
 
 
 # ─────────────────────────────────────────────
@@ -1243,38 +1312,35 @@ def _build_lead_email(lead: dict, sf_ok: bool, sf_status: int,
 # ─────────────────────────────────────────────
 
 def _push_to_salesforce(lead: dict) -> tuple[bool, int, str, str]:
-    """
-    Push lead to Salesforce Web-to-Lead.
-    Returns (success, http_status, response_snippet, error_message)
-    """
     if not cfg.SF_OID:
-        msg = "SF_OID env var is not set — cannot push to Salesforce"
+        msg = "SF_OID not set — cannot push to Salesforce"
         logger.warning(msg)
         return False, 0, "", msg
 
+    ctx = lead.get("search_context", {})
     sf_payload = {
         "oid":         cfg.SF_OID,
         "retURL":      cfg.SF_RET_URL or "https://www.aquarient.com",
-        "first_name":  lead.get("first_name", ""),
-        "last_name":   lead.get("last_name",  ""),
-        "email":       lead.get("email",       ""),
-        "phone":       lead.get("phone",       ""),
-        "company":     lead.get("company") or "N/A",
-        "title":       lead.get("title",       ""),
-        "lead_source": "Web",
-        "description": "Physician Locator search — "
-                       + f"Location: {lead.get('search_context',{}).get('address','')} | "
-                       + f"Specialty: {', '.join(lead.get('search_context',{}).get('descriptions',[]))} | "
-                       + f"Results: {lead.get('search_context',{}).get('total_results','')}",
+        "first_name":  _sanitise(lead.get("first_name", ""), 80),
+        "last_name":   _sanitise(lead.get("last_name",  ""), 80),
+        "email":       _sanitise(lead.get("email",       ""), 254),
+        "phone":       _sanitise(lead.get("phone",       ""), 40),
+        "company":     _sanitise(lead.get("company") or "N/A", 120),
+        "title":       _sanitise(lead.get("title",       ""), 80),
+        "lead_source": "Physician Locator",
+        "description": _sanitise(
+            "Physician Locator — "
+            f"Location: {ctx.get('address', '')} | "
+            f"Specialty: {', '.join(ctx.get('descriptions', []))} | "
+            f"Results: {ctx.get('total_results', '')}",
+            2000,
+        ),
     }
-    # Always enable SF debug mode so SF emails field errors to SF_DEBUG_EMAIL
     if cfg.SF_DEBUG_EMAIL:
         sf_payload["debug"]      = "1"
         sf_payload["debugEmail"] = cfg.SF_DEBUG_EMAIL
 
-    logger.info("Pushing to SF Web-to-Lead | OID=%s | email=%s", cfg.SF_OID, lead["email"])
-    logger.debug("SF payload: %s", sf_payload)
-
+    logger.info("Pushing to SF | OID=%s | email=%s", cfg.SF_OID, lead["email"])
     try:
         resp = _http.post(
             "https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8",
@@ -1282,44 +1348,53 @@ def _push_to_salesforce(lead: dict) -> tuple[bool, int, str, str]:
             timeout=cfg.REQUEST_TIMEOUT,
             allow_redirects=True,
         )
-        snippet = (resp.text or "")[:500]
-        logger.info("SF HTTP status: %d | email=%s", resp.status_code, lead["email"])
-        logger.debug("SF response body: %.500s", snippet)
-
-        # SF returns 200 even on failure — check body for error indicators
+        snippet    = (resp.text or "")[:500]
         body_lower = snippet.lower()
-        has_error = ("error" in body_lower and "debugEmail" not in snippet
-                     and "successfully" not in body_lower)
+        has_error  = (
+            "error" in body_lower
+            and "debugEmail" not in snippet
+            and "successfully" not in body_lower
+        )
         if has_error:
             logger.warning("SF response suggests failure: %.300s", snippet)
-
         success = resp.status_code in (200, 301, 302) and not has_error
+        logger.info("SF HTTP %d | success=%s | email=%s", resp.status_code, success, lead["email"])
         return success, resp.status_code, snippet, ""
-
     except requests.Timeout:
         msg = f"SF request timed out after {cfg.REQUEST_TIMEOUT}s"
         logger.error(msg)
         return False, 0, "", msg
-    except Exception as e:
-        msg = f"{type(e).__name__}: {e}"
+    except Exception as ex:
+        msg = f"{type(ex).__name__}: {ex}"
         logger.error("SF push exception: %s", msg)
         return False, 0, "", msg
 
 
 def _save_lead_to_file(lead: dict) -> tuple[bool, str, str]:
     """
-    Append lead to NDJSON file.
-    Returns (success, file_path, error_message)
+    Append lead as a JSON line to LEADS_DIR/leads.ndjson.
+
+    IMPORTANT — Render free plan has an ephemeral filesystem.
+    leads.ndjson is wiped on every deploy unless you:
+      • Add a Render Persistent Disk mounted at /var/data (paid)
+      • Set LEADS_DIR=/var/data in the Render dashboard
+
+    Salesforce is the primary store. This file is a safety net only.
     """
-    leads_file = os.path.abspath("leads.ndjson")
+    try:
+        os.makedirs(cfg.LEADS_DIR, exist_ok=True)
+    except Exception:
+        pass
+
+    leads_file = os.path.join(cfg.LEADS_DIR, "leads.ndjson")
     try:
         with open(leads_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(lead) + "\n")
-        logger.info("Lead saved to file: %s | id=%s", leads_file, lead["id"])
+        logger.info("Lead saved | file=%s | id=%s", leads_file, lead["id"])
         return True, leads_file, ""
-    except Exception as e:
-        msg = f"{type(e).__name__}: {e}"
-        logger.error("leads.ndjson write failed: %s", msg)
+    except Exception as ex:
+        msg = f"{type(ex).__name__}: {ex}"
+        logger.error("File write failed: %s", msg)
         return False, leads_file, msg
 
 
@@ -1329,10 +1404,3 @@ def _save_lead_to_file(lead: dict) -> tuple[bool, str, str]:
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=cfg.PORT, debug=False)
-
-# ─────────────────────────────────────────────
-#  GUNICORN CONFIG (used when started via gunicorn cli)
-#  Set timeout high enough for NPPES multi-ZIP queries
-# ─────────────────────────────────────────────
-# Run with: gunicorn app:app --timeout 120 --workers 2 --threads 4
-# Or set env var: GUNICORN_TIMEOUT=120
