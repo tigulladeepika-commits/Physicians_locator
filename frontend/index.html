@@ -37,7 +37,8 @@
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
 
-html,body{font-family:var(--f);color:var(--ink);font-size:15px;line-height:1.6;overflow-x:hidden}
+html,body{font-family:var(--f);color:var(--ink);font-size:15px;line-height:1.6;overflow-x:hidden;-ms-overflow-style:none;scrollbar-width:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}
 body{
   background:linear-gradient(145deg,#E8F4FD 0%,#EDF7F6 35%,#F0F5FF 65%,#E6F3FB 100%);
   position:relative;min-height:100vh;
@@ -123,7 +124,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
 
 /* ══ PHASE 2: RESULTS ════════════════════════════════════════ */
-.phase-results{display:flex;flex-direction:column;align-items:center;padding:0 var(--border);min-height:calc(100vh - var(--hdr));max-height:calc(100vh - var(--hdr));overflow-y:auto;overflow-x:hidden}
+.phase-results{display:none;flex-direction:column;align-items:center;padding:0 var(--border);min-height:calc(100vh - var(--hdr));max-height:calc(100vh - var(--hdr));overflow-y:auto;overflow-x:hidden;-ms-overflow-style:none;scrollbar-width:none}
+.phase-results::-webkit-scrollbar{display:none}
+.phase-results.show{display:flex}
 
 /* ── Search Banner ───────────────────────────────────────── */
 .srch-banner{
@@ -266,8 +269,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   border-radius:0 0 12px 12px;
   box-shadow:0 8px 24px rgba(0,80,150,.12);
   z-index:1000;max-height:300px;overflow-y:auto;display:none;
-  scrollbar-width:thin;scrollbar-color:#D0E8F5 transparent;
+  -ms-overflow-style:none;scrollbar-width:none;
 }
+.ac-list::-webkit-scrollbar,.tax-list::-webkit-scrollbar{display:none}
 .ac-list.open,.tax-list.open{display:block}
 .field:has(.ac-list.open) .inp,
 .field:has(.tax-list.open) .tag-box{
@@ -322,7 +326,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   background:var(--w);border-radius:20px;box-shadow:var(--s3);
   width:100%;max-width:500px;max-height:90vh;overflow-y:auto;
   padding:2.25rem;position:relative;animation:mIn .25s cubic-bezier(.34,1.56,.64,1);
+  -ms-overflow-style:none;scrollbar-width:none;
 }
+.modal::-webkit-scrollbar{display:none}
 @keyframes mIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:none}}
 .mcb{position:absolute;top:1.25rem;right:1.25rem;background:var(--cream);border:1px solid var(--cream3);width:30px;height:30px;border-radius:50%;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink3);transition:var(--tr)}
 .mcb:hover,.mcb:focus-visible{background:var(--cream2);color:var(--ink)}
@@ -363,7 +369,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .toast.error{background:var(--coral)}.toast.success{background:var(--teal)}
 
 /* ── Detail Overlay ──────────────────────────────────────── */
-.detail-overlay{position:fixed;inset:0;z-index:500;background:rgba(10,25,55,.55);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding:0;overflow-y:auto;animation:fadeIn .2s ease}
+.detail-overlay{position:fixed;inset:0;z-index:500;background:rgba(10,25,55,.55);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding:0;overflow-y:auto;animation:fadeIn .2s ease;-ms-overflow-style:none;scrollbar-width:none}
+.detail-overlay::-webkit-scrollbar{display:none}
 .detail-overlay.open{display:flex}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .detail-panel{background:#fff;width:calc(100vw - 96px);max-width:calc(100vw - 96px);min-height:100vh;margin:0 auto;position:relative;animation:slideUp .28s cubic-bezier(.34,1.3,.64,1);box-shadow:-8px 0 60px rgba(0,40,120,.2)}
@@ -788,13 +795,13 @@ function initMap() {
 function showResultsPhase() {
   document.getElementById("phase-search").style.display = "none";
   var results = document.getElementById("phase-results");
-  results.style.display = "flex";
+  results.classList.add("show");
   initMap();
   setTimeout(function() { if (map) map.invalidateSize(); }, 250);
 }
 
 function resetToSearch() {
-  document.getElementById("phase-results").style.display = "none";
+  document.getElementById("phase-results").classList.remove("show");
   document.getElementById("phase-search").style.display = "flex";
   allPhysicians = []; totalFound = 0; shownCount = 0;
   selLat = selLng = null; selCity = selState = "";
@@ -1453,13 +1460,20 @@ function createSalesforceLead(physician) {
   var payload = {
     first_name: firstName,
     last_name: lastName,
+    email: "lead@aquarient.local",
     company: "Individual Physicians",
     phone: physician.phone || "",
-    address: physician.address || "",
-    specialty: (physician.all_taxonomies && physician.all_taxonomies.length > 0) 
-      ? physician.all_taxonomies.map(function(t) { return t.desc; }).join("; ")
-      : (physician.taxonomy_desc || ""),
-    npi: physician.npi || "",
+    title: (physician.all_taxonomies && physician.all_taxonomies.length > 0) 
+      ? physician.all_taxonomies[0].desc
+      : (physician.taxonomy_desc || "Healthcare Provider"),
+    search_context: {
+      npi: physician.npi || "",
+      address: physician.address || "",
+      specialty: (physician.all_taxonomies && physician.all_taxonomies.length > 0) 
+        ? physician.all_taxonomies.map(function(t) { return t.desc; }).join("; ")
+        : (physician.taxonomy_desc || ""),
+      distance_miles: physician.distance_miles || "",
+    }
   };
 
   var btn = document.getElementById("dp-add-lead-btn");
@@ -1467,7 +1481,7 @@ function createSalesforceLead(physician) {
   var originalText = btn.innerHTML;
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10" style="animation:spin 1s linear infinite"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg>Creating...';
 
-  fetchWithTimeout(BACKEND_URL + "/api/salesforce/lead", {
+  fetchWithTimeout(BACKEND_URL + "/api/leads", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -1479,7 +1493,7 @@ function createSalesforceLead(physician) {
     })
     .then(function(data) {
       if (data.success) {
-        showToast("Lead created successfully in Salesforce!", "success");
+        showToast("Lead created successfully!", "success");
         announce("Lead created for " + physician.name);
       } else {
         throw new Error(data.error || "Failed to create lead.");
