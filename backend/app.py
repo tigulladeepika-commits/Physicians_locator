@@ -70,7 +70,7 @@ logger.addFilter(RequestIdFilter())
 
 
 # ─────────────────────────────────────────────
-#  CONFIG  (all values from environment — no hardcoded secrets)
+#  CONFIG
 # ─────────────────────────────────────────────
 
 class Config:
@@ -103,7 +103,6 @@ class Config:
 
 cfg = Config()
 
-# ── Startup checks ────────────────────────────────────────────
 _MISSING_ENV: list[str] = []
 for _key, _label in [
     (cfg.MAPQUEST_API_KEY, "MAPQUEST_API_KEY"),
@@ -192,7 +191,6 @@ _CTRL_RE = re.compile(r"[\x00-\x1f\x7f]")
 
 
 def _sanitise(value: str, max_len: int = 500) -> str:
-    """Strip HTML tags, control characters, decode HTML entities, truncate."""
     if not isinstance(value, str):
         value = str(value)
     value = _TAG_RE.sub("", value)
@@ -206,12 +204,6 @@ def _sanitise(value: str, max_len: int = 500) -> str:
 # ─────────────────────────────────────────────
 
 class RateLimiter:
-    """
-    Sliding-window rate limiter keyed by (IP, endpoint).
-    In-process only — works correctly with WEB_CONCURRENCY=1.
-    For multi-worker setups, replace with Redis-backed limiting.
-    """
-
     def __init__(self):
         self._store: dict[tuple, list[float]] = {}
         self._lock = threading.Lock()
@@ -427,7 +419,6 @@ def _find_zips_in_radius(center_lat: float, center_lng: float, radius_miles: flo
                     if d <= radius_miles:
                         result.append((d, z))
 
-    # Fallback to linear scan if index not yet built
     if not result and not _zip_index:
         with _zip_db_lock:
             for z, (zlat, zlng) in _zip_db.items():
@@ -830,10 +821,6 @@ def lead_debug():
     """
     Fires a dummy lead through the full pipeline and returns a JSON report.
     Requires X-Debug-Secret header matching the DEBUG_SECRET env var.
-
-    Usage:
-        curl -X POST https://your-api.onrender.com/api/lead-debug \
-             -H "X-Debug-Secret: your_secret_value"
     """
     if cfg.DEBUG_SECRET:
         provided      = request.headers.get("X-Debug-Secret", "")
@@ -870,15 +857,6 @@ def lead_debug():
     sf_ok,   sf_status, sf_snippet, sf_error  = _push_to_salesforce(dummy)
     file_ok, file_path, file_error            = _save_lead_to_file(dummy)
 
-    email_sent = False
-    try:
-        subject, html_body = _build_lead_email(
-            dummy, sf_ok, sf_status, sf_snippet, sf_error, file_ok, file_path, file_error
-        )
-        email_sent = _send_debug_email(subject, html_body)
-    except Exception as e:
-        logger.error("Debug email failed: %s", e)
-
     return jsonify({
         "lead_id": dummy["id"],
         "salesforce": {
@@ -895,11 +873,6 @@ def lead_debug():
             "path":    file_path,
             "error":   file_error,
         },
-        "email": {
-            "sent":         email_sent,
-            "smtp_host":    email_cfg.SMTP_HOST    or "NOT SET",
-            "notify_email": email_cfg.NOTIFY_EMAIL or "NOT SET",
-        },
         "env_status": {
             "MAPQUEST_API_KEY":  "SET" if cfg.MAPQUEST_API_KEY else "MISSING",
             "GEOAPIFY_API_KEY":  "SET" if cfg.GEOAPIFY_API_KEY else "MISSING",
@@ -908,10 +881,6 @@ def lead_debug():
             "SF_DEBUG_EMAIL":    "SET" if cfg.SF_DEBUG_EMAIL     else "MISSING",
             "FRONTEND_URL":      "SET" if cfg.FRONTEND_URL       else "MISSING",
             "DEBUG_SECRET":      "SET" if cfg.DEBUG_SECRET       else "MISSING — endpoint unprotected",
-            "SMTP_HOST":         "SET" if email_cfg.SMTP_HOST    else "MISSING",
-            "SMTP_USER":         "SET" if email_cfg.SMTP_USER    else "MISSING",
-            "SMTP_PASS":         "SET" if email_cfg.SMTP_PASS    else "MISSING",
-            "NOTIFY_EMAIL":      "SET" if email_cfg.NOTIFY_EMAIL else "MISSING",
             "LEADS_DIR":         cfg.LEADS_DIR,
         },
     })
@@ -1148,26 +1117,6 @@ def capture_lead():
     sf_ok,   sf_status, sf_snippet, sf_error  = _push_to_salesforce(lead)
     file_ok, file_path, file_error            = _save_lead_to_file(lead)
 
-    try:
-        subject, html_body = _build_lead_email(
-            lead             = lead,
-            sf_ok            = sf_ok,
-            sf_status        = sf_status,
-            sf_response_snippet = sf_snippet,
-            sf_error         = sf_error,
-            file_ok          = file_ok,
-            file_path        = file_path,
-            file_error       = file_error,
-        )
-        threading.Thread(
-            target=_send_debug_email,
-            args=(subject, html_body),
-            daemon=True,
-            name="lead-email-notify",
-        ).start()
-    except Exception as e:
-        logger.error("Failed to build/send debug email: %s", e)
-
     if not sf_ok and not file_ok:
         logger.error(
             "Lead LOST — both SF and file failed | email=%s | sf_err=%s | file_err=%s",
@@ -1182,129 +1131,6 @@ def capture_lead():
         "lead_id": lead["id"],
         "message": "Thank you! Our team will contact you shortly.",
     })
-
-
-# ─────────────────────────────────────────────
-#  EMAIL NOTIFICATION
-# ─────────────────────────────────────────────
-
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
-
-class EmailConfig:
-    SMTP_HOST:    str = os.environ.get("SMTP_HOST",    "")
-    SMTP_PORT:    int = int(os.environ.get("SMTP_PORT", "587"))
-    SMTP_USER:    str = os.environ.get("SMTP_USER",    "")
-    SMTP_PASS:    str = os.environ.get("SMTP_PASS",    "")
-    NOTIFY_EMAIL: str = os.environ.get("NOTIFY_EMAIL", cfg.SF_DEBUG_EMAIL)
-
-
-email_cfg = EmailConfig()
-
-
-def _send_debug_email(subject: str, html_body: str) -> bool:
-    if not all([email_cfg.SMTP_HOST, email_cfg.SMTP_USER,
-                email_cfg.SMTP_PASS, email_cfg.NOTIFY_EMAIL]):
-        logger.debug("Email skipped — SMTP not fully configured")
-        return False
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"]    = f"Physician Locator <{email_cfg.SMTP_USER}>"
-        msg["To"]      = email_cfg.NOTIFY_EMAIL
-        msg.attach(MIMEText(html_body, "html"))
-        with smtplib.SMTP(email_cfg.SMTP_HOST, email_cfg.SMTP_PORT, timeout=10) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(email_cfg.SMTP_USER, email_cfg.SMTP_PASS)
-            server.sendmail(email_cfg.SMTP_USER, email_cfg.NOTIFY_EMAIL, msg.as_string())
-        logger.info("Email sent to %s | subject: %s", email_cfg.NOTIFY_EMAIL, subject)
-        return True
-    except Exception as e:
-        logger.error("Email failed: %s", e)
-        return False
-
-
-def _build_lead_email(lead: dict, sf_ok: bool, sf_status: int,
-                       sf_response_snippet: str, sf_error: str,
-                       file_ok: bool, file_path: str,
-                       file_error: str) -> tuple[str, str]:
-    ts    = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    name  = f"{lead.get('first_name','')} {lead.get('last_name','')}".strip()
-    email = lead.get("email", "")
-    ctx   = lead.get("search_context", {})
-
-    # html.escape all user-supplied values to prevent HTML injection in email
-    def e(v): return html.escape(str(v or "—"))
-
-    if sf_ok and file_ok:
-        sc, st = "#16a34a", "✅ SUCCESS — Saved to Salesforce + local backup"
-    elif sf_ok:
-        sc, st = "#2563eb", "✅ SALESFORCE OK — Local file backup failed"
-    elif file_ok:
-        sc, st = "#d97706", "⚠️ SALESFORCE FAILED — Saved to local backup only"
-    else:
-        sc, st = "#dc2626", "❌ COMPLETE FAILURE — Both Salesforce and file backup failed"
-
-    sf_icon       = "✅" if sf_ok   else "❌"
-    sf_color      = "#dcfce7" if sf_ok   else "#fee2e2"
-    file_icon     = "✅" if file_ok else "❌"
-    file_color    = "#dcfce7" if file_ok else "#fee2e2"
-    subject       = f"[PhysicianLocator] Lead {sf_icon} — {e(name)} ({e(email)})"
-
-    body = f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"/></head>
-<body style="font-family:Arial,sans-serif;font-size:14px;color:#1f2937;background:#f9fafb;margin:0;padding:0">
-<div style="max-width:640px;margin:24px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
-  <div style="background:#0F2044;padding:24px 28px">
-    <div style="font-size:20px;font-weight:700;color:#fff">Physician Locator — Lead Alert</div>
-    <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">{e(ts)}</div>
-  </div>
-  <div style="background:{sc};padding:14px 28px">
-    <div style="font-size:15px;font-weight:700;color:#fff">{st}</div>
-  </div>
-  <div style="padding:24px 28px">
-    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:0 0 12px">Lead Information</p>
-    <table style="width:100%;border-collapse:collapse;font-size:14px">
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600;width:130px">Name</td><td style="padding:8px 12px">{e(name)}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Email</td><td style="padding:8px 12px"><a href="mailto:{e(email)}">{e(email)}</a></td></tr>
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Phone</td><td style="padding:8px 12px">{e(lead.get('phone'))}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Company</td><td style="padding:8px 12px">{e(lead.get('company'))}</td></tr>
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Title</td><td style="padding:8px 12px">{e(lead.get('title'))}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Lead ID</td><td style="padding:8px 12px;font-family:monospace;font-size:12px">{e(lead.get('id'))}</td></tr>
-    </table>
-
-    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Search Context</p>
-    <table style="width:100%;border-collapse:collapse;font-size:14px">
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600;width:130px">Location</td><td style="padding:8px 12px">{e(ctx.get('address'))}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Radius</td><td style="padding:8px 12px">{e(ctx.get('radius'))} miles</td></tr>
-      <tr style="background:#f3f4f6"><td style="padding:8px 12px;font-weight:600">Specialties</td><td style="padding:8px 12px">{e(', '.join(ctx.get('descriptions', [])) or ctx.get('taxonomy_code', ''))}</td></tr>
-      <tr><td style="padding:8px 12px;font-weight:600">Results</td><td style="padding:8px 12px">{e(ctx.get('total_results'))}</td></tr>
-    </table>
-
-    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">Salesforce Status</p>
-    <div style="background:{sf_color};border-radius:8px;padding:16px">
-      <div style="font-size:15px;font-weight:700;margin-bottom:8px">{sf_icon} {'SUCCESS' if sf_ok else 'FAILED'} — HTTP {sf_status or 'N/A'}</div>
-      {('<div style="font-size:12px;color:#374151;margin-top:6px;word-break:break-all"><b>Response:</b> <code>' + e(sf_response_snippet[:300]) + '</code></div>') if sf_response_snippet else ''}
-      {('<div style="font-size:13px;color:#dc2626;margin-top:6px"><b>Error:</b> ' + e(sf_error) + '</div>') if sf_error else ''}
-    </div>
-
-    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:20px 0 12px">File Backup Status</p>
-    <div style="background:{file_color};border-radius:8px;padding:16px">
-      <div style="font-size:15px;font-weight:700;margin-bottom:8px">{file_icon} {'SUCCESS' if file_ok else 'FAILED'}</div>
-      {('<div style="font-size:13px;color:#374151"><b>Path:</b> <code>' + e(file_path) + '</code></div>') if file_ok else ''}
-      {('<div style="font-size:13px;color:#dc2626;margin-top:4px"><b>Error:</b> ' + e(file_error) + '</div>') if file_error else ''}
-    </div>
-  </div>
-  <div style="background:#f3f4f6;padding:16px 28px;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb">
-    Physician Locator — Aquarient · {e(ts)}
-  </div>
-</div>
-</body></html>"""
-
-    return subject, body
 
 
 # ─────────────────────────────────────────────

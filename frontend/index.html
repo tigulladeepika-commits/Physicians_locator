@@ -21,7 +21,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --w:#FFFFFF;--cream:#FAF8F4;--cream2:#F3EFE7;--cream3:#E8E2D8;
-  --ink:#141420;--ink2:#3A3A52;--ink3:#5E5E78; /* raised from #7A7A96 — passes WCAG AA */
+  --ink:#141420;--ink2:#3A3A52;--ink3:#5E5E78;
   --teal:#0C7A7A;--teal2:#0FA8A8;--tg:rgba(12,122,122,.10);--tb:rgba(12,122,122,.22);
   --coral:#D95F4B;--gold:#C4993A;--navy:#0F2044;
   --focus-ring:0 0 0 3px rgba(0,174,239,.5);
@@ -33,7 +33,6 @@
   --hdr:64px;--content:860px;
 }
 
-/* Respect reduced-motion preferences */
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
@@ -63,7 +62,7 @@ body::after{
 }
 .hdr,.phase-search,.phase-results,.sw,.mbg,.toast{position:relative;z-index:1}
 
-/* ── Skip nav (accessibility) ─────────────────────────────── */
+/* ── Skip nav ─────────────────────────────── */
 .skip-nav{
   position:absolute;top:-100%;left:1rem;z-index:9999;
   padding:8px 16px;background:var(--teal);color:#fff;
@@ -95,7 +94,6 @@ body::after{
 
 /* ── Global focus ring ────────────────────────────────────── */
 :focus-visible{outline:2px solid #00AEEF;outline-offset:2px}
-/* inputs handle their own focus ring via border+shadow — no extra outline needed */
 input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box-shadow:none}
 button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
@@ -108,10 +106,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   padding:3rem 3rem 2.5rem;width:100%;max-width:760px;
   border:1px solid rgba(0,174,239,.15);
   position:relative;
-  z-index:10; /* ensure card contents stack above page bg elements */
-  overflow:visible; /* allow dropdowns to extend outside card bounds */
+  z-index:10;
+  overflow:visible;
 }
-/* Shimmer bar clipped to card top edge */
 .search-card::before{clip-path:inset(0 0 0 0 round 28px 28px 0 0)}
 .search-card::before{
   content:"";position:absolute;top:0;left:0;right:0;height:3px;
@@ -145,37 +142,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sb-chip{font-size:.68rem;font-weight:700;color:var(--teal2);background:rgba(15,168,168,.12);border:1px solid rgba(15,168,168,.3);padding:2px 9px;border-radius:100px;white-space:nowrap}
 .sb-divider{width:1px;height:28px;background:rgba(255,255,255,.12);flex-shrink:0}
 .sb-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
-.sb-new-btn,.sb-modify-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-family:var(--f);font-size:.76rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
-.sb-new-btn{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.8)}
+.sb-new-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-family:var(--f);font-size:.76rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.8)}
 .sb-new-btn:hover,.sb-new-btn:focus-visible{background:rgba(255,255,255,.16);color:#fff}
-.sb-modify-btn{background:#E8730A;border:none;color:#fff;box-shadow:0 2px 8px rgba(232,115,10,.35)}
-.sb-modify-btn:hover,.sb-modify-btn:focus-visible{background:#F08020}
-.sb-new-btn svg,.sb-modify-btn svg{width:13px;height:13px}
-
-/* ── Modify Panel ────────────────────────────────────────── */
-.modify-panel{
-  width:100%;max-width:var(--content);display:none;
-  background:var(--navy);border-radius:12px;padding:1.25rem 1.75rem;
-  margin-top:-1rem;margin-bottom:1.5rem;
-  box-shadow:0 8px 32px rgba(15,32,68,.25);border:1px solid rgba(255,255,255,.08);
-}
-.modify-panel.show{display:block}
-.mp-inner{display:grid;grid-template-columns:1fr 140px 1fr auto;gap:.75rem;align-items:end}
-.mp-field{display:flex;flex-direction:column;gap:4px;position:relative}
-.mp-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)}
-.mp-inp{width:100%;padding:9px 12px;font-family:var(--f);font-size:.85rem;color:var(--ink);background:rgba(255,255,255,.92);border:1.5px solid transparent;border-radius:8px;outline:none;transition:border-color .15s;appearance:none}
-.mp-inp:focus{border-color:var(--teal2);background:var(--w);box-shadow:var(--focus-ring)}
-.mp-inp::placeholder{color:var(--ink3)}
-.mp-tag-box{min-height:40px;padding:4px 8px;background:rgba(255,255,255,.92);border:1.5px solid transparent;border-radius:8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;cursor:text;transition:border-color .15s}
-.mp-tag-box:focus-within{border-color:var(--teal2);background:var(--w);box-shadow:var(--focus-ring)}
-.mp-chip{display:inline-flex;align-items:center;gap:4px;background:var(--ink);color:var(--w);font-size:.7rem;font-weight:600;padding:2px 7px 2px 9px;border-radius:100px;white-space:nowrap;animation:chipPop .15s ease}
-@keyframes chipPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
-.mp-chip-x{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:.85rem;padding:0;line-height:1;display:flex;align-items:center}
-.mp-chip-x:hover,.mp-chip-x:focus-visible{color:var(--w)}
-.mp-chip-input{border:none;outline:none;font-family:var(--f);font-size:.82rem;color:var(--ink);background:transparent;min-width:80px;flex:1}
-.mp-chip-input::placeholder{color:var(--ink3)}
-.mp-apply{padding:9px 20px;background:var(--teal2);color:var(--w);border:none;border-radius:8px;font-family:var(--f);font-size:.85rem;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;height:40px}
-.mp-apply:hover,.mp-apply:focus-visible{background:var(--teal)}
+.sb-new-btn svg{width:13px;height:13px}
 
 /* ── Results meta ────────────────────────────────────────── */
 .res-meta{
@@ -195,7 +164,6 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   width:100%;max-width:var(--content);
   display:grid;grid-template-columns:repeat(3,1fr);
   gap:16px;margin-bottom:1rem;align-items:stretch;
-  /* Prevent cards from ever overflowing the container */
   box-sizing:border-box;
 }
 .dc{
@@ -204,13 +172,13 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   box-shadow:0 3px 16px rgba(0,80,150,.06);
   cursor:pointer;transition:box-shadow .2s,border-color .2s,transform .18s;
   display:flex;flex-direction:column;position:relative;overflow:hidden;
-  min-height:120px; /* touch target */
+  min-height:120px;
 }
 .dc::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00AEEF,#0C7A7A);opacity:0;transition:opacity .2s;border-radius:16px 16px 0 0}
 .dc:hover,.dc:focus-visible{box-shadow:0 10px 36px rgba(0,100,180,.15);border-color:rgba(0,174,239,.35);transform:translateY(-4px);outline:none}
 .dc:hover::after,.dc:focus-visible::after{opacity:1}
 .dc-head{padding:1.2rem 1.2rem .8rem;display:flex;align-items:center;gap:12px}
-.dav{width:48px;height:48px;border-radius:13px;flex-shrink:0;background:linear-gradient(135deg,#0F2044 0%,#0076B6 100%);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:1.1rem;font-weight:700;color:#fff;position:relative;overflow:hidden;aria-hidden:"true"}
+.dav{width:48px;height:48px;border-radius:13px;flex-shrink:0;background:linear-gradient(135deg,#0F2044 0%,#0076B6 100%);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:1.1rem;font-weight:700;color:#fff;position:relative;overflow:hidden}
 .dav::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,174,239,.3),transparent)}
 .dc-main{flex:1;min-width:0}
 .dc-name{font-weight:700;font-size:.88rem;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -263,11 +231,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .inp::placeholder{color:var(--ink3)}
 .inp:focus{background:#fff;border-color:#00AEEF;box-shadow:0 0 0 3px rgba(0,174,239,.18)}
 .inp[aria-invalid="true"]{border-color:var(--coral)}
-/* tag-box matches .inp exactly — same height, padding, border, radius */
 .tag-box{min-height:54px;padding:10px 14px;background:#F5FAFF;border:1.5px solid #D0E8F5;border-radius:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;cursor:text;transition:border-color .18s,box-shadow .18s,background .18s}
-/* Only border/bg change on focus — NO extra box-shadow so there's no double ring */
 .tag-box:focus-within{background:#fff;border-color:#00AEEF;box-shadow:0 0 0 3px rgba(0,174,239,.18)}
-/* The inner chip-input must never show its own focus ring */
 .chip-input:focus{outline:none;box-shadow:none}
 .chip{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:var(--w);font-size:.72rem;font-weight:600;padding:3px 8px 3px 10px;border-radius:100px;white-space:nowrap;max-width:220px;animation:chipPop .15s ease}
 .chip span{overflow:hidden;text-overflow:ellipsis}
@@ -290,10 +255,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .btn-s:disabled{background:#D0D0DE;cursor:not-allowed;transform:none;box-shadow:none;color:var(--ink3)}
 .btn-s svg{width:16px;height:16px;flex-shrink:0}
 
-/* ══ DROPDOWNS — identical style for both Location and Specialty ══════════ */
-.ac-list,.tax-list,.mp-ac-list,.mp-tax-list{
+/* ══ DROPDOWNS ══════════════════════════════════════════════ */
+.ac-list,.tax-list{
   position:absolute;
-  /* Attach flush under the input — no gap */
   top:calc(100% + 2px);
   left:0;right:0;
   background:#fff;
@@ -304,36 +268,36 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   z-index:1000;max-height:300px;overflow-y:auto;display:none;
   scrollbar-width:thin;scrollbar-color:#D0E8F5 transparent;
 }
-.ac-list.open,.tax-list.open,.mp-ac-list.open,.mp-tax-list.open{display:block}
-/* When dropdown is open, square off the bottom corners of the input above it */
+.ac-list.open,.tax-list.open{display:block}
 .field:has(.ac-list.open) .inp,
 .field:has(.tax-list.open) .tag-box{
   border-radius:12px 12px 0 0;
   border-bottom-color:#00AEEF;
-  box-shadow:none; /* suppress ring while dropdown is open */
+  box-shadow:none;
 }
-.ac-item,.mp-ac-item{
+.ac-item{
   padding:10px 16px;font-size:.84rem;color:var(--ink2);cursor:pointer;
   border-bottom:1px solid #F0F6FF;display:flex;align-items:flex-start;gap:10px;
   transition:background .08s;
 }
-.ac-item:last-child,.mp-ac-item:last-child{border-bottom:none}
-.ac-item:hover,.ac-item[aria-selected="true"],.mp-ac-item:hover,.mp-ac-item[aria-selected="true"]{background:#F0F8FF}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item[aria-selected="true"]{background:#F0F8FF}
 .ac-ico{color:#0076B6;margin-top:2px;flex-shrink:0}
 .ac-main{font-weight:600;line-height:1.3;color:var(--ink)}
 .ac-sub{font-size:.72rem;color:var(--ink3);margin-top:1px}
-.tax-item,.mp-tax-item{
+.tax-item{
   padding:10px 16px;cursor:pointer;
   border-bottom:1px solid #F0F6FF;transition:background .08s;
 }
-.tax-item:last-child,.mp-tax-item:last-child{border-bottom:none}
-.tax-item:hover,.tax-item[aria-selected="true"],.mp-tax-item:hover,.mp-tax-item[aria-selected="true"]{background:#F0F8FF}
+.tax-item:last-child{border-bottom:none}
+.tax-item:hover,.tax-item[aria-selected="true"]{background:#F0F8FF}
 .tax-n{font-size:.84rem;font-weight:600;color:var(--ink)}
 .tax-c{font-size:.72rem;color:var(--ink3);margin-top:2px}
 .ac-spin{padding:12px 16px;font-size:.8rem;color:var(--ink3);display:flex;align-items:center;gap:8px}
 .ac-spin-d{width:6px;height:6px;border-radius:50%;background:#0076B6;animation:ldot .55s ease infinite}
 .ac-spin-d:nth-child(2){animation-delay:.15s}.ac-spin-d:nth-child(3){animation-delay:.3s}
 @keyframes ldot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+@keyframes chipPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 
 /* ── Map Pins ────────────────────────────────────────────── */
 .map-pin{position:relative;width:30px;height:40px;cursor:pointer}
@@ -430,8 +394,6 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .dp-actions{display:flex;gap:10px;margin-top:1.5rem}
 .dp-btn{flex:1;padding:12px 16px;border-radius:12px;font-family:var(--f);font-size:.85rem;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s}
 .dp-btn svg{width:15px;height:15px}
-.dp-btn-primary{background:linear-gradient(135deg,#0F2044,#0076B6);color:#fff;box-shadow:0 6px 20px rgba(0,118,182,.3)}
-.dp-btn-primary:hover,.dp-btn-primary:focus-visible{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,118,182,.4)}
 .dp-btn-secondary{background:#fff;color:#0076B6;border:2px solid rgba(0,174,239,.3)}
 .dp-btn-secondary:hover,.dp-btn-secondary:focus-visible{background:rgba(0,174,239,.06);border-color:#00AEEF}
 .dp-map{border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,174,239,.15);margin-top:.75rem}
@@ -440,8 +402,6 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 /* ── Responsive ──────────────────────────────────────────── */
 @media(max-width:900px){
   :root{--content:100%}
-  .mp-inner{grid-template-columns:1fr 1fr}
-  .mp-apply{grid-column:1/-1}
   #map{height:360px}
   .srch-banner{border-radius:0 0 12px 12px}
   .cards-list{grid-template-columns:repeat(2,1fr)}
@@ -464,10 +424,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 </head>
 <body>
 
-<!-- Skip navigation — first element in body -->
 <a class="skip-nav" href="#main-content">Skip to main content</a>
 
-<!-- ARIA live region for dynamic announcements -->
 <div class="sr-live" role="status" aria-live="polite" aria-atomic="true" id="live-region"></div>
 <div class="sr-live" role="alert"  aria-live="assertive" aria-atomic="true" id="alert-region"></div>
 
@@ -577,49 +535,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
       </div>
     </div>
     <div class="sb-actions">
-      <button class="sb-modify-btn" id="sb-modify-btn" onclick="toggleModifyPanel()"
-        aria-expanded="false" aria-controls="modify-panel">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Modify Search
-      </button>
       <button class="sb-new-btn" onclick="resetToSearch()" aria-label="Start a new search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
         New Search
-      </button>
-    </div>
-  </div>
-
-  <!-- Modify Panel -->
-  <div class="modify-panel" id="modify-panel" aria-label="Modify search parameters" role="region" aria-hidden="true">
-    <div class="mp-inner">
-      <div class="mp-field" id="mp-addr-group">
-        <label class="mp-label" for="mp-address">Address / Location</label>
-        <input type="text" id="mp-address" class="mp-inp" placeholder="City, ZIP or address..."
-          autocomplete="off" aria-autocomplete="list" aria-controls="mp-ac-list"/>
-        <div class="mp-ac-list" id="mp-ac-list" role="listbox" aria-label="Address suggestions"></div>
-      </div>
-      <div class="mp-field">
-        <label class="mp-label" for="mp-radius">Radius</label>
-        <select id="mp-radius" class="mp-inp">
-          <option value="5">5 miles</option><option value="10">10 miles</option>
-          <option value="25">25 miles</option><option value="50">50 miles</option>
-          <option value="100">100 miles</option>
-        </select>
-      </div>
-      <input type="hidden" id="mp-taxcode" value=""/>
-      <div class="mp-field" id="mp-tax-field">
-        <label class="mp-label" for="mp-tax-inp">Specialties</label>
-        <div class="mp-tag-box" id="mp-tags-box" onclick="document.getElementById('mp-tax-inp').focus()"
-          role="group" aria-label="Selected specialties">
-          <input type="text" class="mp-chip-input" id="mp-tax-inp" placeholder="Search specialties..."
-            autocomplete="off" aria-label="Search specialties"
-            aria-autocomplete="list" aria-controls="mp-tax-list"/>
-        </div>
-        <div class="mp-tax-list" id="mp-tax-list" role="listbox" aria-label="Specialty suggestions"></div>
-      </div>
-      <button class="mp-apply" onclick="applyModify()" aria-label="Apply modified search">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:5px" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Apply
       </button>
     </div>
   </div>
@@ -667,7 +585,6 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
       <h2 class="mtitle" id="modal-title">View All Results</h2>
       <p class="msub">We found <strong id="modal-total">many</strong> physicians matching your search. Leave your details and an Aquarient specialist will send you the complete list.</p>
       <div id="lead-error" class="mfe" role="alert"></div>
-      <!-- Use div+button instead of form to avoid native form submission issues -->
       <div id="lead-form" novalidate>
         <div class="mfr">
           <div class="mff">
@@ -746,10 +663,6 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
         <div class="dp-map"><div id="dp-map" role="application" aria-label="Provider location map"></div></div>
       </section>
       <div class="dp-actions">
-        <button class="dp-btn dp-btn-primary" onclick="openLeadModal()" aria-label="Contact this provider">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.72 17z"/></svg>
-          Contact Provider
-        </button>
         <button class="dp-btn dp-btn-secondary" id="dp-map-btn" aria-label="View provider on main map">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
           View on Main Map
@@ -766,11 +679,11 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 </div>
 
 <script>
-/* ══ CONFIG — never put secret keys here; MAPQUEST_KEY is a public map key ══ */
+/* ══ CONFIG ══ */
 var MAPQUEST_KEY = (window.ENV && window.ENV.MAPQUEST_KEY) ? window.ENV.MAPQUEST_KEY : "";
 var BACKEND_URL  = (window.ENV && window.ENV.BACKEND_URL)  ? window.ENV.BACKEND_URL  : "";
-var MAX_PAGE     = 9;   // show 9 cards; Load More always opens lead form
-var FETCH_TIMEOUT_MS = 45000;  // 45s for main search — NPPES can be slow
+var MAX_PAGE     = 9;
+var FETCH_TIMEOUT_MS = 45000;
 
 if (!MAPQUEST_KEY) console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
 if (!BACKEND_URL)  console.warn("[PhysicianLocator] BACKEND_URL not set");
@@ -779,8 +692,7 @@ if (!BACKEND_URL)  console.warn("[PhysicianLocator] BACKEND_URL not set");
 var map = null, markers = [], mapInited = false;
 var allPhysicians = [], totalFound = 0, shownCount = 0;
 var selLat = null, selLng = null, selCity = "", selState = "";
-var mpLat  = null, mpLng  = null, mpCity  = "", mpState  = "";
-var currentSearch = {}, taxTags = [], mpTaxTags = [];
+var currentSearch = {}, taxTags = [];
 
 
 /* ══ FETCH WITH TIMEOUT ══ */
@@ -800,10 +712,6 @@ window.addEventListener("DOMContentLoaded", function() {
     function() { selLat = selLng = null; selCity = selState = ""; });
 
   initTaxAC("taxonomy-desc", "tax-ac-list", "tax-field", "tax-tags-box", taxTags, renderMainTags);
-  initAC("mp-address", "mp-ac-list", "mp-addr-group",
-    function(lat, lng, city, state, fmt) { mpLat = lat; mpLng = lng; mpCity = city; mpState = state; if (fmt) document.getElementById("mp-address").value = fmt; },
-    function() { mpLat = mpLng = null; mpCity = mpState = ""; });
-  initTaxAC("mp-tax-inp", "mp-tax-list", "mp-tax-field", "mp-tags-box", mpTaxTags, renderMpTags);
 
   document.getElementById("search-btn").addEventListener("click", doSearch);
   document.getElementById("address-input").addEventListener("keydown", function(e) { if (e.key === "Enter") doSearch(); });
@@ -814,9 +722,9 @@ window.addEventListener("DOMContentLoaded", function() {
     if (e.target === document.getElementById("lead-modal")) closeModal();
   });
 
-  /* Escape key — close modals / panels */
+  /* Escape key */
   document.addEventListener("keydown", function(e) {
-    if (e.key === "Escape") { closeModal(); closeModifyPanel(); closeDetail(); }
+    if (e.key === "Escape") { closeModal(); closeDetail(); }
   });
 
   /* Focus trap for modal */
@@ -879,7 +787,6 @@ function showResultsPhase() {
 
 function resetToSearch() {
   document.getElementById("phase-results").style.display = "none";
-  closeModifyPanel();
   document.getElementById("phase-search").style.display = "flex";
   allPhysicians = []; totalFound = 0; shownCount = 0;
   selLat = selLng = null; selCity = selState = "";
@@ -909,80 +816,6 @@ function updateSbar() {
 }
 
 
-/* ══ MODIFY PANEL ══ */
-function toggleModifyPanel() {
-  var panel = document.getElementById("modify-panel");
-  var btn   = document.getElementById("sb-modify-btn");
-  var open  = panel.classList.toggle("show");
-  panel.setAttribute("aria-hidden", !open);
-  btn.setAttribute("aria-expanded", open);
-  if (open) {
-    document.getElementById("mp-address").value = currentSearch.address || "";
-    document.getElementById("mp-radius").value  = currentSearch.radius  || "10";
-    document.getElementById("mp-taxcode").value  = currentSearch.taxonomy_code || "";
-    mpLat = selLat; mpLng = selLng; mpCity = selCity; mpState = selState;
-    mpTaxTags = JSON.parse(JSON.stringify(taxTags));
-    renderMpTags();
-    setTimeout(function() { if (map) map.invalidateSize(); }, 100);
-    document.getElementById("mp-address").focus();
-  }
-}
-
-function closeModifyPanel() {
-  var panel = document.getElementById("modify-panel");
-  panel.classList.remove("show");
-  panel.setAttribute("aria-hidden", "true");
-  document.getElementById("sb-modify-btn").setAttribute("aria-expanded", "false");
-  setTimeout(function() { if (map) map.invalidateSize(); }, 100);
-}
-
-function applyModify() {
-  var addr    = document.getElementById("mp-address").value.trim();
-  var radius  = document.getElementById("mp-radius").value;
-  var taxCode = document.getElementById("mp-taxcode").value.trim();
-  var partial = document.getElementById("mp-tax-inp").value.trim();
-  var descs   = mpTaxTags.map(function(t) { return t.display; });
-  if (partial.length >= 2 && descs.indexOf(partial) === -1) descs.push(partial);
-
-  if (!addr) { showToast("Please enter a location.", "error"); return; }
-  if (!taxCode && descs.length === 0) { showToast("Please add at least one specialty.", "error"); return; }
-
-  // Sync back to main search form
-  document.getElementById("address-input").value = addr;
-  document.getElementById("radius-input").value  = radius;
-  document.getElementById("taxonomy-code").value  = taxCode;
-  taxTags = JSON.parse(JSON.stringify(mpTaxTags));
-  renderMainTags();
-  closeModifyPanel();
-
-  var addressChanged = (addr !== (currentSearch.address || ""));
-
-  // Re-geocode if address changed or we have no coords
-  if (addressChanged || !mpLat || !mpLng) {
-    setLoading(true);
-    fetchWithTimeout(BACKEND_URL + "/api/geocode?address=" + encodeURIComponent(addr), {}, 15000)
-      .then(function(r) {
-        if (r.status === 404) throw new Error("Address not found in the US");
-        if (!r.ok) throw new Error("Geocoding failed (HTTP " + r.status + ")");
-        return r.json();
-      })
-      .then(function(gd) {
-        if (gd.error) throw new Error(gd.error);
-        selLat = gd.lat; selLng = gd.lng; selCity = gd.city || ""; selState = gd.state || "";
-        mpLat = selLat; mpLng = selLng; mpCity = selCity; mpState = selState;
-        if (gd.formatted) { document.getElementById("address-input").value = gd.formatted; addr = gd.formatted; }
-        currentSearch = { address: addr, radius: radius, taxonomy_code: taxCode, descriptions: descs };
-        runSearch(addr, radius, taxCode, descs, true);
-      })
-      .catch(function(err) { showToast(err.message || "Could not geocode address.", "error"); setLoading(false); });
-  } else {
-    selLat = mpLat; selLng = mpLng; selCity = mpCity; selState = mpState;
-    currentSearch = { address: addr, radius: radius, taxonomy_code: taxCode, descriptions: descs };
-    runSearch(addr, radius, taxCode, descs, true);
-  }
-}
-
-
 /* ══ ADDRESS AUTOCOMPLETE ══ */
 function initAC(inputId, listId, groupId, onSelect, onReset) {
   var inp  = document.getElementById(inputId);
@@ -995,7 +828,7 @@ function initAC(inputId, listId, groupId, onSelect, onReset) {
     if (v.length < 2) { closeAC(); return; }
     if (v === lastQ) return;
     showSpin(list);
-    timer = setTimeout(function() { lastQ = v; fetchAC(v); }, 250); // raised from 130ms
+    timer = setTimeout(function() { lastQ = v; fetchAC(v); }, 250);
   });
 
   inp.addEventListener("keydown", function(e) {
@@ -1043,7 +876,6 @@ function initAC(inputId, listId, groupId, onSelect, onReset) {
       item.id = listId + "-opt-" + fi;
       item.setAttribute("role", "option");
       item.setAttribute("aria-selected", "false");
-      // Safe DOM construction — no innerHTML with user data
       var ico = document.createElement("span"); ico.className = "ac-ico"; ico.setAttribute("aria-hidden", "true");
       ico.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>';
       var info = document.createElement("div");
@@ -1179,21 +1011,6 @@ function renderMainTags() {
   inp.placeholder = taxTags.length ? "Add more..." : "Type to search specialties...";
 }
 
-function renderMpTags() {
-  var box = document.getElementById("mp-tags-box"), inp = document.getElementById("mp-tax-inp");
-  box.querySelectorAll(".mp-chip").forEach(function(el) { el.remove(); });
-  mpTaxTags.forEach(function(tag, i) {
-    var chip = document.createElement("span"); chip.className = "mp-chip";
-    var lbl  = document.createElement("span"); lbl.textContent = tag.display;
-    var btn  = document.createElement("button"); btn.className = "mp-chip-x"; btn.type = "button";
-    btn.setAttribute("aria-label", "Remove " + tag.display); btn.textContent = "×";
-    btn.addEventListener("click", function(e) { e.stopPropagation(); mpTaxTags.splice(i, 1); renderMpTags(); });
-    chip.appendChild(lbl); chip.appendChild(btn);
-    box.insertBefore(chip, inp);
-  });
-  inp.placeholder = mpTaxTags.length ? "Add more..." : "Search specialties...";
-}
-
 function checkTaxSt() {
   fetchWithTimeout(BACKEND_URL + "/api/taxonomy-status", {}, 5000)
     .then(function(r) { return r.json(); })
@@ -1204,7 +1021,7 @@ function checkTaxSt() {
         setTimeout(function() { el.style.opacity = "0"; }, 3000);
       }
     })
-    .catch(function() {}); // non-critical
+    .catch(function() {});
 }
 
 
@@ -1295,7 +1112,6 @@ function runSearch(address, radius, taxCode, descs, clearExisting) {
 /* ══ COUNT BAR ══ */
 function renderCountBar() {
   var end = Math.min(allPhysicians.length, MAX_PAGE);
-  // shownCount is set by renderCards; only update display here
   document.getElementById("rc-shown").textContent = end;
   document.getElementById("rc-total").textContent  = totalFound.toLocaleString();
   var chips  = document.getElementById("rc-chips"); chips.innerHTML = "";
@@ -1316,25 +1132,22 @@ function renderCards() {
   if (!allPhysicians.length) {
     var spec = (currentSearch.descriptions || []).join(", ") || "this specialty";
     var empty = document.createElement("div"); empty.className = "empty-state"; empty.setAttribute("role", "status");
-    // Safe DOM construction
     var ico = document.createElement("div"); ico.className = "empty-ico"; ico.setAttribute("aria-hidden", "true");
     ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
     var title = document.createElement("div"); title.className = "empty-title"; title.textContent = "No providers found";
     var desc  = document.createElement("p");  desc.className  = "empty-desc";
     desc.textContent = 'No physicians matching "' + spec + '" were found in this area. Try a different specialty name or expand your search radius.';
-    var btn = document.createElement("button"); btn.className = "empty-btn"; btn.textContent = "Modify Search";
-    btn.addEventListener("click", toggleModifyPanel);
+    var btn = document.createElement("button"); btn.className = "empty-btn"; btn.textContent = "New Search";
+    btn.addEventListener("click", resetToSearch);
     empty.appendChild(ico); empty.appendChild(title); empty.appendChild(desc); empty.appendChild(btn);
     col.appendChild(empty);
     return;
   }
 
-  // Always show at most MAX_PAGE (9) cards
   var end = Math.min(allPhysicians.length, MAX_PAGE);
   for (var i = 0; i < end; i++) appendCard(col, allPhysicians[i], i);
   shownCount = end;
   document.getElementById("rc-shown").textContent = end;
-  // Always show Load More if there are any results (leads to form)
   appendLoadMore(col);
 }
 
@@ -1351,7 +1164,6 @@ function appendCard(col, p, i) {
   card.setAttribute("aria-label", name + ", " + spec + (p.distance_miles != null ? ", " + p.distance_miles + " miles away" : ""));
   card.dataset.index = i;
 
-  // Head
   var head = document.createElement("div"); head.className = "dc-head";
   var av = document.createElement("div"); av.className = "dav"; av.textContent = ini; av.setAttribute("aria-hidden", "true");
   var main = document.createElement("div"); main.className = "dc-main";
@@ -1361,7 +1173,6 @@ function appendCard(col, p, i) {
   var num = document.createElement("div"); num.className = "dc-num"; num.textContent = i + 1; num.setAttribute("aria-hidden", "true");
   head.appendChild(av); head.appendChild(main); head.appendChild(num);
 
-  // Foot
   var foot = document.createElement("div"); foot.className = "dc-foot";
   var dist = document.createElement("span");
   if (p.distance_miles != null) { dist.className = "dc-dist"; dist.textContent = "📍 " + p.distance_miles + " mi"; }
@@ -1379,7 +1190,6 @@ function appendCard(col, p, i) {
 
 function appendLoadMore(col) {
   var old = document.querySelector(".load-more-wrap"); if (old) old.remove();
-  // Only show Load More if there are results
   if (!allPhysicians.length) return;
   var remaining = totalFound - shownCount;
   var wrap = document.createElement("div"); wrap.className = "load-more-wrap";
@@ -1389,7 +1199,6 @@ function appendLoadMore(col) {
     : "View full list — request access";
   btn.setAttribute("aria-label", label);
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>' + label;
-  // ALWAYS open lead modal — never add more cards inline
   btn.addEventListener("click", function() { openLeadModal(); });
   wrap.appendChild(btn);
   col.parentNode.insertBefore(wrap, col.nextSibling);
@@ -1426,7 +1235,6 @@ function plotMarkers() {
     if (!p.lat || !p.lng) { markers.push(null); return; }
     var icon = L.divIcon({ html: mkPin(i + 1), className: "", iconSize: [30, 40], iconAnchor: [15, 40] });
     var at   = (p.all_taxonomies || []).map(function(t) { return t.desc; }).filter(Boolean).join(", ") || p.taxonomy_desc || "";
-    // Build popup using safe DOM approach
     var popupEl = document.createElement("div");
     popupEl.style.cssText = "font-family:Plus Jakarta Sans,sans-serif;min-width:200px;max-width:270px;padding:2px";
     var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:5px";
@@ -1466,7 +1274,6 @@ function openLeadModal() {
   document.getElementById("modal-success-content").style.display = "none";
   document.getElementById("lead-modal").classList.add("open");
   document.getElementById("lead-error").style.display = "none";
-  // Focus first field
   setTimeout(function() { document.getElementById("lf-first").focus(); }, 100);
 }
 
@@ -1486,7 +1293,6 @@ function submitLead() {
   var title   = document.getElementById("lf-title").value.trim();
   var company = document.getElementById("lf-company").value.trim();
 
-  // Client-side validation
   if (!first || !last) {
     errDiv.textContent = "First and last name are required."; errDiv.style.display = "block";
     document.getElementById("lf-first").setAttribute("aria-invalid", "true");
@@ -1500,7 +1306,6 @@ function submitLead() {
     return;
   }
 
-  // Reset invalid states
   ["lf-first","lf-last","lf-email"].forEach(function(id) { document.getElementById(id).removeAttribute("aria-invalid"); });
 
   var payload = {
@@ -1509,7 +1314,7 @@ function submitLead() {
     email:      email,
     phone:      phone  || "",
     title:      title  || "",
-    company:    company || "N/A",   // SF requires non-empty company
+    company:    company || "N/A",
     search_context: Object.assign({}, currentSearch, {
       total_results: totalFound,
       timestamp: new Date().toISOString(),
@@ -1585,7 +1390,6 @@ function openDetail(idx) {
   var ov = document.getElementById("detail-overlay");
   ov.classList.add("open"); ov.scrollTop = 0;
   document.body.style.overflow = "hidden";
-  // Focus the panel for screen readers
   setTimeout(function() { document.getElementById("detail-panel").focus(); }, 100);
 
   if (p.lat && p.lng) {
