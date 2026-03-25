@@ -123,7 +123,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
 
 /* ══ PHASE 2: RESULTS ════════════════════════════════════════ */
-.phase-results{display:none;flex-direction:column;align-items:center;padding:0 1rem 4rem;min-height:calc(100vh - var(--hdr))}
+.phase-results{display:flex;flex-direction:column;align-items:center;padding:0 1rem;min-height:calc(100vh - var(--hdr));max-height:calc(100vh - var(--hdr));overflow-y:auto;overflow-x:hidden}
 
 /* ── Search Banner ───────────────────────────────────────── */
 .srch-banner{
@@ -131,7 +131,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   border-radius:0 0 16px 16px;padding:1.1rem 1.75rem;
   display:flex;align-items:center;flex-wrap:wrap;gap:12px;
   box-shadow:0 8px 32px rgba(15,32,68,.22);border-bottom:3px solid var(--teal);
-  margin-bottom:1.5rem;
+  margin-bottom:1.5rem;flex-shrink:0;
 }
 .sb-fields{display:flex;align-items:center;flex-wrap:wrap;gap:8px;flex:1}
 .sb-pill{display:flex;flex-direction:column;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:5px 14px;min-width:90px}
@@ -152,7 +152,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   display:flex;align-items:center;justify-content:space-between;
   flex-wrap:wrap;gap:8px;
   margin-bottom:.75rem;
-  padding:0 4px;
+  padding:0 4px;flex-shrink:0;
 }
 .res-count{font-size:.82rem;font-weight:700;color:var(--ink3);letter-spacing:.04em}
 .res-count strong{color:var(--teal);font-size:.96rem}
@@ -163,8 +163,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .cards-list{
   width:100%;max-width:var(--content);
   display:grid;grid-template-columns:repeat(3,1fr);
-  gap:16px;margin-bottom:1rem;align-items:stretch;
-  box-sizing:border-box;
+  gap:16px;margin-bottom:2rem;align-items:stretch;
+  box-sizing:border-box;flex-shrink:0;
 }
 .dc{
   background:rgba(255,255,255,.97);border-radius:16px;
@@ -196,7 +196,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 @keyframes skeletonShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 
 /* ── Empty State ────────────────────────────────────────── */
-.empty-state{width:100%;max-width:var(--content);background:rgba(255,255,255,.9);border-radius:20px;border:1.5px dashed rgba(0,174,239,.25);padding:3rem 2rem;text-align:center;margin-bottom:1.5rem}
+.empty-state{width:100%;max-width:var(--content);background:rgba(255,255,255,.9);border-radius:20px;border:1.5px dashed rgba(0,174,239,.25);padding:3rem 2rem;text-align:center;margin-bottom:2rem;flex-shrink:0}
 .empty-ico{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(0,174,239,.1),rgba(12,122,122,.1));display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem}
 .empty-ico svg{width:32px;height:32px;color:#0076B6}
 .empty-title{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:var(--ink);margin-bottom:.5rem}
@@ -207,14 +207,14 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .empty-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 24px;background:linear-gradient(135deg,#0F2044,#0076B6);color:#fff;border:none;border-radius:10px;font-family:var(--f);font-size:.84rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,118,182,.3);transition:all .2s}
 .empty-btn:hover,.empty-btn:focus-visible{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,118,182,.4)}
 
-/* ── Load More ──────────────────────────────────────────── */
-.load-more-wrap{width:100%;max-width:var(--content);display:flex;justify-content:flex-end;padding:.25rem 0 .75rem}
+/* ── Load More ──────────────────────────────────────────– */
+.load-more-wrap{width:100%;max-width:var(--content);display:flex;justify-content:flex-end;padding:.25rem 0 2rem;flex-shrink:0;margin-bottom:.75rem}
 .btn-lm{background:none;border:none;padding:0;font-family:var(--f);font-size:.82rem;font-weight:700;color:#0076B6;cursor:pointer;display:flex;align-items:center;gap:6px;transition:color .15s}
 .btn-lm:hover,.btn-lm:focus-visible{color:#00AEEF}
 .btn-lm svg{width:13px;height:13px}
 
 /* ── Map Section ────────────────────────────────────────── */
-.map-section{width:100%;max-width:var(--content);margin-top:2rem}
+.map-section{width:100%;max-width:var(--content);margin:2rem 0 1.5rem;flex-shrink:0}
 .map-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;padding:0 2px}
 .map-title{display:flex;align-items:center;gap:9px;font-size:.82rem;font-weight:700;color:var(--ink2);letter-spacing:.05em;text-transform:uppercase}
 .map-title svg{color:var(--teal);width:15px;height:15px}
@@ -406,6 +406,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   .srch-banner{border-radius:0 0 12px 12px}
   .cards-list{grid-template-columns:repeat(2,1fr)}
   .dp-grid{grid-template-columns:1fr}
+  .phase-results{padding:0 1rem}
 }
 @media(max-width:580px){
   .search-card{padding:1.75rem 1.25rem}
@@ -419,6 +420,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   .dp-body{padding:1.25rem 1.25rem 3rem}
   .dp-hdr{padding:1.25rem 1.25rem 1.75rem}
   .dp-actions{flex-direction:column}
+  .phase-results{padding:0 1rem}
 }
 </style>
 </head>
@@ -548,9 +550,6 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
     <div class="res-tags" id="rc-chips"></div>
   </div>
 
-  <!-- Cards -->
-  <div class="cards-list" id="results-list" role="list" aria-label="Physician results"></div>
-
   <!-- Map -->
   <div class="map-section" id="map-section" role="region" aria-label="Provider map">
     <div class="map-title-row">
@@ -564,6 +563,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
       <div id="map" role="application" aria-label="Interactive map showing provider locations" tabindex="0"></div>
     </div>
   </div>
+
+  <!-- Cards -->
+  <div class="cards-list" id="results-list" role="list" aria-label="Physician results"></div>
 
 </div>
 </main>
