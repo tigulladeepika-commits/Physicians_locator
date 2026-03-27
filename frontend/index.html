@@ -123,33 +123,34 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sc-title em{font-style:italic;color:var(--teal)}
 .sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
 
-/* ══ PHASE 2: RESULTS - TWO COLUMN LAYOUT ════════════════════ */
+/* ══ PHASE 2: RESULTS - TWO COLUMN LAYOUT (banner now full-width above) ── */
 .phase-results{
   display:none;
   flex-direction:row;
-  height:calc(100vh - var(--hdr));
+  height:calc(100vh - var(--hdr) - 75px);
   background:#fff;
 }
 .phase-results.show{display:flex}
 
-/* Left panel: List */
+/* Left panel: Physicians List (compact, 28%) */
 .results-left-panel{
-  flex:0 0 45%;
+  flex:0 0 28%;
   display:flex;
   flex-direction:column;
-  border-right:1px solid rgba(0,174,239,.15);
+  border-right:1.5px solid rgba(0,174,239,.12);
   background:#fff;
   overflow:hidden;
 }
 
-/* Right panel: Map */
+/* Right panel: Map (larger, 72%) */
 .results-right-panel{
   flex:1;
   position:relative;
   overflow:hidden;
+  background:#fff;
 }
 
-/* ── Search Banner (top of left panel) ───────────────────── */
+/* ── Search Banner (full-width, before results) ───────────────────── */
 .srch-banner{
   background:var(--navy);
   padding:1.1rem 1.75rem;
@@ -159,6 +160,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   gap:12px;
   border-bottom:3px solid var(--teal);
   flex-shrink:0;
+  width:100%;
 }
 .sb-fields{display:flex;align-items:center;flex-wrap:wrap;gap:8px;flex:1}
 .sb-pill{display:flex;flex-direction:column;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:5px 14px;min-width:90px}
@@ -173,21 +175,22 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sb-new-btn:hover,.sb-new-btn:focus-visible{background:rgba(255,255,255,.16);color:#fff}
 .sb-new-btn svg{width:13px;height:13px}
 
-/* ── Results meta & filters ────────────────────────────────── */
+/* ── Results meta & filters (compact for side panel) ────────────────────────────────── */
 .res-meta{
-  padding:1rem 1.75rem;
+  padding:0.75rem 1rem;
   border-bottom:1px solid rgba(0,174,239,.08);
   display:flex;
   align-items:center;
   justify-content:space-between;
   flex-wrap:wrap;
-  gap:8px;
+  gap:6px;
   flex-shrink:0;
+  background:#F8FCFE;
 }
-.res-count{font-size:.82rem;font-weight:700;color:var(--ink3);letter-spacing:.04em}
-.res-count strong{color:var(--teal);font-size:.96rem}
-.res-tags{display:flex;gap:6px;flex-wrap:wrap}
-.res-tag{font-size:.67rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 10px;border-radius:100px}
+.res-count{font-size:.75rem;font-weight:700;color:var(--ink3);letter-spacing:.04em}
+.res-count strong{color:var(--teal);font-size:.85rem}
+.res-tags{display:flex;gap:4px;flex-wrap:wrap}
+.res-tag{font-size:.65rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 8px;border-radius:100px}
 
 /* ── Scrollable Cards List ─────────────────────────────────– */
 .cards-scroll-container{
@@ -203,35 +206,35 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .cards-list{
   display:flex;
   flex-direction:column;
-  gap:12px;
-  padding:12px;
+  gap:10px;
+  padding:10px;
   align-items:stretch;
 }
 
-/* ── Physician Cards ─────────────────────────────────────── */
+/* ── Physician Cards (compact for side panel) ─────────────────────────────────── */
 .dc{
-  background:rgba(255,255,255,.97);border-radius:12px;
+  background:rgba(255,255,255,.97);border-radius:10px;
   border:1.5px solid rgba(0,174,239,.1);
   box-shadow:0 2px 8px rgba(0,80,150,.04);
   cursor:pointer;transition:all .2s;
   display:flex;flex-direction:column;position:relative;overflow:hidden;
-  min-height:110px;
-  padding:1rem;
+  min-height:90px;
+  padding:0.85rem;
 }
-.dc::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00AEEF,#0C7A7A);opacity:0;transition:opacity .2s;border-radius:12px 12px 0 0}
-.dc:hover,.dc:focus-visible{box-shadow:0 6px 16px rgba(0,100,180,.12);border-color:rgba(0,174,239,.35);transform:translateX(4px);outline:none}
+.dc::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00AEEF,#0C7A7A);opacity:0;transition:opacity .2s;border-radius:10px 10px 0 0}
+.dc:hover,.dc:focus-visible{box-shadow:0 6px 16px rgba(0,100,180,.12);border-color:rgba(0,174,239,.35);transform:translateX(2px);outline:none}
 .dc:hover::after,.dc:focus-visible::after{opacity:1}
-.dc-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:0.75rem}
-.dav{width:40px;height:40px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#0F2044 0%,#0076B6 100%);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.95rem;font-weight:700;color:#fff;position:relative;overflow:hidden}
+.dc-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:0.6rem}
+.dav{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#0F2044 0%,#0076B6 100%);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.85rem;font-weight:700;color:#fff;position:relative;overflow:hidden}
 .dav::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,174,239,.3),transparent)}
 .dc-main{flex:1;min-width:0}
-.dc-name{font-weight:700;font-size:.84rem;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.dc-spec{font-size:.68rem;color:#0076B6;font-weight:600;margin-top:3px;display:-webkit-box;-webkit-line-clamp:1;line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
-.dc-meta{display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid rgba(0,174,239,.08)}
-.dc-dist{font-size:.68rem;font-weight:700;color:#0076B6;background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.18);padding:3px 10px;border-radius:100px}
-.dc-arrow{display:flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#0076B6;transition:all .15s}
-.dc:hover .dc-arrow{color:#00AEEF;gap:6px}
-.dc-arrow svg{width:12px;height:12px}
+.dc-name{font-weight:700;font-size:.78rem;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dc-spec{font-size:.65rem;color:#0076B6;font-weight:600;margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+.dc-meta{display:flex;align-items:center;justify-content:space-between;margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid rgba(0,174,239,.08)}
+.dc-dist{font-size:.64rem;font-weight:700;color:#0076B6;background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.18);padding:2px 8px;border-radius:100px}
+.dc-arrow{display:flex;align-items:center;gap:3px;font-size:.64rem;font-weight:700;color:#0076B6;transition:all .15s}
+.dc:hover .dc-arrow{color:#00AEEF;gap:5px}
+.dc-arrow svg{width:11px;height:11px}
 
 /* ── Skeleton loading cards ──────────────────────────────── */
 .dc-skeleton{background:rgba(255,255,255,.7);border-radius:12px;border:1.5px solid rgba(0,174,239,.06);min-height:110px;overflow:hidden;position:relative;padding:1rem}
@@ -562,37 +565,38 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   </div>
 </div>
 
-<!-- ══ PHASE 2: RESULTS - TWO COLUMN LAYOUT ════════════════════ -->
+<!-- ══ PHASE 2: RESULTS - FULL-WIDTH BANNER + TWO COLUMN LAYOUT ════ -->
+<!-- Banner: Full-width above the two-column layout -->
+<div class="srch-banner" id="srch-banner" role="region" aria-label="Current search criteria">
+  <div class="sb-fields">
+    <div class="sb-pill">
+      <div class="sb-pill-label">Location</div>
+      <div class="sb-pill-val" id="sb-loc">—</div>
+    </div>
+    <div class="sb-divider" aria-hidden="true"></div>
+    <div class="sb-pill">
+      <div class="sb-pill-label">Radius</div>
+      <div class="sb-pill-val accent" id="sb-radius">—</div>
+    </div>
+    <div class="sb-divider" aria-hidden="true"></div>
+    <div class="sb-pill" style="min-width:140px">
+      <div class="sb-pill-label">Specialties</div>
+      <div class="sb-chips" id="sb-chips"></div>
+    </div>
+  </div>
+  <div class="sb-actions">
+    <button class="sb-new-btn" onclick="resetToSearch()" aria-label="Start a new search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      New Search
+    </button>
+  </div>
+</div>
+
+<!-- Two-column layout: Physicians (left, smaller) and Map (right, larger) -->
 <div class="phase-results" id="phase-results" aria-live="polite">
 
-  <!-- LEFT PANEL: List -->
+  <!-- LEFT PANEL: Physicians List (compact) -->
   <div class="results-left-panel" id="results-left-panel">
-    <!-- Banner -->
-    <div class="srch-banner" id="srch-banner" role="region" aria-label="Current search criteria">
-      <div class="sb-fields">
-        <div class="sb-pill">
-          <div class="sb-pill-label">Location</div>
-          <div class="sb-pill-val" id="sb-loc">—</div>
-        </div>
-        <div class="sb-divider" aria-hidden="true"></div>
-        <div class="sb-pill">
-          <div class="sb-pill-label">Radius</div>
-          <div class="sb-pill-val accent" id="sb-radius">—</div>
-        </div>
-        <div class="sb-divider" aria-hidden="true"></div>
-        <div class="sb-pill" style="min-width:140px">
-          <div class="sb-pill-label">Specialties</div>
-          <div class="sb-chips" id="sb-chips"></div>
-        </div>
-      </div>
-      <div class="sb-actions">
-        <button class="sb-new-btn" onclick="resetToSearch()" aria-label="Start a new search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
-          New Search
-        </button>
-      </div>
-    </div>
-
     <!-- Results meta -->
     <div class="res-meta" id="res-meta" role="status" aria-live="polite">
       <div class="res-count">Showing <strong id="rc-shown">0</strong> of <strong id="rc-total">0</strong> providers</div>
@@ -608,7 +612,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
     <div class="load-more-wrap" id="load-more-container"></div>
   </div>
 
-  <!-- RIGHT PANEL: Map -->
+  <!-- RIGHT PANEL: Map (larger) -->
   <div class="results-right-panel" id="results-right-panel">
     <div id="map" role="application" aria-label="Interactive map showing provider locations" tabindex="0"></div>
   </div>
