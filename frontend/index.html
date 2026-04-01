@@ -7,7 +7,6 @@
   <meta name="description" content="Search 6M+ licensed US physicians by specialty and location using the official NPPES registry."/>
   <title>Physician Locator — Aquarient</title>
 
-  <!-- Preconnect to reduce latency -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link rel="preconnect" href="https://api.mqcdn.com"/>
@@ -83,6 +82,7 @@ body::after{
   border-bottom:1px solid rgba(0,174,239,.12);padding:0 clamp(1rem,4vw,2.5rem);
   height:var(--hdr);align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:300;box-shadow:0 2px 20px rgba(0,118,182,.08);
+  flex-shrink:0;
 }
 .logo{display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer}
 .logo:focus-visible{outline:2px solid #00AEEF;border-radius:6px}
@@ -131,10 +131,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   border-radius:100px;
   white-space:nowrap;
 }
-.search-card::before{clip-path:inset(0 0 0 0 round 28px 28px 0 0)}
-.search-card{
-   margin-top:72px;
-}
+.search-card{margin-top:72px;}
 @media(prefers-reduced-motion:reduce){.search-card::before{animation:none}}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .sc-eye{font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#0076B6;margin-bottom:.5rem}
@@ -142,14 +139,26 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sc-title em{font-style:italic;color:var(--teal)}
 .sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
 
-/* ══ PHASE 2: RESULTS - TWO COLUMN LAYOUT (banner now full-width above) ── */
-.phase-results{
+/* ══ RESULTS WRAPPER — full viewport stack ═════════════════ */
+/* The wrapper stacks: header (sticky) → banner → results columns */
+/* All three live inside #results-wrapper which is display:none until search */
+#results-wrapper{
   display:none;
-  flex-direction:row;
-  height:calc(100vh - var(--hdr) - 75px);
-  background:#fff;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
 }
-.phase-results.show{display:flex}
+#results-wrapper.show{display:flex}
+
+/* ══ PHASE 2: RESULTS - TWO COLUMN LAYOUT ══════════════════ */
+.phase-results{
+  display:flex;
+  flex-direction:row;
+  flex:1;               /* fills whatever space is left after header + banner */
+  min-height:0;         /* critical — allows flex children to shrink below content size */
+  background:#fff;
+  overflow:hidden;
+}
 
 /* Left panel: Physicians List (compact, 28%) */
 .results-left-panel{
@@ -159,6 +168,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   border-right:1.5px solid rgba(0,174,239,.12);
   background:#fff;
   overflow:hidden;
+  min-height:0;
 }
 
 /* Right panel: Map (larger, 72%) */
@@ -167,9 +177,10 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   position:relative;
   overflow:hidden;
   background:#fff;
+  min-height:0;
 }
 
-/* ── Search Banner (full-width, before results) ───────────────────── */
+/* ── Search Banner (full-width, before results) ─────────── */
 .srch-banner{
   display:none;
   background:var(--navy);
@@ -181,6 +192,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   flex-shrink:0;
   width:100%;
 }
+.srch-banner.visible{display:flex}
 .sb-fields{display:flex;align-items:center;flex-wrap:wrap;gap:8px;flex:1}
 .sb-pill{display:flex;flex-direction:column;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:5px 14px;min-width:90px}
 .sb-pill-label{font-size:.52rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.4);line-height:1;margin-bottom:2px}
@@ -194,7 +206,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sb-new-btn:hover,.sb-new-btn:focus-visible{background:rgba(255,255,255,.16);color:#fff}
 .sb-new-btn svg{width:13px;height:13px}
 
-/* ── Results meta & filters (compact for side panel) ────────────────────────────────── */
+/* ── Results meta & filters ──────────────────────────────── */
 .res-meta{
   padding:0.75rem 1rem;
   border-bottom:1px solid rgba(0,174,239,.08);
@@ -211,14 +223,14 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .res-tags{display:flex;gap:4px;flex-wrap:wrap}
 .res-tag{font-size:.65rem;font-weight:700;color:var(--teal);background:var(--tg);border:1px solid var(--tb);padding:2px 8px;border-radius:100px}
 
-/* ── Scrollable Cards List ─────────────────────────────────– */
+/* ── Scrollable Cards List ─────────────────────────────── */
 .cards-scroll-container{
   flex:1;
   overflow-y:auto;
   overflow-x:hidden;
   -ms-overflow-style:none;
   scrollbar-width:none;
-  padding:0;
+  min-height:0;
 }
 .cards-scroll-container::-webkit-scrollbar{display:none}
 
@@ -230,7 +242,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   align-items:stretch;
 }
 
-/* ── Physician Cards (compact for side panel) ─────────────────────────────────── */
+/* ── Physician Cards ─────────────────────────────────────── */
 .dc{
   background:rgba(255,255,255,.97);border-radius:10px;
   border:1.5px solid rgba(0,174,239,.1);
@@ -260,7 +272,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .dc-skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.6) 50%,transparent 100%);animation:skeletonShimmer 1.4s infinite}
 @keyframes skeletonShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 
-/* ── Empty State ────────────────────────────────────────── */
+/* ── Empty State ─────────────────────────────────────────── */
 .empty-state{background:rgba(255,255,255,.9);border-radius:12px;border:1.5px dashed rgba(0,174,239,.25);padding:2rem;text-align:center;margin:2rem 1rem;flex-shrink:0}
 .empty-ico{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,rgba(0,174,239,.1),rgba(12,122,122,.1));display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
 .empty-ico svg{width:28px;height:28px;color:#0076B6}
@@ -269,16 +281,16 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .empty-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:linear-gradient(135deg,#0F2044,#0076B6);color:#fff;border:none;border-radius:10px;font-family:var(--f);font-size:.78rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,118,182,.3);transition:all .2s}
 .empty-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,118,182,.4)}
 
-/* ── Load More ──────────────────────────────────────────– */
+/* ── Load More ───────────────────────────────────────────── */
 .load-more-wrap{padding:1rem 1.75rem;flex-shrink:0}
 .btn-lm{background:none;border:none;padding:0;font-family:var(--f);font-size:.78rem;font-weight:700;color:#0076B6;cursor:pointer;display:flex;align-items:center;gap:6px;transition:color .15s;width:100%}
 .btn-lm:hover{color:#00AEEF}
 .btn-lm svg{width:12px;height:12px}
 
-/* ── Map Section (right panel) ──────────────────────────────– */
+/* ── Map Section ─────────────────────────────────────────── */
 #map{width:100%;height:100%;background:linear-gradient(135deg,#E8F4FD,#EDF7F6)}
 
-/* ══ SHARED FORM FIELDS ══════════════════════════════════════ */
+/* ══ SHARED FORM FIELDS ════════════════════════════════════ */
 .field{margin-bottom:.9rem;position:relative}
 .field:last-child{margin-bottom:0}
 .lbl{display:flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px}
@@ -311,7 +323,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .btn-s:disabled{background:#D0D0DE;cursor:not-allowed;transform:none;box-shadow:none;color:var(--ink3)}
 .btn-s svg{width:16px;height:16px;flex-shrink:0}
 
-/* ══ DROPDOWNS ══════════════════════════════════════════════ */
+/* ══ DROPDOWNS ═════════════════════════════════════════════ */
 .ac-list,.tax-list{
   position:absolute;
   top:calc(100% + 2px);
@@ -372,7 +384,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sb2 p{font-size:.82rem;color:var(--ink3);font-weight:500}
 
-/* ══ MODAL ═══════════════════════════════════════════════════ */
+/* ══ MODAL ══════════════════════════════════════════════════ */
 .mbg{position:fixed;inset:0;background:rgba(13,27,53,.55);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem}
 .mbg.open{display:flex}
 .modal{
@@ -467,9 +479,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 }
 
 @media(max-width:900px){
-  .phase-results{flex-direction:column;height:auto}
+  .phase-results{flex-direction:column;overflow-y:auto}
   .results-left-panel{flex:0 0 auto;max-height:60vh;border-right:none;border-bottom:1px solid rgba(0,174,239,.15)}
-  .results-right-panel{flex:1;min-height:400px}
+  .results-right-panel{flex:0 0 400px}
   #map{height:400px}
   .srch-banner{border-radius:0}
   .dp-grid{grid-template-columns:1fr}
@@ -488,8 +500,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   .dp-actions{flex-direction:column}
   .srch-banner{padding:.85rem 1rem}
   .res-meta{padding:.75rem 1rem}
-  .cards-list{padding:8px}
-  .cards-list{gap:8px}
+  .cards-list{padding:8px;gap:8px}
 }
 </style>
 </head>
@@ -500,32 +511,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 <div class="sr-live" role="status" aria-live="polite" aria-atomic="true" id="live-region"></div>
 <div class="sr-live" role="alert"  aria-live="assertive" aria-atomic="true" id="alert-region"></div>
 
-<!-- HEADER -->
-<header class="hdr" role="banner">
-  <a class="logo" onclick="resetToSearch();return false;" href="#" aria-label="Aquarient Physician Locator — return to search">
-    <svg class="logo-mark" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="lgbg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0F2044"/><stop offset="100%" stop-color="#1A3A6E"/></linearGradient>
-        <linearGradient id="lgpin" x1="22" y1="4" x2="22" y2="40" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00AEEF"/><stop offset="100%" stop-color="#0076B6"/></linearGradient>
-        <filter id="lglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.5" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
-      </defs>
-      <rect width="44" height="44" rx="11" fill="url(#lgbg)"/>
-      <path d="M22 5C16.48 5 12 9.48 12 15C12 22.5 22 39 22 39C22 39 32 22.5 32 15C32 9.48 27.52 5 22 5Z" fill="url(#lgpin)" filter="url(#lglow)"/>
-      <rect x="19.5" y="10.5" width="5" height="9" rx="1.5" fill="white"/>
-      <rect x="16.5" y="13.5" width="11" height="3" rx="1.5" fill="white"/>
-      <circle cx="22" cy="37" r="1.5" fill="#00AEEF" opacity="0.6"/>
-    </svg>
-    <div>
-      <div class="logo-name">Aquar<em>ient</em></div>
-      <div class="logo-sub">Physician Locator</div>
-    </div>
-  </a>
-  <div class="hdr-badge" aria-label="Live NPPES Registry connection">
-    <div class="hdr-dot" aria-hidden="true"></div>NPPES Registry
-  </div>
-</header>
-
-<!-- ══ PHASE 1: SEARCH ═════════════════════════════════════════ -->
+<!-- ══ PHASE 1: SEARCH ════════════════════════════════════════ -->
 <main id="main-content">
 <div class="phase-search" id="phase-search">
   <div class="search-card" role="search" aria-label="Physician search form">
@@ -585,47 +571,78 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   </div>
 </div>
 
-<!-- ══ PHASE 2: RESULTS ════ -->
-<div class="srch-banner" id="srch-banner" role="region" aria-label="Current search criteria">
-  <div class="sb-fields">
-    <div class="sb-pill">
-      <div class="sb-pill-label">Location</div>
-      <div class="sb-pill-val" id="sb-loc">—</div>
-    </div>
-    <div class="sb-divider" aria-hidden="true"></div>
-    <div class="sb-pill">
-      <div class="sb-pill-label">Radius</div>
-      <div class="sb-pill-val accent" id="sb-radius">—</div>
-    </div>
-    <div class="sb-divider" aria-hidden="true"></div>
-    <div class="sb-pill" style="min-width:140px">
-      <div class="sb-pill-label">Specialties</div>
-      <div class="sb-chips" id="sb-chips"></div>
-    </div>
-  </div>
-  <div class="sb-actions">
-    <button class="sb-new-btn" onclick="resetToSearch()" aria-label="Start a new search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
-      New Search
-    </button>
-  </div>
-</div>
+<!-- ══ RESULTS WRAPPER (header + banner + columns) ══════════ -->
+<div id="results-wrapper">
 
-<div class="phase-results" id="phase-results" aria-live="polite">
-  <div class="results-left-panel" id="results-left-panel">
-    <div class="res-meta" id="res-meta" role="status" aria-live="polite">
-      <div class="res-count">Showing <strong id="rc-shown">0</strong> of <strong id="rc-total">0</strong> providers</div>
-      <div class="res-tags" id="rc-chips"></div>
+  <!-- HEADER — lives inside the wrapper so it scrolls with the flex column -->
+  <header class="hdr" id="hdr" role="banner">
+    <a class="logo" onclick="resetToSearch();return false;" href="#" aria-label="Aquarient Physician Locator — return to search">
+      <svg class="logo-mark" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="lgbg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0F2044"/><stop offset="100%" stop-color="#1A3A6E"/></linearGradient>
+          <linearGradient id="lgpin" x1="22" y1="4" x2="22" y2="40" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#00AEEF"/><stop offset="100%" stop-color="#0076B6"/></linearGradient>
+          <filter id="lglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.5" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>
+        </defs>
+        <rect width="44" height="44" rx="11" fill="url(#lgbg)"/>
+        <path d="M22 5C16.48 5 12 9.48 12 15C12 22.5 22 39 22 39C22 39 32 22.5 32 15C32 9.48 27.52 5 22 5Z" fill="url(#lgpin)" filter="url(#lglow)"/>
+        <rect x="19.5" y="10.5" width="5" height="9" rx="1.5" fill="white"/>
+        <rect x="16.5" y="13.5" width="11" height="3" rx="1.5" fill="white"/>
+        <circle cx="22" cy="37" r="1.5" fill="#00AEEF" opacity="0.6"/>
+      </svg>
+      <div>
+        <div class="logo-name">Aquar<em>ient</em></div>
+        <div class="logo-sub">Physician Locator</div>
+      </div>
+    </a>
+    <div class="hdr-badge" aria-label="Live NPPES Registry connection">
+      <div class="hdr-dot" aria-hidden="true"></div>NPPES Registry
     </div>
-    <div class="cards-scroll-container" id="cards-scroll-container">
-      <div class="cards-list" id="results-list" role="list" aria-label="Physician results"></div>
+  </header>
+
+  <!-- BANNER -->
+  <div class="srch-banner" id="srch-banner" role="region" aria-label="Current search criteria">
+    <div class="sb-fields">
+      <div class="sb-pill">
+        <div class="sb-pill-label">Location</div>
+        <div class="sb-pill-val" id="sb-loc">—</div>
+      </div>
+      <div class="sb-divider" aria-hidden="true"></div>
+      <div class="sb-pill">
+        <div class="sb-pill-label">Radius</div>
+        <div class="sb-pill-val accent" id="sb-radius">—</div>
+      </div>
+      <div class="sb-divider" aria-hidden="true"></div>
+      <div class="sb-pill" style="min-width:140px">
+        <div class="sb-pill-label">Specialties</div>
+        <div class="sb-chips" id="sb-chips"></div>
+      </div>
     </div>
-    <div class="load-more-wrap" id="load-more-container"></div>
+    <div class="sb-actions">
+      <button class="sb-new-btn" onclick="resetToSearch()" aria-label="Start a new search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+        New Search
+      </button>
+    </div>
   </div>
-  <div class="results-right-panel" id="results-right-panel">
-    <div id="map" role="application" aria-label="Interactive map showing provider locations" tabindex="0"></div>
+
+  <!-- TWO-COLUMN RESULTS -->
+  <div class="phase-results" id="phase-results" aria-live="polite">
+    <div class="results-left-panel" id="results-left-panel">
+      <div class="res-meta" id="res-meta" role="status" aria-live="polite">
+        <div class="res-count">Showing <strong id="rc-shown">0</strong> of <strong id="rc-total">0</strong> providers</div>
+        <div class="res-tags" id="rc-chips"></div>
+      </div>
+      <div class="cards-scroll-container" id="cards-scroll-container">
+        <div class="cards-list" id="results-list" role="list" aria-label="Physician results"></div>
+      </div>
+      <div class="load-more-wrap" id="load-more-container"></div>
+    </div>
+    <div class="results-right-panel" id="results-right-panel">
+      <div id="map" role="application" aria-label="Interactive map showing provider locations" tabindex="0"></div>
+    </div>
   </div>
-</div>
+
+</div><!-- /#results-wrapper -->
 </main>
 
 <!-- SPINNER -->
@@ -747,8 +764,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 var MAPQUEST_KEY     = (window.ENV && window.ENV.MAPQUEST_KEY) ? window.ENV.MAPQUEST_KEY : "";
 var BACKEND_URL      = (window.ENV && window.ENV.BACKEND_URL)  ? window.ENV.BACKEND_URL  : "";
 var MAX_PAGE         = 10;
-var FETCH_TIMEOUT_MS = 45000;  // general timeout (search, lead submit, geocode)
-var AC_TIMEOUT_MS    = 8000;   // autocomplete — must be well under Render's 30 s proxy
+var FETCH_TIMEOUT_MS = 45000;
+var AC_TIMEOUT_MS    = 8000;
 
 if (!MAPQUEST_KEY) console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
 if (!BACKEND_URL)  console.warn("[PhysicianLocator] BACKEND_URL not set");
@@ -760,10 +777,7 @@ var selLat = null, selLng = null, selCity = "", selState = "";
 var currentSearch = {}, taxTags = [];
 
 
-/* ══ FETCH WITH TIMEOUT ══
- *  Uses AbortController so the browser-side request is also cancelled,
- *  not just ignored after the timeout. Pass explicit ms per call.
- */
+/* ══ FETCH WITH TIMEOUT ══ */
 function fetchWithTimeout(url, options, ms) {
   ms = ms || FETCH_TIMEOUT_MS;
   var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -845,19 +859,41 @@ function initMap() {
 
 /* ══ PHASES ══ */
 function showResultsPhase() {
+  /* Hide search */
   document.getElementById("phase-search").style.display = "none";
-  document.getElementById("phase-results").classList.add("show");
+
+  /* Show the wrapper (flex column: header + banner + results) */
+  var wrapper = document.getElementById("results-wrapper");
+  wrapper.classList.add("show");
+
+  /* Show header & banner inside wrapper */
+  document.getElementById("hdr").style.display        = "flex";
+  document.getElementById("srch-banner").classList.add("visible");
+
+  /* Init map */
   initMap();
+
+  /* Let the DOM settle, then fix map size */
   setTimeout(function() { if (map) map.invalidateSize(); }, 250);
 }
 
 function resetToSearch() {
-  document.getElementById("phase-results").classList.remove("show");
-  document.getElementById("phase-search").style.display = "flex";
+  /* Hide results wrapper */
+  var wrapper = document.getElementById("results-wrapper");
+  wrapper.classList.remove("show");
+
+  /* Reset inner states */
+  document.getElementById("hdr").style.display = "none";
+  document.getElementById("srch-banner").classList.remove("visible");
+
+  /* Clear data */
   allPhysicians = []; totalFound = 0; shownCount = 0;
   selLat = selLng = null; selCity = selState = "";
   document.getElementById("results-list").innerHTML = "";
   if (map) { markers.forEach(function(m) { if (m) map.removeLayer(m); }); markers = []; }
+
+  /* Show search */
+  document.getElementById("phase-search").style.display = "flex";
   document.getElementById("address-input").focus();
 }
 
@@ -879,58 +915,32 @@ function updateSbar() {
 }
 
 
-/* ══ ADDRESS AUTOCOMPLETE ══
- *
- *  Fixes applied:
- *  1. Debounce: 300 ms (was 250 ms — fine, kept similar)
- *  2. In-flight request cancellation: each new keystroke aborts the
- *     previous fetch via AbortController so stale responses from "tho"
- *     can never overwrite results from "thou".
- *  3. Explicit AC_TIMEOUT_MS (8 s) passed to fetchWithTimeout so the
- *     AbortController fires at 8 s, not the 45 s FETCH_TIMEOUT_MS default.
- */
+/* ══ ADDRESS AUTOCOMPLETE ══ */
 function initAC(inputId, listId, groupId, onSelect, onReset) {
   var inp   = document.getElementById(inputId);
   var list  = document.getElementById(listId);
   var idx   = -1, lastQ = "", debounceTimer = null;
-  var acController = null;   // tracks the in-flight AbortController
+  var acController = null;
 
   inp.addEventListener("input", function() {
     onReset();
     clearTimeout(debounceTimer);
-
     var v = inp.value.trim();
     if (v.length < 2) { closeAC(); return; }
     if (v === lastQ)  return;
-
     showSpin(list);
-
     debounceTimer = setTimeout(function() {
       lastQ = v;
-
-      // Cancel any in-flight request before starting a new one
       if (acController) { acController.abort(); acController = null; }
-
       acController = typeof AbortController !== "undefined" ? new AbortController() : null;
       var timer = acController ? setTimeout(function() { acController.abort(); }, AC_TIMEOUT_MS) : null;
       var opts  = acController ? { signal: acController.signal } : {};
-
       fetch(BACKEND_URL + "/api/autocomplete?text=" + encodeURIComponent(v) + "&limit=7", opts)
         .finally(function() { if (timer) clearTimeout(timer); })
-        .then(function(r) {
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          return r.json();
-        })
-        .then(function(data) {
-          acController = null;
-          renderAC(data.features || []);
-        })
-        .catch(function(err) {
-          acController = null;
-          // Ignore AbortError — it just means a newer request took over
-          if (err && err.name !== "AbortError") closeAC();
-        });
-    }, 300);  // 300 ms debounce — fires only after user pauses typing
+        .then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function(data) { acController = null; renderAC(data.features || []); })
+        .catch(function(err) { acController = null; if (err && err.name !== "AbortError") closeAC(); });
+    }, 300);
   });
 
   inp.addEventListener("keydown", function(e) {
@@ -972,10 +982,7 @@ function initAC(inputId, listId, groupId, onSelect, onReset) {
       info.appendChild(mainEl);
       if (sub) { var subEl = document.createElement("div"); subEl.className = "ac-sub"; subEl.textContent = sub; info.appendChild(subEl); }
       item.appendChild(ico); item.appendChild(info);
-      item.addEventListener("click", function() {
-        onSelect(c[1], c[0], p.city || p.county || "", p.state_code || "", fmt);
-        closeAC();
-      });
+      item.addEventListener("click", function() { onSelect(c[1], c[0], p.city || p.county || "", p.state_code || "", fmt); closeAC(); });
       list.appendChild(item);
     });
     list.classList.add("open");
@@ -990,9 +997,7 @@ function initAC(inputId, listId, groupId, onSelect, onReset) {
 }
 
 
-/* ══ TAXONOMY AUTOCOMPLETE ══
- *  Same fixes: in-flight cancellation + explicit AC_TIMEOUT_MS.
- */
+/* ══ TAXONOMY AUTOCOMPLETE ══ */
 function initTaxAC(inputId, listId, fieldId, boxId, tagsArr, renderFn) {
   var inp  = document.getElementById(inputId);
   var list = document.getElementById(listId);
@@ -1006,32 +1011,18 @@ function initTaxAC(inputId, listId, fieldId, boxId, tagsArr, renderFn) {
     var v = inp.value.trim();
     if (v.length < 2) { closeTL(); return; }
     if (v === lastQ)  return;
-
     showSpin(list);
-
     debounceTimer = setTimeout(function() {
       lastQ = v;
-
       if (taxController) { taxController.abort(); taxController = null; }
-
       taxController = typeof AbortController !== "undefined" ? new AbortController() : null;
       var timer = taxController ? setTimeout(function() { taxController.abort(); }, AC_TIMEOUT_MS) : null;
       var opts  = taxController ? { signal: taxController.signal } : {};
-
       fetch(BACKEND_URL + "/api/taxonomy-search?q=" + encodeURIComponent(v), opts)
         .finally(function() { if (timer) clearTimeout(timer); })
-        .then(function(r) {
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          return r.json();
-        })
-        .then(function(data) {
-          taxController = null;
-          renderTL(data.results || []);
-        })
-        .catch(function(err) {
-          taxController = null;
-          if (err && err.name !== "AbortError") closeTL();
-        });
+        .then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function(data) { taxController = null; renderTL(data.results || []); })
+        .catch(function(err) { taxController = null; if (err && err.name !== "AbortError") closeTL(); });
     }, 300);
   });
 
