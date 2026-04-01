@@ -37,7 +37,7 @@ class Config:
     MAX_DESC_LEN: int = 120
     MAX_RADIUS: float = 100.0
     GEOCODE_CACHE_SIZE: int = 2000
-    REQUEST_TIMEOUT: int = 30
+    REQUEST_TIMEOUT: int = 45
     
     # Rate limiting (per-IP, in-process)
     RATE_LIMIT_WINDOW: int = 60

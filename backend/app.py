@@ -18,6 +18,7 @@ import hashlib
 import logging
 import os
 import sys
+import time
 import traceback
 import uuid
 from datetime import datetime
@@ -26,6 +27,8 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from requests import Timeout  # For exception handling
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
