@@ -100,7 +100,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box
 button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
 /* ══ PHASE 1: SEARCH CARD ════════════════════════════════════ */
-.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:0 96px 96px 96px;overflow:visible}
+.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding:96px 96px 96px 96px;overflow:visible;padding-top:0}
 .search-card{
   background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-radius:28px;
@@ -111,23 +111,25 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   position:relative;
   z-index:10;
   overflow:visible;
+  margin-top:0;
 }
 .sc-nppes-badge{
   position:absolute;
-  left:-75px;
-  top:2rem;
-  display:flex;
-  flex-direction:column;
+  right:1.5rem;
+  top:1.5rem;
+  display:inline-flex;
   align-items:center;
-  gap:8px;
+  gap:6px;
   font-size:.65rem;
   font-weight:700;
-  letter-spacing:.12em;
+  letter-spacing:.08em;
   text-transform:uppercase;
   color:#0076B6;
-  writing-mode:vertical-rl;
-  text-orientation:mixed;
-  padding:1rem 0;
+  background:rgba(0,174,239,.08);
+  border:1px solid rgba(0,174,239,.18);
+  padding:6px 14px;
+  border-radius:100px;
+  white-space:nowrap;
 }
 .search-card::before{clip-path:inset(0 0 0 0 round 28px 28px 0 0)}
 .search-card::before{
