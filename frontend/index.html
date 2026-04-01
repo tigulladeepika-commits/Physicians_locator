@@ -100,16 +100,34 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box
 button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
 /* ══ PHASE 1: SEARCH CARD ════════════════════════════════════ */
-.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:96px;overflow:visible}
+.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:0 96px 96px 96px;overflow:visible}
 .search-card{
   background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-radius:28px;
   box-shadow:0 32px 100px rgba(0,60,120,.16),0 0 0 1.5px rgba(0,174,239,.18),inset 0 1px 0 rgba(255,255,255,.8);
   padding:3rem 3rem 2.5rem;width:100%;max-width:none;
   border:1px solid rgba(0,174,239,.15);
+  border-left:6px solid var(--teal);
   position:relative;
   z-index:10;
   overflow:visible;
+}
+.sc-nppes-badge{
+  position:absolute;
+  left:-75px;
+  top:2rem;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  font-size:.65rem;
+  font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:#0076B6;
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  padding:1rem 0;
 }
 .search-card::before{clip-path:inset(0 0 0 0 round 28px 28px 0 0)}
 .search-card::before{
@@ -511,6 +529,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 <main id="main-content">
 <div class="phase-search" id="phase-search">
   <div class="search-card" role="search" aria-label="Physician search form">
+    <div class="sc-nppes-badge" aria-hidden="true">NPPES Registry</div>
     <div class="sc-eye" aria-hidden="true">US Physician Directory</div>
     <h1 class="sc-title">Find a <em>specialist</em> near you</h1>
     <p class="sc-desc">Search 6M+ licensed providers across all 50 states using the official NPPES registry.</p>
