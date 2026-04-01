@@ -78,9 +78,10 @@ body::after{
 
 /* ── HEADER ──────────────────────────────────────────────── */
 .hdr{
+  display:none;
   background:rgba(255,255,255,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border-bottom:1px solid rgba(0,174,239,.12);padding:0 clamp(1rem,4vw,2.5rem);
-  height:var(--hdr);display:flex;align-items:center;justify-content:space-between;
+  height:var(--hdr);align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:300;box-shadow:0 2px 20px rgba(0,118,182,.08);
 }
 .logo{display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer}
@@ -99,12 +100,12 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box
 button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
 /* ══ PHASE 1: SEARCH CARD ════════════════════════════════════ */
-.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--hdr));padding:2rem var(--border);overflow:visible}
+.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:96px;overflow:visible}
 .search-card{
   background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-radius:28px;
   box-shadow:0 32px 100px rgba(0,60,120,.16),0 0 0 1.5px rgba(0,174,239,.18),inset 0 1px 0 rgba(255,255,255,.8);
-  padding:3rem 3rem 2.5rem;width:100%;max-width:760px;
+  padding:3rem 3rem 2.5rem;width:100%;max-width:none;
   border:1px solid rgba(0,174,239,.15);
   position:relative;
   z-index:10;
@@ -152,9 +153,9 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
 /* ── Search Banner (full-width, before results) ───────────────────── */
 .srch-banner{
+  display:none;
   background:var(--navy);
   padding:1.1rem 1.75rem;
-  display:flex;
   align-items:center;
   flex-wrap:wrap;
   gap:12px;
@@ -554,7 +555,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
       </div>
       <div class="tax-list" id="tax-ac-list" role="listbox" aria-label="Specialty suggestions"></div>
       <div class="fhint" id="tax-hint">Press Enter or select to add · multiple allowed</div>
-      <div class="tax-st" id="tax-status" aria-live="polite">Loading specialties...</div>
+      <div class="tax-st" id="tax-status" aria-live="polite"></div>
     </div>
 
     <div class="field-err" id="search-err" role="alert"></div>
