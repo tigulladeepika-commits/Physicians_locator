@@ -50,7 +50,7 @@ except ImportError:
 # Import our modular components
 from config import cfg, validate_configuration
 from services import zip_database, taxonomy, nppes, salesforce, rate_limiting
-from services.http_client import http_client
+from services.http_client import http_client, http_client_once
 from services.rate_limiting import rate_limit
 from utils.helpers import sanitise
 from utils.validation import validate_lat_lng, validate_radius, validate_descriptions
@@ -239,7 +239,7 @@ def autocomplete():
         return _error("Geocoding service not configured", 503, "GEOCODE_UNCONFIGURED")
 
     try:
-        resp = http_client.get(
+        resp = http_client_once.get(    # no-retry: fails in 8s, not 27s
             "https://api.geoapify.com/v1/geocode/autocomplete",
             params={
                 "text": text[:200],
@@ -283,7 +283,7 @@ def geocode():
         return _error("Geocoding service not configured", 503, "GEOCODE_UNCONFIGURED")
 
     try:
-        resp = http_client.get(
+        resp = http_client_once.get(   # no-retry: fails in 8s, not 27s
             "https://api.geoapify.com/v1/geocode/search",
             params={
                 "text": address[:300],
