@@ -52,6 +52,9 @@ def _build_spatial_index(db: Dict) -> None:
 
 def _load_zip_database() -> None:
     """Load ZIP database from cache or download from GeoNames."""
+    # Import here to avoid circular import at module level
+    from config import cfg
+
     local_cache = "us_zip_db.json"
 
     def _apply(db: Dict) -> None:
@@ -74,9 +77,11 @@ def _load_zip_database() -> None:
             logger.warning("ZIP disk cache corrupt, re-downloading: %s", e)
 
     # Download from GeoNames
+    # Use ZIP_DL_TIMEOUT (90 s) — this runs in a background thread at startup
+    # and is NOT subject to Render's per-request 30 s proxy deadline.
     try:
         logger.info("Downloading GeoNames US ZIP database...")
-        resp = http_client.get(GEONAMES_ZIP_URL, timeout=90)
+        resp = http_client.get(GEONAMES_ZIP_URL, timeout=cfg.ZIP_DL_TIMEOUT)
         resp.raise_for_status()
         zf = zipfile.ZipFile(io.BytesIO(resp.content))
         with zf.open("US.txt") as f:

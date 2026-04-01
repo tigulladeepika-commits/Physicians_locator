@@ -37,7 +37,17 @@ class Config:
     MAX_DESC_LEN: int = 120
     MAX_RADIUS: float = 100.0
     GEOCODE_CACHE_SIZE: int = 2000
-    REQUEST_TIMEOUT: int = 45
+
+    # ── Timeouts ──────────────────────────────────────────────────────────────
+    # IMPORTANT: Render's reverse proxy hard-kills connections at 30s.
+    # All outbound HTTP calls MUST complete (or fail) before that deadline.
+    #
+    #   REQUEST_TIMEOUT  — general outbound calls (NPPES, Salesforce, etc.)
+    #   AC_TIMEOUT       — autocomplete / geocode calls (user is typing; must feel fast)
+    #   ZIP_DL_TIMEOUT   — one-time GeoNames ZIP file download at startup
+    REQUEST_TIMEOUT: int = 25   # was 45 — kept under Render's 30 s proxy limit
+    AC_TIMEOUT: int = 8         # NEW — hard cap for autocomplete/geocode endpoints
+    ZIP_DL_TIMEOUT: int = 90    # large file download, runs in background thread only
     
     # Rate limiting (per-IP, in-process)
     RATE_LIMIT_WINDOW: int = 60

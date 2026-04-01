@@ -10,6 +10,13 @@ Changes from v2:
   - Cleaner imports and dependency structure
   - Thread-safe rate limiting and caching
   - Comprehensive error handling
+
+Fix v2.1.1:
+  - REQUEST_TIMEOUT reduced from 45s → 25s (Render proxy kills at 30s)
+  - AC_TIMEOUT = 8s hard cap on autocomplete/geocode (user-facing, must be fast)
+  - autocomplete returns HTTP 200 with empty features on timeout/error
+    (frontend degrades gracefully instead of showing an error banner)
+  - geocode keeps 504/502 status codes (it's a blocking user action)
 """
 
 from __future__ import annotations
@@ -26,7 +33,8 @@ from datetime import datetime
 # Ensure current directory is in Python path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from requests import Timeout  # For exception handling
+import requests
+from requests import Timeout
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -214,12 +222,22 @@ def lead_debug():
 @app.route("/api/autocomplete")
 @rate_limit(limit=cfg.RATE_LIMIT_AC)
 def autocomplete():
+    """
+    Address autocomplete via Geoapify.
+
+    Uses cfg.AC_TIMEOUT (8 s) — well under Render's 30 s proxy deadline.
+    Returns HTTP 200 with empty features on timeout or upstream error so the
+    frontend degrades silently instead of showing an error banner.
+    """
     text = (request.args.get("text") or "").strip()
     limit = min(int(request.args.get("limit", 6)), 10)
+
     if not text or len(text) < 2:
         return jsonify({"features": []})
+
     if not cfg.GEOAPIFY_API_KEY:
         return _error("Geocoding service not configured", 503, "GEOCODE_UNCONFIGURED")
+
     try:
         resp = http_client.get(
             "https://api.geoapify.com/v1/geocode/autocomplete",
@@ -228,27 +246,42 @@ def autocomplete():
                 "limit": limit,
                 "filter": "countrycode:us",
                 "bias": "countrycode:us",
-                "apiKey": cfg.GEOAPIFY_API_KEY
+                "apiKey": cfg.GEOAPIFY_API_KEY,
             },
-            timeout=cfg.REQUEST_TIMEOUT,
+            timeout=cfg.AC_TIMEOUT,  # ← 8 s hard cap (was cfg.REQUEST_TIMEOUT = 45 s)
         )
         resp.raise_for_status()
         return jsonify(resp.json())
+
     except Timeout:
-        return _error("Geocoding service timed out", 504, "GEOCODE_TIMEOUT")
+        # Log a warning but return 200 — the user is just typing; an empty
+        # dropdown is far better than a visible error.
+        logger.warning(
+            "Geoapify autocomplete timed out | text=%r | timeout=%ss",
+            text[:30], cfg.AC_TIMEOUT,
+        )
+        return jsonify({"features": [], "_timeout": True}), 200
+
     except Exception as e:
         logger.error("Autocomplete error: %s", e)
-        return _error("Autocomplete unavailable", 502, "GEOCODE_ERROR")
+        return jsonify({"features": [], "_error": True}), 200
 
 
 @app.route("/api/geocode")
 @rate_limit(limit=cfg.RATE_LIMIT_SEARCH)
 def geocode():
+    """
+    Forward geocode a US address via Geoapify.
+
+    Also uses cfg.AC_TIMEOUT — the user clicked Search and is waiting,
+    but we still must not exceed Render's proxy deadline.
+    """
     address = (request.args.get("address") or "").strip()
     if not address:
         return _error("Address is required", 400, "MISSING_ADDRESS")
     if not cfg.GEOAPIFY_API_KEY:
         return _error("Geocoding service not configured", 503, "GEOCODE_UNCONFIGURED")
+
     try:
         resp = http_client.get(
             "https://api.geoapify.com/v1/geocode/search",
@@ -256,9 +289,9 @@ def geocode():
                 "text": address[:300],
                 "limit": 1,
                 "filter": "countrycode:us",
-                "apiKey": cfg.GEOAPIFY_API_KEY
+                "apiKey": cfg.GEOAPIFY_API_KEY,
             },
-            timeout=cfg.REQUEST_TIMEOUT,
+            timeout=cfg.AC_TIMEOUT,  # ← 8 s hard cap (was cfg.REQUEST_TIMEOUT = 45 s)
         )
         resp.raise_for_status()
         features = resp.json().get("features", [])
@@ -274,8 +307,10 @@ def geocode():
             "state": str(props.get("state_code") or ""),
             "postcode": str(props.get("postcode") or "")[:5],
         })
-    except requests.Timeout:
-        return _error("Geocoding service timed out", 504, "GEOCODE_TIMEOUT")
+
+    except Timeout:
+        return _error("Geocoding service timed out — please try again", 504, "GEOCODE_TIMEOUT")
+
     except Exception as e:
         logger.error("Geocode error: %s", e)
         return _error("Geocoding failed", 502, "GEOCODE_ERROR")
@@ -491,10 +526,12 @@ def initialize_app():
     logger.info("Backend initialized | missing_env=%s", missing_env)
 
 
+initialize_app()
+
+
 # ─────────────────────────────────────────────
 #  ENTRY POINT
 # ─────────────────────────────────────────────
 
 if __name__ == "__main__":
-    initialize_app()
     app.run(host="0.0.0.0", port=cfg.PORT, debug=False)

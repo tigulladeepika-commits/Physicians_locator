@@ -4,7 +4,14 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --worker-class gthread --workers 1 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT
+    # ── Worker config ────────────────────────────────────────────────────────
+    # gthread  : each worker handles multiple requests concurrently via threads
+    # workers 2: two processes → survives one worker being busy with a slow NPPES call
+    # threads 8: 8 concurrent Geoapify/NPPES calls per worker without blocking
+    # timeout 25: must be < Render's 30 s proxy deadline; app-level timeouts
+    #             (AC_TIMEOUT=8s, REQUEST_TIMEOUT=25s) fire first
+    # keep-alive 5: reuse connections from Vercel edge → fewer TCP handshakes
+    startCommand: gunicorn app:app --worker-class gthread --workers 2 --threads 8 --timeout 25 --keep-alive 5 --bind 0.0.0.0:$PORT
     plan: free
     autoDeploy: true
     envVars:
