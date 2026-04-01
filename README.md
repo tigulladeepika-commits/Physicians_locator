@@ -1,7 +1,14 @@
-# Physician Locator Project 
 # 🩺 Physician Locator — Aquarient
 
-A Flask web application for locating physicians using the NPPES NPI Registry, with map integration, address autocomplete, and lead capture.
+A professional, scalable Flask web application for locating physicians using the NPPES NPI Registry, with map integration, address autocomplete, and lead capture.
+
+> **📋 NOTE**: This project has been **restructured into a professional architecture**. See [RESTRUCTURING_SUMMARY.md](RESTRUCTURING_SUMMARY.md) for what changed.
+> 
+> **Quick Links**:
+> - [Project Structure Overview](PROJECT_STRUCTURE.md)  
+> - [Backend Details](backend/README.md)
+> - [Frontend Details](frontend/README.md)
+> - [Setup Guide](SETUP_GUIDE.md)
 
 ---
 
