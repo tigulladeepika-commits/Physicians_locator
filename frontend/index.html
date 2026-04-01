@@ -565,8 +565,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   </div>
 </div>
 
-<!-- ══ PHASE 2: RESULTS - FULL-WIDTH BANNER + TWO COLUMN LAYOUT ════ -->
-<!-- Banner: Full-width above the two-column layout -->
+<!-- ══ PHASE 2: RESULTS ════ -->
 <div class="srch-banner" id="srch-banner" role="region" aria-label="Current search criteria">
   <div class="sb-fields">
     <div class="sb-pill">
@@ -592,31 +591,20 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   </div>
 </div>
 
-<!-- Two-column layout: Physicians (left, smaller) and Map (right, larger) -->
 <div class="phase-results" id="phase-results" aria-live="polite">
-
-  <!-- LEFT PANEL: Physicians List (compact) -->
   <div class="results-left-panel" id="results-left-panel">
-    <!-- Results meta -->
     <div class="res-meta" id="res-meta" role="status" aria-live="polite">
       <div class="res-count">Showing <strong id="rc-shown">0</strong> of <strong id="rc-total">0</strong> providers</div>
       <div class="res-tags" id="rc-chips"></div>
     </div>
-
-    <!-- Scrollable Cards -->
     <div class="cards-scroll-container" id="cards-scroll-container">
       <div class="cards-list" id="results-list" role="list" aria-label="Physician results"></div>
     </div>
-
-    <!-- Load More Button at Bottom -->
     <div class="load-more-wrap" id="load-more-container"></div>
   </div>
-
-  <!-- RIGHT PANEL: Map (larger) -->
   <div class="results-right-panel" id="results-right-panel">
     <div id="map" role="application" aria-label="Interactive map showing provider locations" tabindex="0"></div>
   </div>
-
 </div>
 </main>
 
@@ -736,10 +724,11 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
 <script>
 /* ══ CONFIG ══ */
-var MAPQUEST_KEY = (window.ENV && window.ENV.MAPQUEST_KEY) ? window.ENV.MAPQUEST_KEY : "";
-var BACKEND_URL  = (window.ENV && window.ENV.BACKEND_URL)  ? window.ENV.BACKEND_URL  : "";
-var MAX_PAGE     = 9;
-var FETCH_TIMEOUT_MS = 45000;
+var MAPQUEST_KEY     = (window.ENV && window.ENV.MAPQUEST_KEY) ? window.ENV.MAPQUEST_KEY : "";
+var BACKEND_URL      = (window.ENV && window.ENV.BACKEND_URL)  ? window.ENV.BACKEND_URL  : "";
+var MAX_PAGE         = 9;
+var FETCH_TIMEOUT_MS = 45000;  // general timeout (search, lead submit, geocode)
+var AC_TIMEOUT_MS    = 8000;   // autocomplete — must be well under Render's 30 s proxy
 
 if (!MAPQUEST_KEY) console.warn("[PhysicianLocator] MAPQUEST_KEY not set");
 if (!BACKEND_URL)  console.warn("[PhysicianLocator] BACKEND_URL not set");
@@ -751,39 +740,44 @@ var selLat = null, selLng = null, selCity = "", selState = "";
 var currentSearch = {}, taxTags = [];
 
 
-/* ══ FETCH WITH TIMEOUT ══ */
+/* ══ FETCH WITH TIMEOUT ══
+ *  Uses AbortController so the browser-side request is also cancelled,
+ *  not just ignored after the timeout. Pass explicit ms per call.
+ */
 function fetchWithTimeout(url, options, ms) {
   ms = ms || FETCH_TIMEOUT_MS;
   var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   var timer = controller ? setTimeout(function() { controller.abort(); }, ms) : null;
-  var fetchOptions = controller ? Object.assign({}, options, { signal: controller.signal }) : options;
-  return fetch(url, fetchOptions).finally(function() { if (timer) clearTimeout(timer); });
+  var opts  = controller ? Object.assign({}, options, { signal: controller.signal }) : options;
+  return fetch(url, opts).finally(function() { if (timer) clearTimeout(timer); });
 }
 
 
 /* ══ INIT ══ */
 window.addEventListener("DOMContentLoaded", function() {
   initAC("address-input", "autocomplete-list", "addr-group",
-    function(lat, lng, city, state, fmt) { selLat = lat; selLng = lng; selCity = city; selState = state; if (fmt) document.getElementById("address-input").value = fmt; },
+    function(lat, lng, city, state, fmt) {
+      selLat = lat; selLng = lng; selCity = city; selState = state;
+      if (fmt) document.getElementById("address-input").value = fmt;
+    },
     function() { selLat = selLng = null; selCity = selState = ""; });
 
   initTaxAC("taxonomy-desc", "tax-ac-list", "tax-field", "tax-tags-box", taxTags, renderMainTags);
 
   document.getElementById("search-btn").addEventListener("click", doSearch);
-  document.getElementById("address-input").addEventListener("keydown", function(e) { if (e.key === "Enter") doSearch(); });
+  document.getElementById("address-input").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") doSearch();
+  });
 
-  /* Modal */
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("lead-modal").addEventListener("click", function(e) {
     if (e.target === document.getElementById("lead-modal")) closeModal();
   });
 
-  /* Escape key */
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") { closeModal(); closeDetail(); }
   });
 
-  /* Focus trap for modal */
   document.getElementById("lead-modal").addEventListener("keydown", trapFocus);
   document.getElementById("detail-overlay").addEventListener("keydown", trapFocus);
   document.getElementById("detail-overlay").addEventListener("click", function(e) {
@@ -797,17 +791,14 @@ window.addEventListener("DOMContentLoaded", function() {
 /* ══ FOCUS TRAP ══ */
 function trapFocus(e) {
   if (e.key !== "Tab") return;
-  var dialog = e.currentTarget;
+  var dialog   = e.currentTarget;
   var focusable = dialog.querySelectorAll(
     'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
   );
   if (!focusable.length) return;
   var first = focusable[0], last = focusable[focusable.length - 1];
-  if (e.shiftKey) {
-    if (document.activeElement === first) { last.focus(); e.preventDefault(); }
-  } else {
-    if (document.activeElement === last) { first.focus(); e.preventDefault(); }
-  }
+  if (e.shiftKey) { if (document.activeElement === first) { last.focus(); e.preventDefault(); } }
+  else            { if (document.activeElement === last)  { first.focus(); e.preventDefault(); } }
 }
 
 
@@ -835,8 +826,7 @@ function initMap() {
 /* ══ PHASES ══ */
 function showResultsPhase() {
   document.getElementById("phase-search").style.display = "none";
-  var results = document.getElementById("phase-results");
-  results.classList.add("show");
+  document.getElementById("phase-results").classList.add("show");
   initMap();
   setTimeout(function() { if (map) map.invalidateSize(); }, 250);
 }
@@ -854,7 +844,7 @@ function resetToSearch() {
 
 /* ══ BANNER ══ */
 function updateSbar() {
-  document.getElementById("sb-loc").textContent = currentSearch.address || "—";
+  document.getElementById("sb-loc").textContent    = currentSearch.address || "—";
   document.getElementById("sb-radius").textContent = (currentSearch.radius || "—") + " miles";
   var chipsEl = document.getElementById("sb-chips");
   chipsEl.innerHTML = "";
@@ -864,35 +854,71 @@ function updateSbar() {
     return;
   }
   labels.forEach(function(d) {
-    var s = document.createElement("span");
-    s.className = "sb-chip";
-    s.textContent = d;
-    chipsEl.appendChild(s);
+    var s = document.createElement("span"); s.className = "sb-chip"; s.textContent = d; chipsEl.appendChild(s);
   });
 }
 
 
-/* ══ ADDRESS AUTOCOMPLETE ══ */
+/* ══ ADDRESS AUTOCOMPLETE ══
+ *
+ *  Fixes applied:
+ *  1. Debounce: 300 ms (was 250 ms — fine, kept similar)
+ *  2. In-flight request cancellation: each new keystroke aborts the
+ *     previous fetch via AbortController so stale responses from "tho"
+ *     can never overwrite results from "thou".
+ *  3. Explicit AC_TIMEOUT_MS (8 s) passed to fetchWithTimeout so the
+ *     AbortController fires at 8 s, not the 45 s FETCH_TIMEOUT_MS default.
+ */
 function initAC(inputId, listId, groupId, onSelect, onReset) {
-  var inp  = document.getElementById(inputId);
-  var list = document.getElementById(listId);
-  var idx = -1, lastQ = "", timer = null;
+  var inp   = document.getElementById(inputId);
+  var list  = document.getElementById(listId);
+  var idx   = -1, lastQ = "", debounceTimer = null;
+  var acController = null;   // tracks the in-flight AbortController
 
   inp.addEventListener("input", function() {
-    onReset(); clearTimeout(timer);
+    onReset();
+    clearTimeout(debounceTimer);
+
     var v = inp.value.trim();
     if (v.length < 2) { closeAC(); return; }
-    if (v === lastQ) return;
+    if (v === lastQ)  return;
+
     showSpin(list);
-    timer = setTimeout(function() { lastQ = v; fetchAC(v); }, 250);
+
+    debounceTimer = setTimeout(function() {
+      lastQ = v;
+
+      // Cancel any in-flight request before starting a new one
+      if (acController) { acController.abort(); acController = null; }
+
+      acController = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var timer = acController ? setTimeout(function() { acController.abort(); }, AC_TIMEOUT_MS) : null;
+      var opts  = acController ? { signal: acController.signal } : {};
+
+      fetch(BACKEND_URL + "/api/autocomplete?text=" + encodeURIComponent(v) + "&limit=7", opts)
+        .finally(function() { if (timer) clearTimeout(timer); })
+        .then(function(r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function(data) {
+          acController = null;
+          renderAC(data.features || []);
+        })
+        .catch(function(err) {
+          acController = null;
+          // Ignore AbortError — it just means a newer request took over
+          if (err && err.name !== "AbortError") closeAC();
+        });
+    }, 300);  // 300 ms debounce — fires only after user pauses typing
   });
 
   inp.addEventListener("keydown", function(e) {
-    var items = list.querySelectorAll(".ac-item,.mp-ac-item");
-    if (e.key === "ArrowDown") { idx = Math.min(idx + 1, items.length - 1); hiAC(items, idx); e.preventDefault(); }
-    else if (e.key === "ArrowUp")   { idx = Math.max(idx - 1, 0); hiAC(items, idx); e.preventDefault(); }
-    else if (e.key === "Enter")  { if (idx >= 0 && items[idx]) items[idx].click(); else closeAC(); }
-    else if (e.key === "Escape") { closeAC(); }
+    var items = list.querySelectorAll(".ac-item");
+    if      (e.key === "ArrowDown") { idx = Math.min(idx + 1, items.length - 1); hiAC(items, idx); e.preventDefault(); }
+    else if (e.key === "ArrowUp")   { idx = Math.max(idx - 1, 0);                hiAC(items, idx); e.preventDefault(); }
+    else if (e.key === "Enter")     { if (idx >= 0 && items[idx]) items[idx].click(); else closeAC(); }
+    else if (e.key === "Escape")    { closeAC(); }
   });
 
   document.addEventListener("click", function(e) {
@@ -901,21 +927,9 @@ function initAC(inputId, listId, groupId, onSelect, onReset) {
   });
 
   function hiAC(items, i) {
-    items.forEach(function(it, j) {
-      it.setAttribute("aria-selected", j === i ? "true" : "false");
-    });
+    items.forEach(function(it, j) { it.setAttribute("aria-selected", j === i ? "true" : "false"); });
     if (items[i]) items[i].scrollIntoView({ block: "nearest" });
     inp.setAttribute("aria-activedescendant", items[i] ? items[i].id : "");
-  }
-
-  function fetchAC(text) {
-    fetchWithTimeout(BACKEND_URL + "/api/autocomplete?text=" + encodeURIComponent(text) + "&limit=7", {}, 8000)
-      .then(function(r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
-      .then(function(data) { renderAC(data.features || []); })
-      .catch(function() { closeAC(); });
   }
 
   function renderAC(features) {
@@ -926,15 +940,14 @@ function initAC(inputId, listId, groupId, onSelect, onReset) {
       var fmt = p.formatted || ""; if (!fmt) return;
       var parts = fmt.split(",").map(function(s) { return s.trim(); }).filter(Boolean);
       var main  = parts.slice(0, 2).join(", "), sub = parts.slice(2).join(", ");
-      var cls   = listId.indexOf("mp-") === 0 ? "mp-ac-item" : "ac-item";
       var item  = document.createElement("div");
-      item.className = cls;
+      item.className = "ac-item";
       item.id = listId + "-opt-" + fi;
       item.setAttribute("role", "option");
       item.setAttribute("aria-selected", "false");
       var ico = document.createElement("span"); ico.className = "ac-ico"; ico.setAttribute("aria-hidden", "true");
       ico.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>';
-      var info = document.createElement("div");
+      var info   = document.createElement("div");
       var mainEl = document.createElement("div"); mainEl.className = "ac-main"; mainEl.textContent = main;
       info.appendChild(mainEl);
       if (sub) { var subEl = document.createElement("div"); subEl.className = "ac-sub"; subEl.textContent = sub; info.appendChild(subEl); }
@@ -957,28 +970,56 @@ function initAC(inputId, listId, groupId, onSelect, onReset) {
 }
 
 
-/* ══ TAXONOMY AUTOCOMPLETE ══ */
+/* ══ TAXONOMY AUTOCOMPLETE ══
+ *  Same fixes: in-flight cancellation + explicit AC_TIMEOUT_MS.
+ */
 function initTaxAC(inputId, listId, fieldId, boxId, tagsArr, renderFn) {
   var inp  = document.getElementById(inputId);
   var list = document.getElementById(listId);
-  var lastQ = "", timer = null;
+  var lastQ = "", debounceTimer = null;
+  var taxController = null;
 
   document.getElementById(boxId).addEventListener("click", function() { inp.focus(); });
 
   inp.addEventListener("input", function() {
-    clearTimeout(timer);
+    clearTimeout(debounceTimer);
     var v = inp.value.trim();
     if (v.length < 2) { closeTL(); return; }
-    if (v === lastQ) return;
+    if (v === lastQ)  return;
+
     showSpin(list);
-    timer = setTimeout(function() { lastQ = v; fetchTL(v); }, 250);
+
+    debounceTimer = setTimeout(function() {
+      lastQ = v;
+
+      if (taxController) { taxController.abort(); taxController = null; }
+
+      taxController = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var timer = taxController ? setTimeout(function() { taxController.abort(); }, AC_TIMEOUT_MS) : null;
+      var opts  = taxController ? { signal: taxController.signal } : {};
+
+      fetch(BACKEND_URL + "/api/taxonomy-search?q=" + encodeURIComponent(v), opts)
+        .finally(function() { if (timer) clearTimeout(timer); })
+        .then(function(r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function(data) {
+          taxController = null;
+          renderTL(data.results || []);
+        })
+        .catch(function(err) {
+          taxController = null;
+          if (err && err.name !== "AbortError") closeTL();
+        });
+    }, 300);
   });
 
   inp.addEventListener("keydown", function(e) {
-    var active = list.querySelector(".tax-item[aria-selected='true'],.mp-tax-item[aria-selected='true']");
+    var active = list.querySelector(".tax-item[aria-selected='true']");
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      var n = active ? active.nextElementSibling : list.querySelector(".tax-item,.mp-tax-item");
+      var n = active ? active.nextElementSibling : list.querySelector(".tax-item");
       if (n) { if (active) active.setAttribute("aria-selected", "false"); n.setAttribute("aria-selected", "true"); n.scrollIntoView({ block: "nearest" }); }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
@@ -1000,26 +1041,15 @@ function initTaxAC(inputId, listId, fieldId, boxId, tagsArr, renderFn) {
     if (f && !f.contains(e.target)) closeTL();
   });
 
-  function fetchTL(q) {
-    fetchWithTimeout(BACKEND_URL + "/api/taxonomy-search?q=" + encodeURIComponent(q), {}, 5000)
-      .then(function(r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
-      .then(function(data) { renderTL(data.results || []); })
-      .catch(function() { closeTL(); });
-  }
-
   function renderTL(results) {
     var already = {};
     tagsArr.forEach(function(t) { already[t.display.toLowerCase()] = 1; });
     var filtered = results.filter(function(r) { return !already[r.display.toLowerCase()]; });
     if (!filtered.length) { closeTL(); return; }
     list.innerHTML = "";
-    var cls = listId.indexOf("mp-") === 0 ? "mp-tax-item" : "tax-item";
     filtered.forEach(function(r, ri) {
       var item = document.createElement("div");
-      item.className = cls;
+      item.className = "tax-item";
       item.id = listId + "-opt-" + ri;
       item.setAttribute("role", "option");
       item.setAttribute("aria-selected", "false");
@@ -1027,7 +1057,7 @@ function initTaxAC(inputId, listId, fieldId, boxId, tagsArr, renderFn) {
       var catEl  = document.createElement("div"); catEl.className  = "tax-c"; catEl.textContent  = r.classification;
       item.appendChild(nameEl); item.appendChild(catEl);
       item.addEventListener("mouseenter", function() {
-        list.querySelectorAll(".tax-item,.mp-tax-item").forEach(function(i) { i.setAttribute("aria-selected", "false"); });
+        list.querySelectorAll(".tax-item").forEach(function(i) { i.setAttribute("aria-selected", "false"); });
         item.setAttribute("aria-selected", "true");
       });
       item.addEventListener("click", function(e) {
@@ -1095,13 +1125,11 @@ function doSearch() {
 
   if (!address) {
     errEl.textContent = "Please enter a US address or location."; errEl.style.display = "block";
-    document.getElementById("address-input").focus();
-    return;
+    document.getElementById("address-input").focus(); return;
   }
   if (!taxCode && descs.length === 0) {
     errEl.textContent = "Please enter at least one specialty."; errEl.style.display = "block";
-    document.getElementById("taxonomy-desc").focus();
-    return;
+    document.getElementById("taxonomy-desc").focus(); return;
   }
 
   currentSearch = { address: address, radius: radius, taxonomy_code: taxCode, descriptions: descs };
@@ -1118,7 +1146,7 @@ function doSearch() {
         if (gd.error) throw new Error(gd.error);
         selLat = gd.lat; selLng = gd.lng; selCity = gd.city || ""; selState = gd.state || "";
         if (gd.formatted) document.getElementById("address-input").value = gd.formatted;
-        runSearch(address, radius, taxCode, descs, false);
+        runSearch(address, radius, taxCode, descs);
       })
       .catch(function(err) {
         showToast(err.message || "Could not find that address.", "error");
@@ -1126,11 +1154,11 @@ function doSearch() {
         setLoading(false);
       });
   } else {
-    runSearch(address, radius, taxCode, descs, false);
+    runSearch(address, radius, taxCode, descs);
   }
 }
 
-function runSearch(address, radius, taxCode, descs, clearExisting) {
+function runSearch(address, radius, taxCode, descs) {
   setLoading(true);
   announce("Searching for providers...");
   var params = new URLSearchParams({
@@ -1154,8 +1182,7 @@ function runSearch(address, radius, taxCode, descs, clearExisting) {
       renderCountBar();
       renderCards();
       plotMarkers();
-      var msg = totalFound + " providers found near " + address;
-      announce(msg);
+      announce(totalFound + " providers found near " + address);
     })
     .catch(function(err) {
       showToast(err.message || "Search failed. Please try again.", "error");
@@ -1169,7 +1196,7 @@ function runSearch(address, radius, taxCode, descs, clearExisting) {
 function renderCountBar() {
   var end = Math.min(allPhysicians.length, MAX_PAGE);
   document.getElementById("rc-shown").textContent = end;
-  document.getElementById("rc-total").textContent  = totalFound.toLocaleString();
+  document.getElementById("rc-total").textContent = totalFound.toLocaleString();
   var chips  = document.getElementById("rc-chips"); chips.innerHTML = "";
   var labels = currentSearch.taxonomy_code ? [currentSearch.taxonomy_code] : (currentSearch.descriptions || []);
   labels.forEach(function(d) {
@@ -1184,12 +1211,12 @@ function renderCards() {
   col.innerHTML = "";
 
   if (!allPhysicians.length) {
-    var spec = (currentSearch.descriptions || []).join(", ") || "this specialty";
+    var spec  = (currentSearch.descriptions || []).join(", ") || "this specialty";
     var empty = document.createElement("div"); empty.className = "empty-state"; empty.setAttribute("role", "status");
-    var ico = document.createElement("div"); ico.className = "empty-ico"; ico.setAttribute("aria-hidden", "true");
+    var ico   = document.createElement("div"); ico.className = "empty-ico"; ico.setAttribute("aria-hidden", "true");
     ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
     var title = document.createElement("div"); title.className = "empty-title"; title.textContent = "No providers found";
-    var desc  = document.createElement("p");  desc.className  = "empty-desc";
+    var desc  = document.createElement("p");   desc.className  = "empty-desc";
     desc.textContent = 'No physicians matching "' + spec + '" were found in this area. Try a different specialty name or expand your search radius.';
     var btn = document.createElement("button"); btn.className = "empty-btn"; btn.textContent = "New Search";
     btn.addEventListener("click", resetToSearch);
@@ -1218,16 +1245,16 @@ function appendCard(col, p, i) {
   card.setAttribute("aria-label", name + ", " + spec + (p.distance_miles != null ? ", " + p.distance_miles + " miles away" : ""));
   card.dataset.index = i;
 
-  var head = document.createElement("div"); head.className = "dc-head";
-  var av = document.createElement("div"); av.className = "dav"; av.textContent = ini; av.setAttribute("aria-hidden", "true");
-  var main = document.createElement("div"); main.className = "dc-main";
-  var nm = document.createElement("div"); nm.className = "dc-name"; nm.textContent = name;
-  var sp = document.createElement("div"); sp.className = "dc-spec"; sp.textContent = spec;
+  var head   = document.createElement("div"); head.className = "dc-head";
+  var av     = document.createElement("div"); av.className = "dav"; av.textContent = ini; av.setAttribute("aria-hidden", "true");
+  var main   = document.createElement("div"); main.className = "dc-main";
+  var nm     = document.createElement("div"); nm.className = "dc-name"; nm.textContent = name;
+  var sp     = document.createElement("div"); sp.className = "dc-spec"; sp.textContent = spec;
   main.appendChild(nm); main.appendChild(sp);
   head.appendChild(av); head.appendChild(main);
 
-  var meta = document.createElement("div"); meta.className = "dc-meta";
-  var dist = document.createElement("span");
+  var meta  = document.createElement("div"); meta.className = "dc-meta";
+  var dist  = document.createElement("span");
   if (p.distance_miles != null) { dist.className = "dc-dist"; dist.textContent = "📍 " + p.distance_miles + " mi"; }
   var arrow = document.createElement("span"); arrow.className = "dc-arrow";
   arrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>';
@@ -1245,10 +1272,9 @@ function appendLoadMore() {
   var old = document.getElementById("load-more-container");
   if (!old) return;
   old.innerHTML = "";
-  
   if (!allPhysicians.length) return;
   var remaining = totalFound - shownCount;
-  var btn  = document.createElement("button"); btn.className = "btn-lm";
+  var btn   = document.createElement("button"); btn.className = "btn-lm";
   var label = remaining > 0
     ? "Load more — " + remaining.toLocaleString() + " more providers"
     : "View full list — request access";
@@ -1287,23 +1313,21 @@ function plotMarkers() {
   }
   allPhysicians.forEach(function(p, i) {
     if (!p.lat || !p.lng) { markers.push(null); return; }
-    var icon = L.divIcon({ html: mkPin(i + 1), className: "", iconSize: [30, 40], iconAnchor: [15, 40] });
-    var at   = (p.all_taxonomies || []).map(function(t) { return t.desc; }).filter(Boolean).join(", ") || p.taxonomy_desc || "";
+    var icon    = L.divIcon({ html: mkPin(i + 1), className: "", iconSize: [30, 40], iconAnchor: [15, 40] });
+    var at      = (p.all_taxonomies || []).map(function(t) { return t.desc; }).filter(Boolean).join(", ") || p.taxonomy_desc || "";
     var popupEl = document.createElement("div");
     popupEl.style.cssText = "font-family:Plus Jakarta Sans,sans-serif;min-width:200px;max-width:270px;padding:2px";
-    var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:5px";
+    var row   = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:5px";
     var badge = document.createElement("div"); badge.style.cssText = "background:#0C7A7A;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0";
     badge.textContent = i + 1;
     var nameEl = document.createElement("div"); nameEl.style.cssText = "font-weight:700;font-size:.88rem;color:#141420;line-height:1.2"; nameEl.textContent = p.name || "";
     row.appendChild(badge); row.appendChild(nameEl); popupEl.appendChild(row);
     if (at) { var specEl = document.createElement("div"); specEl.style.cssText = "font-size:.74rem;color:#0C7A7A;margin-bottom:4px;line-height:1.4"; specEl.textContent = at; popupEl.appendChild(specEl); }
     if (p.address) { var addrEl = document.createElement("div"); addrEl.style.cssText = "font-size:.74rem;color:#7A7A96;line-height:1.4"; addrEl.textContent = p.address; popupEl.appendChild(addrEl); }
-    if (p.phone) { var phEl = document.createElement("div"); phEl.style.cssText = "font-size:.74rem;margin-top:4px;color:#141420"; phEl.textContent = "📞 " + p.phone; popupEl.appendChild(phEl); }
+    if (p.phone)   { var phEl   = document.createElement("div"); phEl.style.cssText   = "font-size:.74rem;margin-top:4px;color:#141420"; phEl.textContent = "📞 " + p.phone; popupEl.appendChild(phEl); }
     var marker = L.marker([p.lat, p.lng], { icon: icon }).addTo(map).bindPopup(popupEl, { maxWidth: 280 });
-    
     marker.on("mouseover", function() { marker.openPopup(); });
-    marker.on("mouseout", function() { marker.closePopup(); });
-    
+    marker.on("mouseout",  function() { marker.closePopup(); });
     marker.on("click", function() {
       document.querySelectorAll(".dc").forEach(function(c) { c.classList.remove("expanded", "active"); });
       var cards = document.querySelectorAll(".dc");
@@ -1334,9 +1358,7 @@ function openLeadModal() {
   setTimeout(function() { document.getElementById("lf-first").focus(); }, 100);
 }
 
-function closeModal() {
-  document.getElementById("lead-modal").classList.remove("open");
-}
+function closeModal() { document.getElementById("lead-modal").classList.remove("open"); }
 
 function submitLead() {
   var errDiv = document.getElementById("lead-error");
@@ -1353,28 +1375,20 @@ function submitLead() {
   if (!first || !last) {
     errDiv.textContent = "First and last name are required."; errDiv.style.display = "block";
     document.getElementById("lf-first").setAttribute("aria-invalid", "true");
-    document.getElementById("lf-first").focus();
-    return;
+    document.getElementById("lf-first").focus(); return;
   }
   if (!email || email.indexOf("@") === -1) {
     errDiv.textContent = "A valid email address is required."; errDiv.style.display = "block";
     document.getElementById("lf-email").setAttribute("aria-invalid", "true");
-    document.getElementById("lf-email").focus();
-    return;
+    document.getElementById("lf-email").focus(); return;
   }
-
   ["lf-first","lf-last","lf-email"].forEach(function(id) { document.getElementById(id).removeAttribute("aria-invalid"); });
 
   var payload = {
-    first_name: first,
-    last_name:  last,
-    email:      email,
-    phone:      phone  || "",
-    title:      title  || "",
-    company:    company || "N/A",
+    first_name: first, last_name: last, email: email,
+    phone: phone || "", title: title || "", company: company || "N/A",
     search_context: Object.assign({}, currentSearch, {
-      total_results: totalFound,
-      timestamp: new Date().toISOString(),
+      total_results: totalFound, timestamp: new Date().toISOString(),
     }),
   };
 
@@ -1395,18 +1409,14 @@ function submitLead() {
         document.getElementById("modal-form-content").style.display = "none";
         document.getElementById("modal-success-content").style.display = "block";
         announce("Request submitted successfully.");
-      } else {
-        throw new Error(data.error || "Submission failed.");
-      }
+      } else { throw new Error(data.error || "Submission failed."); }
     })
     .catch(function(err) {
       errDiv.textContent = err.message || "Network error. Please try again.";
       errDiv.style.display = "block";
       announce(errDiv.textContent, true);
     })
-    .finally(function() {
-      btn.disabled = false; btn.textContent = "Request Full Access →";
-    });
+    .finally(function() { btn.disabled = false; btn.textContent = "Request Full Access →"; });
 }
 
 
@@ -1416,8 +1426,7 @@ var currentDetailIdx = null, currentDetailPhysician = null;
 
 function openDetail(idx) {
   var p = allPhysicians[idx]; if (!p) return;
-  currentDetailIdx = idx;
-  currentDetailPhysician = p;
+  currentDetailIdx = idx; currentDetailPhysician = p;
   var name = p.name || "Unknown Provider";
   var ini  = name.split(" ").slice(0, 2).map(function(w) { return w[0] || ""; }).join("").toUpperCase();
   var at   = (p.all_taxonomies || []).map(function(t) { return t.desc; }).filter(Boolean);
@@ -1431,25 +1440,18 @@ function openDetail(idx) {
   document.getElementById("dp-phone").textContent   = p.phone || "—";
   document.getElementById("dp-entity").textContent  = p.entity_type || "Individual";
 
-  var specBadges = document.getElementById("dp-spec-badges");
-  specBadges.innerHTML = "";
+  var specBadges = document.getElementById("dp-spec-badges"); specBadges.innerHTML = "";
   (at.length ? at : [p.taxonomy_desc || "Provider"]).forEach(function(s) {
     var b = document.createElement("span"); b.className = "dp-spec-badge"; b.textContent = s; specBadges.appendChild(b);
   });
 
-  var tagsEl = document.getElementById("dp-tags");
-  tagsEl.innerHTML = "";
+  var tagsEl = document.getElementById("dp-tags"); tagsEl.innerHTML = "";
   (at.length ? at : [p.taxonomy_desc || "Provider"]).forEach(function(s) {
     var t = document.createElement("span"); t.className = "dp-tag"; t.textContent = s; tagsEl.appendChild(t);
   });
 
-  document.getElementById("dp-map-btn").onclick = function() {
-    closeDetail(); setTimeout(function() { focusMap(idx); }, 200);
-  };
-
-  document.getElementById("dp-add-lead-btn").onclick = function() {
-    createSalesforceLead(p);
-  };
+  document.getElementById("dp-map-btn").onclick     = function() { closeDetail(); setTimeout(function() { focusMap(idx); }, 200); };
+  document.getElementById("dp-add-lead-btn").onclick = function() { createSalesforceLead(p); };
 
   var ov = document.getElementById("detail-overlay");
   ov.classList.add("open"); ov.scrollTop = 0;
@@ -1489,25 +1491,18 @@ function closeDetail() {
 /* ══ SALESFORCE LEAD ══ */
 function createSalesforceLead(physician) {
   if (!physician) return;
-
-  // Parse physician name into first and last
   var nameParts = (physician.name || "Unknown").trim().split(/\s+/);
   var firstName = nameParts[0] || "";
-  var lastName = nameParts.slice(1).join(" ") || nameParts[0] || "";
-
+  var lastName  = nameParts.slice(1).join(" ") || nameParts[0] || "";
   var payload = {
-    first_name: firstName,
-    last_name: lastName,
-    email: "lead@aquarient.local",
-    company: "Individual Physicians",
+    first_name: firstName, last_name: lastName,
+    email: "lead@aquarient.local", company: "Individual Physicians",
     phone: physician.phone || "",
-    title: (physician.all_taxonomies && physician.all_taxonomies.length > 0) 
-      ? physician.all_taxonomies[0].desc
-      : (physician.taxonomy_desc || "Healthcare Provider"),
+    title: (physician.all_taxonomies && physician.all_taxonomies.length > 0)
+      ? physician.all_taxonomies[0].desc : (physician.taxonomy_desc || "Healthcare Provider"),
     search_context: {
-      npi: physician.npi || "",
-      address: physician.address || "",
-      specialty: (physician.all_taxonomies && physician.all_taxonomies.length > 0) 
+      npi: physician.npi || "", address: physician.address || "",
+      specialty: (physician.all_taxonomies && physician.all_taxonomies.length > 0)
         ? physician.all_taxonomies.map(function(t) { return t.desc; }).join("; ")
         : (physician.taxonomy_desc || ""),
       distance_miles: physician.distance_miles || "",
@@ -1516,8 +1511,8 @@ function createSalesforceLead(physician) {
 
   var btn = document.getElementById("dp-add-lead-btn");
   btn.disabled = true;
-  var originalText = btn.innerHTML;
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10" style="animation:spin 1s linear infinite"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg>Creating...';
+  var originalHTML = btn.innerHTML;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg>Creating...';
 
   fetchWithTimeout(BACKEND_URL + "/api/leads", {
     method: "POST",
@@ -1533,22 +1528,17 @@ function createSalesforceLead(physician) {
       if (data.success) {
         showToast("Lead created successfully!", "success");
         announce("Lead created for " + physician.name);
-      } else {
-        throw new Error(data.error || "Failed to create lead.");
-      }
+      } else { throw new Error(data.error || "Failed to create lead."); }
     })
     .catch(function(err) {
       showToast(err.message || "Could not create lead. Please try again.", "error");
       announce(err.message, true);
     })
-    .finally(function() {
-      btn.disabled = false;
-      btn.innerHTML = originalText;
-    });
+    .finally(function() { btn.disabled = false; btn.innerHTML = originalHTML; });
 }
 
 
-
+/* ══ HELPERS ══ */
 function showSpin(list) {
   list.innerHTML = '<div class="ac-spin"><div class="ac-spin-d"></div><div class="ac-spin-d"></div><div class="ac-spin-d"></div></div>';
   list.classList.add("open");
