@@ -16,9 +16,14 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
+import sys
 import traceback
 import uuid
 from datetime import datetime
+
+# Ensure current directory is in Python path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from requests import Timeout  # For exception handling
 
