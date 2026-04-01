@@ -1267,9 +1267,11 @@ function appendCard(col, p, i) {
   var meta  = document.createElement("div"); meta.className = "dc-meta";
   var dist  = document.createElement("span");
   if (p.distance_miles != null) { dist.className = "dc-dist"; dist.textContent = "📍 " + p.distance_miles + " mi"; }
-  var arrow = document.createElement("span"); arrow.className = "dc-arrow";
-  arrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>';
-  meta.appendChild(dist); meta.appendChild(arrow);
+  var numBadge = document.createElement("span");
+  numBadge.style.cssText = "width:22px;height:22px;border-radius:50%;background:#0C7A7A;color:#fff;font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--f);letter-spacing:-.5px;";
+  numBadge.textContent = i + 1;
+  numBadge.setAttribute("aria-hidden", "true");
+  meta.appendChild(dist); meta.appendChild(numBadge);
 
   card.appendChild(head); card.appendChild(meta);
 
