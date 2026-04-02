@@ -36,13 +36,7 @@
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
 
-/* FIX 1: body locked to viewport, no overflow */
-html,body{
-  font-family:var(--f);color:var(--ink);font-size:15px;line-height:1.6;
-  overflow:hidden; /* FIXED: was overflow-x:hidden — now fully locked */
-  height:100vh;    /* FIXED: added — locks body to viewport height */
-  -ms-overflow-style:none;scrollbar-width:none;
-}
+html,body{font-family:var(--f);color:var(--ink);font-size:15px;line-height:1.6;overflow-x:hidden;-ms-overflow-style:none;scrollbar-width:none}
 html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}
 body{
   background:linear-gradient(145deg,#E8F4FD 0%,#EDF7F6 35%,#F0F5FF 65%,#E6F3FB 100%);
@@ -106,30 +100,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;box
 button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 
 /* ══ PHASE 1: SEARCH CARD ════════════════════════════════════ */
-/* FIX 2: phase-search is now a full-viewport scrollable container */
-.phase-search{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  height:100vh;        /* FIXED: was min-height:100vh — now exact viewport */
-  overflow-y:auto;     /* FIXED: search card scrolls inside this, not the body */
-  overflow-x:hidden;
-  -ms-overflow-style:none;
-  scrollbar-width:none;
-  padding:96px 96px 96px 96px;
-  padding-top:0;
-}
-.phase-search::-webkit-scrollbar{display:none}
-
-/* FIX 3: when search is hidden, it takes zero space */
-.phase-search[style*="display: none"],
-.phase-search.hidden{
-  height:0 !important;
-  padding:0 !important;
-  overflow:hidden !important;
-}
-
+.phase-search{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding:96px 96px 96px 96px;overflow:visible;padding-top:0}
 .search-card{
   background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-radius:28px;
@@ -169,10 +140,12 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
 
 /* ══ RESULTS WRAPPER — full viewport stack ═════════════════ */
+/* The wrapper stacks: header (sticky) → banner → results columns */
+/* All three live inside #results-wrapper which is display:none until search */
 #results-wrapper{
   display:none;
   flex-direction:column;
-  height:100vh;  /* FIXED: ensures results wrapper exactly fills viewport */
+  height:100vh;
   overflow:hidden;
 }
 #results-wrapper.show{display:flex}
@@ -181,8 +154,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .phase-results{
   display:flex;
   flex-direction:row;
-  flex:1;
-  min-height:0;
+  flex:1;               /* fills whatever space is left after header + banner */
+  min-height:0;         /* critical — allows flex children to shrink below content size */
   background:#fff;
   overflow:hidden;
 }
@@ -528,10 +501,6 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   .srch-banner{padding:.85rem 1rem}
   .res-meta{padding:.75rem 1rem}
   .cards-list{padding:8px;gap:8px}
-
-  /* FIX 4: mobile search padding */
-  .phase-search{padding:0 16px 48px}
-  .search-card{margin-top:48px}
 }
 </style>
 </head>
@@ -890,9 +859,6 @@ function initMap() {
 
 /* ══ PHASES ══ */
 function showResultsPhase() {
-  /* FIX 5: Reset scroll position before switching phases */
-  window.scrollTo(0, 0);
-
   /* Hide search */
   document.getElementById("phase-search").style.display = "none";
 
@@ -904,10 +870,6 @@ function showResultsPhase() {
   document.getElementById("hdr").style.display        = "flex";
   document.getElementById("srch-banner").classList.add("visible");
 
-  /* Reset the cards scroll container to top */
-  var scrollContainer = document.getElementById("cards-scroll-container");
-  if (scrollContainer) scrollContainer.scrollTop = 0;
-
   /* Init map */
   initMap();
 
@@ -916,9 +878,6 @@ function showResultsPhase() {
 }
 
 function resetToSearch() {
-  /* FIX 6: Reset scroll position when going back to search */
-  window.scrollTo(0, 0);
-
   /* Hide results wrapper */
   var wrapper = document.getElementById("results-wrapper");
   wrapper.classList.remove("show");
@@ -933,13 +892,8 @@ function resetToSearch() {
   document.getElementById("results-list").innerHTML = "";
   if (map) { markers.forEach(function(m) { if (m) map.removeLayer(m); }); markers = []; }
 
-  /* Show search — use flex not block so centering works */
-  var searchPhase = document.getElementById("phase-search");
-  searchPhase.style.display = "flex";
-
-  /* Reset search page's own scroll to top */
-  searchPhase.scrollTop = 0;
-
+  /* Show search */
+  document.getElementById("phase-search").style.display = "flex";
   document.getElementById("address-input").focus();
 }
 
@@ -1543,7 +1497,7 @@ function openDetail(idx) {
 
 function closeDetail() {
   document.getElementById("detail-overlay").classList.remove("open");
-  document.body.style.overflow = "hidden"; /* FIXED: keep body overflow hidden (was resetting to "") */
+  document.body.style.overflow = "";
 }
 
 
