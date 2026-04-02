@@ -42,6 +42,8 @@ body{
   background:linear-gradient(145deg,#E8F4FD 0%,#EDF7F6 35%,#F0F5FF 65%,#E6F3FB 100%);
   position:relative;min-height:100vh;
 }
+
+/* ── FIX 1: Removed bgBreath animation — was causing full-page repaint every frame ── */
 body::before{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
@@ -49,16 +51,19 @@ body::before{
     radial-gradient(ellipse 45% 55% at 92% 85%, rgba(12,122,122,.14) 0%, transparent 55%),
     radial-gradient(ellipse 40% 35% at 75% 12%, rgba(0,118,182,.10) 0%, transparent 50%),
     radial-gradient(ellipse 35% 45% at 20% 88%, rgba(15,32,68,.08) 0%, transparent 50%);
-  animation:bgBreath 14s ease-in-out infinite alternate;
+  /* FIX: promote to own GPU layer, no animation */
+  will-change:auto;
+  transform:translateZ(0);
 }
-@media(prefers-reduced-motion:reduce){body::before{animation:none}}
-@keyframes bgBreath{0%{transform:scale(1)}100%{transform:scale(1.02) translate(8px,-6px)}}
+
 body::after{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background-image:radial-gradient(circle, rgba(0,118,182,.12) 1px, transparent 1px);
   background-size:32px 32px;
   mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
   -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+  /* FIX: own GPU layer */
+  transform:translateZ(0);
 }
 .hdr,.phase-search,.phase-results,.sw,.mbg,.toast{position:relative;z-index:1}
 
@@ -78,11 +83,15 @@ body::after{
 /* ── HEADER ──────────────────────────────────────────────── */
 .hdr{
   display:none;
-  background:rgba(255,255,255,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  /* FIX 3: removed backdrop-filter blur — expensive when stacked with other blurs */
+  background:rgba(255,255,255,.96);
   border-bottom:1px solid rgba(0,174,239,.12);padding:0 clamp(1rem,4vw,2.5rem);
   height:var(--hdr);align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:300;box-shadow:0 2px 20px rgba(0,118,182,.08);
   flex-shrink:0;
+  /* FIX: promote header to own layer to avoid repaints from children */
+  transform:translateZ(0);
+  will-change:auto;
 }
 .logo{display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer}
 .logo:focus-visible{outline:2px solid #00AEEF;border-radius:6px}
@@ -91,8 +100,9 @@ body::after{
 .logo-name em{color:#00AEEF;font-style:normal;font-weight:800}
 .logo-sub{font-size:.6rem;font-weight:600;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
 .hdr-badge{display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:700;color:#0076B6;background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.22);padding:6px 14px;border-radius:100px;letter-spacing:.04em}
+/* FIX 2: hdr-dot — kept blink but removed scale() which caused layout jitter */
 .hdr-dot{width:7px;height:7px;border-radius:50%;background:#00AEEF;animation:blink 2.2s ease infinite;box-shadow:0 0 6px rgba(0,174,239,.6)}
-@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* ── Global focus ring ────────────────────────────────────── */
 :focus-visible{outline:2px solid #00AEEF;outline-offset:2px}
@@ -102,7 +112,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 /* ══ PHASE 1: SEARCH CARD ════════════════════════════════════ */
 .phase-search{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding:96px 96px 96px 96px;overflow:visible;padding-top:0}
 .search-card{
-  background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  /* FIX 3: removed backdrop-filter blur — use high-opacity background instead */
+  background:rgba(255,255,255,.99);
   border-radius:28px;
   box-shadow:0 32px 100px rgba(0,60,120,.16),0 0 0 1.5px rgba(0,174,239,.18),inset 0 1px 0 rgba(255,255,255,.8);
   padding:3rem 3rem 2.5rem;width:100%;max-width:none;
@@ -112,6 +123,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   z-index:10;
   overflow:visible;
   margin-top:0;
+  /* FIX: isolate card to its own stacking context */
+  transform:translateZ(0);
 }
 .sc-nppes-badge{
   position:absolute;
@@ -132,16 +145,12 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   white-space:nowrap;
 }
 .search-card{margin-top:72px;}
-@media(prefers-reduced-motion:reduce){.search-card::before{animation:none}}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .sc-eye{font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#0076B6;margin-bottom:.5rem}
 .sc-title{font-family:var(--fd);font-size:2.4rem;font-weight:700;color:var(--ink);line-height:1.12;letter-spacing:-.02em;margin-bottom:.4rem}
 .sc-title em{font-style:italic;color:var(--teal)}
 .sc-desc{font-size:.82rem;color:var(--ink3);margin-bottom:1.75rem;line-height:1.5}
 
 /* ══ RESULTS WRAPPER — full viewport stack ═════════════════ */
-/* The wrapper stacks: header (sticky) → banner → results columns */
-/* All three live inside #results-wrapper which is display:none until search */
 #results-wrapper{
   display:none;
   flex-direction:column;
@@ -154,13 +163,13 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .phase-results{
   display:flex;
   flex-direction:row;
-  flex:1;               /* fills whatever space is left after header + banner */
-  min-height:0;         /* critical — allows flex children to shrink below content size */
+  flex:1;
+  min-height:0;
   background:#fff;
   overflow:hidden;
 }
 
-/* Left panel: Physicians List (compact, 28%) */
+/* Left panel */
 .results-left-panel{
   flex:0 0 28%;
   display:flex;
@@ -171,7 +180,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   min-height:0;
 }
 
-/* Right panel: Map (larger, 72%) */
+/* Right panel */
 .results-right-panel{
   flex:1;
   position:relative;
@@ -180,7 +189,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   min-height:0;
 }
 
-/* ── Search Banner (full-width, before results) ─────────── */
+/* ── Search Banner ─────────────────────────── */
 .srch-banner{
   display:none;
   background:var(--navy);
@@ -231,6 +240,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   -ms-overflow-style:none;
   scrollbar-width:none;
   min-height:0;
+  /* FIX 5: contain layout/paint so card reflows don't bubble up */
+  contain:strict;
 }
 .cards-scroll-container::-webkit-scrollbar{display:none}
 
@@ -247,13 +258,17 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
   background:rgba(255,255,255,.97);border-radius:10px;
   border:1.5px solid rgba(0,174,239,.1);
   box-shadow:0 2px 8px rgba(0,80,150,.04);
-  cursor:pointer;transition:all .2s;
+  cursor:pointer;transition:box-shadow .2s,border-color .2s,opacity .2s;
   display:flex;flex-direction:column;position:relative;overflow:hidden;
   min-height:90px;
   padding:0.85rem;
+  /* FIX 4: promote each card to own layer to prevent sibling repaints */
+  transform:translateZ(0);
+  will-change:auto;
 }
 .dc::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00AEEF,#0C7A7A);opacity:0;transition:opacity .2s;border-radius:10px 10px 0 0}
-.dc:hover,.dc:focus-visible{box-shadow:0 6px 16px rgba(0,100,180,.12);border-color:rgba(0,174,239,.35);transform:translateX(2px);outline:none}
+/* FIX 4: removed translateX(2px) — was causing layout shift on hover */
+.dc:hover,.dc:focus-visible{box-shadow:0 6px 16px rgba(0,100,180,.12);border-color:rgba(0,174,239,.35);outline:none}
 .dc:hover::after,.dc:focus-visible::after{opacity:1}
 .dc-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:0.6rem}
 .dav{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#0F2044 0%,#0076B6 100%);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.85rem;font-weight:700;color:#fff;position:relative;overflow:hidden}
@@ -377,7 +392,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .map-pin.active-pin svg{filter:drop-shadow(0 4px 8px rgba(196,153,58,.5));transform:scale(1.25) translateY(-3px)}
 
 /* ── Spinner ─────────────────────────────────────────────── */
-.sw{position:fixed;inset:0;background:rgba(250,248,244,.78);display:none;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(3px)}
+.sw{position:fixed;inset:0;background:rgba(250,248,244,.82);display:none;align-items:center;justify-content:center;z-index:800;}
+/* FIX 3: removed backdrop-filter blur from spinner */
 .sw.show{display:flex}
 .sb2{background:var(--w);border-radius:16px;padding:2rem 2.5rem;box-shadow:var(--s3);text-align:center;border:1px solid var(--cream2)}
 .sp{width:44px;height:44px;border:3px solid var(--cream3);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .75rem}
@@ -385,7 +401,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .sb2 p{font-size:.82rem;color:var(--ink3);font-weight:500}
 
 /* ══ MODAL ══════════════════════════════════════════════════ */
-.mbg{position:fixed;inset:0;background:rgba(13,27,53,.55);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem}
+.mbg{position:fixed;inset:0;background:rgba(13,27,53,.60);z-index:2000;display:none;align-items:center;justify-content:center;padding:1rem}
+/* FIX 3: removed backdrop-filter blur from modal */
 .mbg.open{display:flex}
 .modal{
   background:var(--w);border-radius:20px;box-shadow:var(--s3);
@@ -434,7 +451,8 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 .toast.error{background:var(--coral)}.toast.success{background:var(--teal)}
 
 /* ── Detail Overlay ──────────────────────────────────────── */
-.detail-overlay{position:fixed;inset:0;z-index:500;background:rgba(10,25,55,.55);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding:0;overflow-y:auto;animation:fadeIn .2s ease;-ms-overflow-style:none;scrollbar-width:none}
+.detail-overlay{position:fixed;inset:0;z-index:500;background:rgba(10,25,55,.60);display:none;align-items:flex-start;justify-content:center;padding:0;overflow-y:auto;animation:fadeIn .2s ease;-ms-overflow-style:none;scrollbar-width:none}
+/* FIX 3: removed backdrop-filter blur from detail overlay */
 .detail-overlay::-webkit-scrollbar{display:none}
 .detail-overlay.open{display:flex}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -574,7 +592,7 @@ button:focus-visible,a:focus-visible{box-shadow:var(--focus-ring)}
 <!-- ══ RESULTS WRAPPER (header + banner + columns) ══════════ -->
 <div id="results-wrapper">
 
-  <!-- HEADER — lives inside the wrapper so it scrolls with the flex column -->
+  <!-- HEADER -->
   <header class="hdr" id="hdr" role="banner">
     <a class="logo" onclick="resetToSearch();return false;" href="#" aria-label="Aquarient Physician Locator — return to search">
       <svg class="logo-mark" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
@@ -859,40 +877,24 @@ function initMap() {
 
 /* ══ PHASES ══ */
 function showResultsPhase() {
-  /* Hide search */
   document.getElementById("phase-search").style.display = "none";
-
-  /* Show the wrapper (flex column: header + banner + results) */
   var wrapper = document.getElementById("results-wrapper");
   wrapper.classList.add("show");
-
-  /* Show header & banner inside wrapper */
   document.getElementById("hdr").style.display        = "flex";
   document.getElementById("srch-banner").classList.add("visible");
-
-  /* Init map */
   initMap();
-
-  /* Let the DOM settle, then fix map size */
   setTimeout(function() { if (map) map.invalidateSize(); }, 250);
 }
 
 function resetToSearch() {
-  /* Hide results wrapper */
   var wrapper = document.getElementById("results-wrapper");
   wrapper.classList.remove("show");
-
-  /* Reset inner states */
   document.getElementById("hdr").style.display = "none";
   document.getElementById("srch-banner").classList.remove("visible");
-
-  /* Clear data */
   allPhysicians = []; totalFound = 0; shownCount = 0;
   selLat = selLng = null; selCity = selState = "";
   document.getElementById("results-list").innerHTML = "";
   if (map) { markers.forEach(function(m) { if (m) map.removeLayer(m); }); markers = []; }
-
-  /* Show search */
   document.getElementById("phase-search").style.display = "flex";
   document.getElementById("address-input").focus();
 }
