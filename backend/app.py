@@ -69,14 +69,21 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s",
+# Configure root logger manually so the filter applies to ALL handlers,
+# including ones Gunicorn adds, and ALL child loggers (zip_database, taxonomy…)
+_handler = logging.StreamHandler()
+_handler.addFilter(RequestIdFilter())
+_handler.setFormatter(logging.Formatter(
+    fmt="%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%SZ",
-)
-logger = logging.getLogger("physician_locator")
-logger.addFilter(RequestIdFilter())
+))
 
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+root_logger.handlers.clear()          # remove any handlers basicConfig already added
+root_logger.addHandler(_handler)
+
+logger = logging.getLogger("ClinTrial Navigator")
 
 # ─────────────────────────────────────────────
 #  FLASK APP SETUP
