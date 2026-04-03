@@ -352,6 +352,61 @@ def taxonomy_status():
 # ─────────────────────────────────────────────
 #  ROUTES: PHYSICIAN SEARCH
 # ─────────────────────────────────────────────
+def _has_coords(physician: dict) -> bool:
+    return physician.get("lat") is not None and physician.get("lng") is not None
+
+
+def _distance_from_search(center_lat: float, center_lng: float, physician: dict) -> float | None:
+    if not _has_coords(physician):
+        return None
+    return zip_database.haversine(center_lat, center_lng, physician["lat"], physician["lng"])
+
+
+def _refine_display_physicians(
+    candidates: list[dict],
+    center_lat: float,
+    center_lng: float,
+    radius: float,
+) -> tuple[list[dict], int, bool]:
+    """
+    Refine the first page of results with address-level coordinates when available.
+    ZIP centroids are still used as the coarse search filter, but the displayed
+    physicians are rechecked against their best-known coordinates so the visible
+    distances better match the selected radius.
+    """
+    shown: list[dict] = []
+    exact_total = 0
+    chunk_size = max(cfg.MAX_DISPLAY * 3, 25)
+
+    for start in range(0, len(candidates), chunk_size):
+        chunk = candidates[start:start + chunk_size]
+        nppes.batch_geocode_for_display(chunk)
+
+        for physician in chunk:
+            distance = _distance_from_search(center_lat, center_lng, physician)
+            if distance is None or distance > radius:
+                continue
+
+            physician["distance_miles"] = round(distance, 1)
+            # FIX 1: Mark coordinate source so callers can distinguish
+            # address-level geocoding from ZIP centroid fallback.
+            physician["_coord_source"] = (
+                "address" if physician.get("_geocoded") else "zip_centroid"
+            )
+            exact_total += 1
+            # FIX 2: Cap the display list but do NOT break out of the loop.
+            # Counting continues through all candidates so exact_total is accurate.
+            if len(shown) < cfg.MAX_DISPLAY:
+                shown.append(physician)
+
+    # exhausted is True only if we walked every candidate without hitting the
+    # display cap mid-chunk — which is now always the case since we removed
+    # the early break.
+    exhausted = True
+
+    shown.sort(key=lambda physician: physician.get("distance_miles", 9999))
+    return shown, exact_total, exhausted
+
 
 @app.route("/api/search")
 @rate_limit(limit=cfg.RATE_LIMIT_SEARCH)
@@ -439,25 +494,24 @@ def search_physicians():
             if p.get("zip"):
                 p["lat"], p["lng"] = zip_database.get_zip_coords(p["zip"])
 
-        in_radius: list[dict] = []
+        coarse_matches: list[dict] = []
         for p in physicians:
-            if p.get("lat") and p.get("lng"):
-                d = zip_database.haversine(lat, lng, p["lat"], p["lng"])
-                if d <= radius:
-                    p["distance_miles"] = round(d, 1)
-                    in_radius.append(p)
+            distance = _distance_from_search(lat, lng, p)
+            if distance is None or distance > radius:
+                continue
 
-        in_radius.sort(key=lambda x: x.get("distance_miles", 9999))
+            p["distance_miles"] = round(distance, 1)
+            coarse_matches.append(p)
 
-        for p in physicians:
-            if not p.get("lat"):
-                p["distance_miles"] = None
-                in_radius.append(p)
+        coarse_matches.sort(key=lambda x: x.get("distance_miles", 9999))
 
-        total = len(in_radius)
-        shown = in_radius[:cfg.MAX_DISPLAY]
+        shown, exact_total, exhausted = _refine_display_physicians(
+            coarse_matches, lat, lng, radius
+        )
+        # FIX 3: exact_total is now always a full walk of all coarse_matches,
+        # so use it unconditionally instead of falling back to len(coarse_matches).
+        total = exact_total
 
-        nppes.batch_geocode_for_display(shown)
         nppes.apply_coord_jitter(shown)
 
         logger.info("Returning %d of %d physicians", len(shown), total)
