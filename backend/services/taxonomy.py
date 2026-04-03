@@ -28,10 +28,6 @@ _taxonomy_lock = threading.Lock()
 
 # ─────────────────────────────────────────────
 #  CONDITION → SPECIALTY MAP
-#
-#  Keys are lowercase condition/symptom strings (or common prefixes/misspellings).
-#  Values are lists of NUCC specialization display names to search for.
-#  The first entry in each list is the "best" specialty shown to the user.
 # ─────────────────────────────────────────────
 
 CONDITION_MAP: Dict[str, List[str]] = {
@@ -71,7 +67,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "dizziness":              ["Neurology", "Otolaryngology"],
     "vertigo":                ["Otolaryngology", "Neurology"],
     "tinnitus":               ["Otolaryngology", "Neurology"],
-
     # ── Cardiac ───────────────────────────────────────────────────────────────
     "heart":                  ["Cardiovascular Disease", "Interventional Cardiology"],
     "heart disease":          ["Cardiovascular Disease", "Interventional Cardiology"],
@@ -96,7 +91,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "swelling":               ["Nephrology", "Cardiovascular Disease", "Vascular Surgery"],
     "pulmonary hypertension":  ["Pulmonary Disease", "Cardiovascular Disease"],
     "circulation":            ["Vascular Surgery", "Cardiovascular Disease"],
-
     # ── Endocrine / Metabolic ─────────────────────────────────────────────────
     "diabetes":               ["Endocrinology, Diabetes & Metabolism"],
     "diabetic":               ["Endocrinology, Diabetes & Metabolism"],
@@ -119,7 +113,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "insulin":                ["Endocrinology, Diabetes & Metabolism"],
     "pancreas":               ["Gastroenterology", "Endocrinology, Diabetes & Metabolism"],
     "osteoporosis":           ["Rheumatology", "Endocrinology, Diabetes & Metabolism", "Geriatric Medicine"],
-
     # ── Gastroenterology / GI ────────────────────────────────────────────────
     "gastro":                 ["Gastroenterology"],
     "ibs":                    ["Gastroenterology"],
@@ -151,7 +144,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "dysphagia":              ["Gastroenterology", "Otolaryngology"],
     "esophageal":             ["Thoracic Surgery", "Gastroenterology"],
     "esophagus":              ["Thoracic Surgery", "Gastroenterology"],
-
     # ── Pulmonary ─────────────────────────────────────────────────────────────
     "asthma":                 ["Pulmonary Disease", "Allergy & Immunology"],
     "copd":                   ["Pulmonary Disease"],
@@ -174,7 +166,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "tuberculosis":           ["Infectious Disease", "Pulmonary Disease"],
     "lung cancer":            ["Thoracic Surgery", "Medical Oncology", "Pulmonary Disease"],
     "pleural":                ["Thoracic Surgery", "Pulmonary Disease"],
-
     # ── Mental Health ─────────────────────────────────────────────────────────
     "depression":             ["Psychiatry"],
     "anxiety":                ["Psychiatry"],
@@ -206,7 +197,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "grief":                  ["Psychiatry"],
     "trauma":                 ["Psychiatry", "Emergency Medicine"],
     "postpartum depression":  ["Psychiatry", "Obstetrics & Gynecology"],
-
     # ── Musculoskeletal / Pain ────────────────────────────────────────────────
     "arthritis":              ["Rheumatology", "Orthopaedic Surgery"],
     "rheumatoid":             ["Rheumatology"],
@@ -253,7 +243,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "epidural":               ["Anesthesiology"],
     "nerve block":            ["Anesthesiology", "Pain Medicine"],
     "pain block":             ["Anesthesiology", "Pain Medicine"],
-
     # ── Cancer / Oncology ─────────────────────────────────────────────────────
     "cancer":                 ["Medical Oncology", "Hematology & Oncology"],
     "tumor":                  ["Medical Oncology", "Radiation Oncology"],
@@ -279,7 +268,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "radiation":              ["Radiation Oncology"],
     "biopsy":                 ["Medical Oncology"],
     "breast reconstruction":  ["Plastic Surgery", "Medical Oncology"],
-
     # ── Kidney / Urology ──────────────────────────────────────────────────────
     "kidney":                 ["Nephrology", "Urology"],
     "kidney disease":         ["Nephrology"],
@@ -305,7 +293,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "urinary tract infection": ["Urology", "Infectious Disease"],
     "sexual health":          ["Urology", "Obstetrics & Gynecology"],
     "male health":            ["Urology"],
-
     # ── Women's Health ────────────────────────────────────────────────────────
     "gynecology":             ["Obstetrics & Gynecology"],
     "pregnancy":              ["Obstetrics & Gynecology"],
@@ -325,7 +312,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "womens health":          ["Obstetrics & Gynecology"],
     "women's health":         ["Obstetrics & Gynecology"],
     "mammogram":              ["Diagnostic Radiology"],
-
     # ── Eyes / Ophthalmology ──────────────────────────────────────────────────
     "eye":                    ["Ophthalmology"],
     "vision":                 ["Ophthalmology"],
@@ -340,7 +326,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "lazy eye":               ["Ophthalmology"],
     "strabismus":             ["Ophthalmology"],
     "cornea":                 ["Ophthalmology"],
-
     # ── ENT / Otolaryngology ──────────────────────────────────────────────────
     "ent":                    ["Otolaryngology"],
     "ear":                    ["Otolaryngology"],
@@ -357,7 +342,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "balance":                ["Otolaryngology", "Neurology"],
     "hearing":                ["Audiologist"],
     "hearing loss":           ["Audiologist"],
-
     # ── Allergy / Immunology ──────────────────────────────────────────────────
     "allergy":                ["Allergy & Immunology"],
     "allergies":              ["Allergy & Immunology"],
@@ -371,8 +355,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "immune":                 ["Allergy & Immunology", "Infectious Disease"],
     "immunology":             ["Allergy & Immunology"],
     "immunodeficiency":       ["Allergy & Immunology", "Infectious Disease"],
-    "wheezing":               ["Pulmonary Disease", "Allergy & Immunology"],
-
     # ── Dermatology / Skin ────────────────────────────────────────────────────
     "skin":                   ["Dermatology"],
     "acne":                   ["Dermatology"],
@@ -387,7 +369,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "vitiligo":               ["Dermatology"],
     "shingles":               ["Dermatology", "Infectious Disease"],
     "scar":                   ["Plastic Surgery", "Dermatology"],
-
     # ── Infection / Blood ─────────────────────────────────────────────────────
     "hiv":                    ["Infectious Disease"],
     "aids":                   ["Infectious Disease"],
@@ -412,7 +393,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "std":                    ["Infectious Disease"],
     "sti":                    ["Infectious Disease"],
     "sexually transmitted":   ["Infectious Disease"],
-
     # ── Vascular Surgery ──────────────────────────────────────────────────────
     "vascular":               ["Vascular Surgery"],
     "aortic aneurysm":        ["Vascular Surgery"],
@@ -421,19 +401,16 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "peripheral vascular":    ["Vascular Surgery"],
     "varicose veins":         ["Vascular Surgery"],
     "carotid":                ["Vascular Surgery", "Neurology"],
-
     # ── Thoracic Surgery ──────────────────────────────────────────────────────
     "thoracic":               ["Thoracic Surgery"],
     "chest surgery":          ["Thoracic Surgery", "Cardiac Surgery"],
     "mediastinum":            ["Thoracic Surgery"],
-
     # ── General Surgery ───────────────────────────────────────────────────────
     "appendicitis":           ["General Surgery"],
     "appendix":               ["General Surgery"],
     "hernia":                 ["General Surgery"],
     "abscess":                ["General Surgery", "Infectious Disease"],
     "wound":                  ["Emergency Medicine", "General Surgery"],
-
     # ── Plastic Surgery ───────────────────────────────────────────────────────
     "plastic surgery":        ["Plastic Surgery"],
     "cosmetic surgery":       ["Plastic Surgery"],
@@ -442,25 +419,21 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "burns":                  ["Plastic Surgery", "Emergency Medicine"],
     "cleft palate":           ["Plastic Surgery", "Pediatrics"],
     "rhinoplasty":            ["Plastic Surgery"],
-
     # ── Anesthesiology ────────────────────────────────────────────────────────
     "anesthesia":             ["Anesthesiology"],
     "anesthesiology":         ["Anesthesiology"],
     "sedation":               ["Anesthesiology"],
-
     # ── Diagnostic Radiology ──────────────────────────────────────────────────
     "mri":                    ["Diagnostic Radiology"],
     "ct scan":                ["Diagnostic Radiology"],
     "x-ray":                  ["Diagnostic Radiology"],
     "ultrasound":             ["Diagnostic Radiology"],
     "imaging":                ["Diagnostic Radiology"],
-
     # ── Emergency Medicine ────────────────────────────────────────────────────
     "emergency":              ["Emergency Medicine"],
     "overdose":               ["Emergency Medicine", "Addiction Medicine"],
     "poisoning":              ["Emergency Medicine"],
     "laceration":             ["Emergency Medicine"],
-
     # ── Physical Medicine & Rehabilitation ────────────────────────────────────
     "physical therapy":       ["Physical Medicine & Rehabilitation"],
     "rehabilitation":         ["Physical Medicine & Rehabilitation"],
@@ -468,7 +441,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "occupational therapy":   ["Physical Medicine & Rehabilitation"],
     "mobility":               ["Physical Medicine & Rehabilitation"],
     "prosthetics":            ["Physical Medicine & Rehabilitation"],
-
     # ── Pediatrics ────────────────────────────────────────────────────────────
     "child":                  ["Pediatrics"],
     "children":               ["Pediatrics"],
@@ -480,7 +452,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "vaccine":                ["Pediatrics", "Family Medicine"],
     "developmental delay":    ["Pediatrics"],
     "growth disorder":        ["Pediatrics", "Endocrinology, Diabetes & Metabolism"],
-
     # ── Allied Health / Non-Physician Providers ───────────────────────────────
     "dentist":                ["Dentist"],
     "dental":                 ["Dentist"],
@@ -537,7 +508,6 @@ CONDITION_MAP: Dict[str, List[str]] = {
     "walk in":                ["Urgent Care"],
     "walk-in":                ["Urgent Care"],
     "ambulatory":             ["Ambulatory Surgical"],
-
     # ── General / Geriatric / Primary Care ────────────────────────────────────
     "geriatric":              ["Geriatric Medicine"],
     "elderly":                ["Geriatric Medicine"],
@@ -635,7 +605,6 @@ _SEED_TAXONOMY = [
 
 
 def _build_entries(rows: List[tuple]) -> List[Dict]:
-    """Build taxonomy entries from classification/specialization tuples."""
     out, seen = [], set()
     for classification, specialization in rows:
         c = (classification or "").strip()
@@ -656,7 +625,6 @@ def _build_entries(rows: List[tuple]) -> List[Dict]:
 
 
 def _load_taxonomy_background() -> None:
-    """Background thread to load taxonomy from NUCC CSV."""
     global _taxonomy_loaded, _taxonomy_source
 
     seed = _build_entries(_SEED_TAXONOMY)
@@ -686,31 +654,13 @@ def _load_taxonomy_background() -> None:
 
 
 def initialize() -> None:
-    """Start background thread to load taxonomy data."""
     threading.Thread(target=_load_taxonomy_background, daemon=True, name="tax-loader").start()
 
 
-# ─────────────────────────────────────────────
-#  CONDITION MAP LOOKUP
-# ─────────────────────────────────────────────
-
 def _condition_map_lookup(q: str) -> Optional[List[str]]:
-    """
-    Check if q (or any prefix of it) matches a key in CONDITION_MAP.
-    Prefix matching lets "alzh", "alzhe", "alzheim" all resolve to "alzheimer".
-
-    When multiple keys start with q (e.g. q="heart" matches both "heart" and
-    "heart failure"), we prefer the LONGEST matching key so that more-specific
-    multi-word entries are not shadowed by shorter single-word ones.
-
-    Returns list of specialty display names, or None if no match.
-    """
     q = q.lower().strip()
-    # Exact match first — always wins
     if q in CONDITION_MAP:
         return CONDITION_MAP[q]
-    # Prefix match: collect ALL keys that start with q (min 3 chars to avoid noise),
-    # then return the mapping for the longest one (most specific).
     if len(q) >= 3:
         candidates = [key for key in CONDITION_MAP if key.startswith(q)]
         if candidates:
@@ -719,30 +669,11 @@ def _condition_map_lookup(q: str) -> Optional[List[str]]:
     return None
 
 
-# ─────────────────────────────────────────────
-#  PUBLIC API
-# ─────────────────────────────────────────────
-
 def search(q: str, limit: int = 12) -> List[Dict]:
-    """
-    Search taxonomy for matching specialties.
-
-    Priority:
-      1. Condition map lookup (plain-language conditions → specialties)
-      2. Direct specialty name matching against NUCC entries
-
-    Args:
-        q: Search query string (specialty name or condition/symptom)
-        limit: Maximum results to return
-
-    Returns:
-        List of matching taxonomy entry dicts with 'display' and 'classification'.
-    """
     q_stripped = q.strip()
     if not q_stripped:
         return []
 
-    # ── Step 1: condition map ──────────────────────────────────────────────
     condition_specialties = _condition_map_lookup(q_stripped)
     if condition_specialties:
         with _taxonomy_lock:
@@ -758,7 +689,6 @@ def search(q: str, limit: int = 12) -> List[Dict]:
         if results:
             return results[:limit]
 
-    # ── Step 2: specialty name matching (original logic) ───────────────────
     q_lower = q_stripped.lower()
     q_words = [w for w in q_lower.split() if len(w) >= 2]
 
@@ -797,27 +727,18 @@ def search(q: str, limit: int = 12) -> List[Dict]:
 
 
 def resolve(q: str) -> str:
-    """
-    Resolve a user query to the best single NUCC specialty display name.
-    Used by the search route when sending taxonomy_description to NPPES.
-
-    Returns the best match display string, or q itself as fallback.
-    """
     matches = search(q, limit=1)
     return matches[0]["display"] if matches else q
 
 
 def is_loaded() -> bool:
-    """Check if taxonomy is loaded."""
     return _taxonomy_loaded
 
 
 def source() -> str:
-    """Get source of loaded taxonomy data."""
     return _taxonomy_source
 
 
 def count() -> int:
-    """Get number of taxonomy entries."""
     with _taxonomy_lock:
         return len(_taxonomy_entries)

@@ -1,6 +1,17 @@
 """
 NPPES (National Provider Enumeration System) service.
 Fetches physician data from the CMS NPPES registry.
+
+Fix v2.1.2:
+  - batch_geocode_for_display() now sets p["_geocoded"] = True only when
+    address-level coordinates are successfully obtained from Geoapify.
+    When geocoding fails, the flag is explicitly set to False so callers
+    can distinguish "has address coords" from "fell back to ZIP centroid".
+  - geocode_address() no longer stores the ZIP centroid fallback in the
+    LRU cache — caching a centroid under an address key would prevent a
+    future successful geocode of the same address after a transient error.
+  - No changes to parse_physician(), fetch(), fetch_with_retry(), or
+    apply_coord_jitter().
 """
 
 import logging
@@ -17,17 +28,17 @@ logger = logging.getLogger(__name__)
 
 NPPES_BASE_URL = "https://npiregistry.cms.hhs.gov/api/"
 
-# Cache for geocoded addresses
+# Cache for geocoded addresses — only stores successful address-level results.
 _addr_cache = LRUCache(cfg.GEOCODE_CACHE_SIZE)
 
 
 def fetch(params: Dict) -> Tuple[List, int]:
     """
     Fetch physician data from NPPES registry.
-    
+
     Args:
         params: Query parameters (postal_code, taxonomy_description, etc.)
-        
+
     Returns:
         Tuple of (results list, total count)
     """
@@ -56,11 +67,11 @@ def fetch(params: Dict) -> Tuple[List, int]:
 def fetch_with_retry(params: Dict, retries: int = 2) -> Tuple[List, int]:
     """
     Fetch from NPPES with retry logic for transient failures.
-    
+
     Args:
         params: Query parameters
         retries: Number of retry attempts
-        
+
     Returns:
         Tuple of (results list, total count)
     """
@@ -77,10 +88,10 @@ def fetch_with_retry(params: Dict, retries: int = 2) -> Tuple[List, int]:
 def parse_physician(result: Dict) -> Optional[Dict]:
     """
     Parse physician data from NPPES result.
-    
+
     Args:
         result: Raw NPPES result dict
-        
+
     Returns:
         Processed physician dict or None
     """
@@ -132,34 +143,40 @@ def parse_physician(result: Dict) -> Optional[Dict]:
         "lat": None,
         "lng": None,
         "distance_miles": None,
+        # _geocoded is set by batch_geocode_for_display(); False here means
+        # "only ZIP centroid coords assigned so far" (set in app.py).
+        "_geocoded": False,
     }
 
 
 def geocode_address(
-    addr1: str, 
-    city: str, 
-    state: str, 
-    zipcode: str
-) -> Tuple[Optional[float], Optional[float]]:
+    addr1: str,
+    city: str,
+    state: str,
+    zipcode: str,
+) -> Tuple[Optional[float], Optional[float], bool]:
     """
     Geocode an address to coordinates using Geoapify API.
-    Results are cached to avoid repeated requests.
-    
+    Successful results are cached to avoid repeated requests.
+
     Args:
         addr1: Street address
         city: City name
         state: State code
         zipcode: ZIP code
-        
+
     Returns:
-        Tuple of (latitude, longitude) or (None, None)
+        Tuple of (latitude, longitude, is_address_level).
+        is_address_level is True only when Geoapify returned a result —
+        False means we fell back to the ZIP centroid or got nothing.
     """
     from services import zip_database
-    
+
     key = f"{addr1.lower().strip()},{city.lower().strip()},{state.upper().strip()},{zipcode[:5]}"
     cached = _addr_cache.get(key)
     if cached is not None:
-        return cached
+        # Cache only holds address-level successes
+        return cached[0], cached[1], True
 
     if cfg.GEOAPIFY_API_KEY:
         query = ", ".join(p for p in [addr1, city, state, zipcode[:5], "US"] if p.strip())
@@ -170,7 +187,7 @@ def geocode_address(
                     "text": query,
                     "limit": 1,
                     "filter": "countrycode:us",
-                    "apiKey": cfg.GEOAPIFY_API_KEY
+                    "apiKey": cfg.GEOAPIFY_API_KEY,
                 },
                 timeout=cfg.REQUEST_TIMEOUT,
             )
@@ -178,23 +195,29 @@ def geocode_address(
             features = resp.json().get("features", [])
             if features:
                 coords = features[0]["geometry"]["coordinates"]
-                result = (coords[1], coords[0])
-                _addr_cache.set(key, result)
-                return result
+                lat, lng = coords[1], coords[0]
+                # Only cache successful address-level geocodes.
+                # Do NOT cache ZIP centroid fallbacks — a future retry
+                # should be allowed to get the real address coordinates.
+                _addr_cache.set(key, (lat, lng))
+                return lat, lng, True
         except Exception as e:
             logger.debug("Addr geocode failed '%s': %s", query, e)
 
-    # Fallback to ZIP code coordinates
-    fallback = zip_database.get_zip_coords(zipcode)
-    _addr_cache.set(key, fallback)
-    return fallback
+    # Fallback to ZIP centroid — not cached intentionally (see above)
+    lat, lng = zip_database.get_zip_coords(zipcode)
+    return lat, lng, False
 
 
 def batch_geocode_for_display(physicians: List[Dict]) -> None:
     """
     Geocode addresses for display using thread pool.
     Updates physician dicts in-place with lat/lng.
-    
+
+    Sets p["_geocoded"] = True only when Geoapify returned address-level
+    coordinates. When falling back to ZIP centroid or on error,
+    p["_geocoded"] = False so the distance filter knows the precision level.
+
     Args:
         physicians: List of physician dicts to geocode
     """
@@ -202,11 +225,17 @@ def batch_geocode_for_display(physicians: List[Dict]) -> None:
 
     def geocode_one(p: Dict) -> None:
         if not p.get("address_1"):
+            p["_geocoded"] = False
             return
-        lat, lng = geocode_address(p["address_1"], p["city"], p["state"], p["zip"])
-        if lat and lng:
+        lat, lng, is_address_level = geocode_address(
+            p["address_1"], p["city"], p["state"], p["zip"]
+        )
+        if lat is not None and lng is not None:
             p["lat"] = lat
             p["lng"] = lng
+            p["_geocoded"] = is_address_level
+        else:
+            p["_geocoded"] = False
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
         list(ex.map(geocode_one, physicians))
@@ -216,12 +245,12 @@ def apply_coord_jitter(physicians: List[Dict]) -> None:
     """
     Apply slight jitter to coordinates to avoid marker overlap on map.
     Updates physician dicts in-place.
-    
+
     Args:
         physicians: List of physician dicts to jitter
     """
     import math
-    
+
     seen: Dict[Tuple, int] = {}
     for p in physicians:
         lat, lng = p.get("lat"), p.get("lng")

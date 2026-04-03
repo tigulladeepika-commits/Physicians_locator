@@ -1,6 +1,10 @@
 """
 Salesforce lead integration service.
 Handles pushing leads to Salesforce and saving to file backup.
+
+Fix v2.1.2:
+  - Added missing `import requests` that caused a NameError on
+    requests.Timeout in the original push_to_salesforce().
 """
 
 import json
@@ -8,6 +12,8 @@ import logging
 import os
 from datetime import datetime
 from typing import Dict, Tuple
+
+import requests
 
 from config import cfg
 from services.http_client import http_client
@@ -19,10 +25,10 @@ logger = logging.getLogger(__name__)
 def push_to_salesforce(lead: Dict) -> Tuple[bool, int, str, str]:
     """
     Push lead to Salesforce Web-to-Lead form.
-    
+
     Args:
         lead: Lead data dict
-        
+
     Returns:
         Tuple of (success, http_status, response_snippet, error_message)
     """
@@ -87,13 +93,13 @@ def push_to_salesforce(lead: Dict) -> Tuple[bool, int, str, str]:
 def save_to_file(lead: Dict) -> Tuple[bool, str, str]:
     """
     Save lead to local file as NDJSON backup.
-    
+
     Note: Render free plan has ephemeral filesystem.
     Set LEADS_DIR to /var/data (paid disk) or leads will be lost on deploy.
-    
+
     Args:
         lead: Lead data dict
-        
+
     Returns:
         Tuple of (success, file_path, error_message)
     """

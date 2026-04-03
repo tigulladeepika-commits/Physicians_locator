@@ -1,6 +1,16 @@
 """
 ZIP code database service.
 Manages loading and querying US ZIP code coordinates.
+
+Fix v2.1.2:
+  - initialize() now accepts background=True/False parameter.
+  - When background=False (used on Render via cfg.ZIP_LOAD_SYNC),
+    _load_zip_database() is called directly on the calling thread so
+    the worker blocks until the ZIP DB is fully ready before accepting
+    any requests. This eliminates the "ZIPs in radius: 0" cold-start
+    race condition seen in production logs.
+  - No other logic changed; background=True preserves original behaviour
+    for local development.
 """
 
 import io
@@ -76,9 +86,10 @@ def _load_zip_database() -> None:
         except Exception as e:
             logger.warning("ZIP disk cache corrupt, re-downloading: %s", e)
 
-    # Download from GeoNames
-    # Use ZIP_DL_TIMEOUT (90 s) — this runs in a background thread at startup
-    # and is NOT subject to Render's per-request 30 s proxy deadline.
+    # Download from GeoNames.
+    # Uses ZIP_DL_TIMEOUT (90s) — this is either a background thread at startup
+    # or the main worker thread on Render (sync mode). Either way it is NOT
+    # subject to Render's per-request 30s proxy deadline.
     try:
         logger.info("Downloading GeoNames US ZIP database...")
         resp = http_client.get(GEONAMES_ZIP_URL, timeout=cfg.ZIP_DL_TIMEOUT)
@@ -86,7 +97,7 @@ def _load_zip_database() -> None:
         zf = zipfile.ZipFile(io.BytesIO(resp.content))
         with zf.open("US.txt") as f:
             content = f.read().decode("utf-8", errors="replace")
-        
+
         db: Dict = {}
         for line in content.splitlines():
             parts = line.split("\t")
@@ -95,21 +106,39 @@ def _load_zip_database() -> None:
                     db[parts[1].strip()] = (float(parts[9]), float(parts[10]))
                 except (ValueError, IndexError):
                     pass
-        
-        # Save to disk
+
+        # Atomic write to disk cache
         tmp = local_cache + ".tmp"
         with open(tmp, "w") as f:
             json.dump({k: list(v) for k, v in db.items()}, f)
         os.replace(tmp, local_cache)
         _apply(db)
+
     except Exception as e:
         logger.error("ZIP db download failed: %s — using fallback", e)
         _apply(_ZIP_FALLBACK)
 
 
-def initialize() -> None:
-    """Start background thread to load ZIP database."""
-    threading.Thread(target=_load_zip_database, daemon=False, name="zip-loader").start()
+def initialize(background: bool = True) -> None:
+    """
+    Load the ZIP database.
+
+    Args:
+        background: If True (default / local dev), load in a background
+                    daemon thread so the server starts immediately.
+                    If False (Render production), load synchronously on
+                    the calling thread — the worker blocks until the DB
+                    is fully ready before accepting any traffic, which
+                    eliminates the cold-start "ZIPs in radius: 0" bug.
+    """
+    if background:
+        threading.Thread(
+            target=_load_zip_database, daemon=False, name="zip-loader"
+        ).start()
+    else:
+        logger.info("ZIP db: loading synchronously (ZIP_LOAD_SYNC=True)")
+        _load_zip_database()
+        logger.info("ZIP db: synchronous load complete — worker ready")
 
 
 def get_zip_coords(zipcode: str) -> Tuple[Optional[float], Optional[float]]:
@@ -142,16 +171,16 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
     dlat, dlon = lat2 - lat1, lon2 - lon1
     a = (
-        math.sin(dlat / 2) ** 2 + 
-        math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
     )
     return 2 * R * math.asin(math.sqrt(a))
 
 
 def find_zips_in_radius(
-    center_lat: float, 
-    center_lng: float, 
-    radius_miles: float
+    center_lat: float,
+    center_lng: float,
+    radius_miles: float,
 ) -> List[str]:
     """Find all ZIP codes within radius of center point."""
     deg_lat = radius_miles / 69.0
@@ -171,6 +200,7 @@ def find_zips_in_radius(
                     if d <= radius_miles:
                         result.append((d, z))
 
+    # Fallback for when spatial index is empty (should not happen in sync mode)
     if not result and not _zip_index:
         with _zip_db_lock:
             for z, (zlat, zlng) in _zip_db.items():

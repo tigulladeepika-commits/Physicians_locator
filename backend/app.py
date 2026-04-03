@@ -1,22 +1,33 @@
 """
-Physician Locator — Aquarient (v2.1 — modularized)
+Physician Locator — Aquarient (v2.1.2)
 
 Production-grade physician search API using the official NPPES registry.
 Features: Full-width search, lead capture, Salesforce integration, structured logging.
 
-Changes from v2:
-  - Modularized codebase: services, routes, utils
-  - Separated concerns: config, validation, geocoding, taxonomy, NPPES, Salesforce
-  - Cleaner imports and dependency structure
-  - Thread-safe rate limiting and caching
-  - Comprehensive error handling
-
-Fix v2.1.1:
-  - REQUEST_TIMEOUT reduced from 45s → 25s (Render proxy kills at 30s)
-  - AC_TIMEOUT = 8s hard cap on autocomplete/geocode (user-facing, must be fast)
-  - autocomplete returns HTTP 200 with empty features on timeout/error
-    (frontend degrades gracefully instead of showing an error banner)
-  - geocode keeps 504/502 status codes (it's a blocking user action)
+Changes from v2.1.1:
+  - FIX: ZIP DB cold-start race condition (root cause of "ZIPs in radius: 0").
+    On Render (IS_RENDER=True / RENDER env var set), zip_database.initialize()
+    now loads synchronously — the worker blocks until the DB is ready before
+    accepting any traffic. This fixes every search returning 0 results after
+    a worker restart.
+  - FIX: ZIP_DB_WAIT increased from 3s → cfg.ZIP_DB_WAIT (30s) as a failsafe
+    for the async path. If the DB still isn't ready after 30s, we return 503
+    ("service warming up") instead of silently returning 0 results.
+  - FIX: Distance filtering — early break in _refine_display_physicians removed.
+    Previously the loop broke as soon as shown[] was full, making exact_total
+    an undercount. Now counting continues through all candidates; only shown[]
+    is capped at MAX_DISPLAY.
+  - FIX: total reported as exact_total unconditionally (was len(coarse_matches)
+    when not exhausted, which was the centroid-based count — inflated).
+  - FIX: Coord source tracking — batch_geocode_for_display() sets _geocoded=True
+    only on address-level success. Physicians with only ZIP centroid coords are
+    labelled _coord_source="zip_centroid" in the response for easier debugging.
+  - FIX: Coord fallback when ZIP DB is unavailable — if get_zip_coords() returns
+    None (shouldn't happen in sync mode, but guards async/fallback paths), we
+    assign the search center coords so physicians aren't silently dropped by the
+    distance filter.
+  - FIX: Missing `import requests` in salesforce.py caused NameError on
+    requests.Timeout — corrected in that module.
 """
 
 from __future__ import annotations
@@ -30,7 +41,6 @@ import traceback
 import uuid
 from datetime import datetime
 
-# Ensure current directory is in Python path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import requests
@@ -47,7 +57,6 @@ try:
 except ImportError:
     pass
 
-# Import our modular components
 from config import cfg, validate_configuration
 from services import zip_database, taxonomy, nppes, salesforce, rate_limiting
 from services.http_client import http_client, http_client_once
@@ -69,8 +78,6 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-# Configure root logger manually so the filter applies to ALL handlers,
-# including ones Gunicorn adds, and ALL child loggers (zip_database, taxonomy…)
 _handler = logging.StreamHandler()
 _handler.addFilter(RequestIdFilter())
 _handler.setFormatter(logging.Formatter(
@@ -80,10 +87,11 @@ _handler.setFormatter(logging.Formatter(
 
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
-root_logger.handlers.clear()          # remove any handlers basicConfig already added
+root_logger.handlers.clear()
 root_logger.addHandler(_handler)
 
 logger = logging.getLogger("ClinTrial Navigator")
+
 
 # ─────────────────────────────────────────────
 #  FLASK APP SETUP
@@ -145,7 +153,7 @@ def _error(message: str, status: int, code: str = "") -> tuple:
 def health():
     missing_env = validate_configuration()
     zip_ready = zip_database.is_ready()
-    
+
     return jsonify({
         "status": "ok" if zip_ready else "degraded",
         "zip_db_ready": zip_ready,
@@ -166,7 +174,7 @@ def lead_debug():
         provided_hash = hashlib.sha256(provided.encode()).digest()
         if expected_hash != provided_hash:
             logger.warning("lead-debug: bad secret | ip=%s",
-                         request.headers.get("X-Forwarded-For", request.remote_addr))
+                           request.headers.get("X-Forwarded-For", request.remote_addr))
             return _error("Forbidden", 403, "FORBIDDEN")
     else:
         logger.warning("lead-debug called — DEBUG_SECRET not set, allowing (insecure)")
@@ -218,6 +226,8 @@ def lead_debug():
             "FRONTEND_URL": "SET" if cfg.FRONTEND_URL else "MISSING",
             "DEBUG_SECRET": "SET" if cfg.DEBUG_SECRET else "MISSING — endpoint unprotected",
             "LEADS_DIR": cfg.LEADS_DIR,
+            "ZIP_LOAD_SYNC": cfg.ZIP_LOAD_SYNC,
+            "IS_RENDER": cfg.IS_RENDER,
         },
     })
 
@@ -232,7 +242,7 @@ def autocomplete():
     """
     Address autocomplete via Geoapify.
 
-    Uses cfg.AC_TIMEOUT (8 s) — well under Render's 30 s proxy deadline.
+    Uses cfg.AC_TIMEOUT (8s) — well under Render's 30s proxy deadline.
     Returns HTTP 200 with empty features on timeout or upstream error so the
     frontend degrades silently instead of showing an error banner.
     """
@@ -246,7 +256,7 @@ def autocomplete():
         return _error("Geocoding service not configured", 503, "GEOCODE_UNCONFIGURED")
 
     try:
-        resp = http_client_once.get(    # no-retry: fails in 8s, not 27s
+        resp = http_client_once.get(
             "https://api.geoapify.com/v1/geocode/autocomplete",
             params={
                 "text": text[:200],
@@ -255,14 +265,12 @@ def autocomplete():
                 "bias": "countrycode:us",
                 "apiKey": cfg.GEOAPIFY_API_KEY,
             },
-            timeout=cfg.AC_TIMEOUT,  # ← 8 s hard cap (was cfg.REQUEST_TIMEOUT = 45 s)
+            timeout=cfg.AC_TIMEOUT,
         )
         resp.raise_for_status()
         return jsonify(resp.json())
 
     except Timeout:
-        # Log a warning but return 200 — the user is just typing; an empty
-        # dropdown is far better than a visible error.
         logger.warning(
             "Geoapify autocomplete timed out | text=%r | timeout=%ss",
             text[:30], cfg.AC_TIMEOUT,
@@ -279,9 +287,6 @@ def autocomplete():
 def geocode():
     """
     Forward geocode a US address via Geoapify.
-
-    Also uses cfg.AC_TIMEOUT — the user clicked Search and is waiting,
-    but we still must not exceed Render's proxy deadline.
     """
     address = (request.args.get("address") or "").strip()
     if not address:
@@ -290,7 +295,7 @@ def geocode():
         return _error("Geocoding service not configured", 503, "GEOCODE_UNCONFIGURED")
 
     try:
-        resp = http_client_once.get(   # no-retry: fails in 8s, not 27s
+        resp = http_client_once.get(
             "https://api.geoapify.com/v1/geocode/search",
             params={
                 "text": address[:300],
@@ -298,7 +303,7 @@ def geocode():
                 "filter": "countrycode:us",
                 "apiKey": cfg.GEOAPIFY_API_KEY,
             },
-            timeout=cfg.AC_TIMEOUT,  # ← 8 s hard cap (was cfg.REQUEST_TIMEOUT = 45 s)
+            timeout=cfg.AC_TIMEOUT,
         )
         resp.raise_for_status()
         features = resp.json().get("features", [])
@@ -352,6 +357,7 @@ def taxonomy_status():
 # ─────────────────────────────────────────────
 #  ROUTES: PHYSICIAN SEARCH
 # ─────────────────────────────────────────────
+
 def _has_coords(physician: dict) -> bool:
     return physician.get("lat") is not None and physician.get("lng") is not None
 
@@ -367,12 +373,18 @@ def _refine_display_physicians(
     center_lat: float,
     center_lng: float,
     radius: float,
-) -> tuple[list[dict], int, bool]:
+) -> tuple[list[dict], int]:
     """
-    Refine the first page of results with address-level coordinates when available.
-    ZIP centroids are still used as the coarse search filter, but the displayed
-    physicians are rechecked against their best-known coordinates so the visible
-    distances better match the selected radius.
+    Refine candidates with address-level coordinates and recount within radius.
+
+    Key fixes vs v2.1.1:
+      - The early `break` is removed. Previously the outer chunk loop broke as
+        soon as shown[] reached MAX_DISPLAY, making exact_total an undercount
+        for everything after that chunk. Now shown[] is still capped but
+        counting runs through all candidates.
+      - Returns (shown, exact_total) — the "exhausted" flag is gone because
+        exact_total is now always the true full count.
+      - p["_coord_source"] is set to "address" or "zip_centroid" for debugging.
     """
     shown: list[dict] = []
     exact_total = 0
@@ -388,24 +400,17 @@ def _refine_display_physicians(
                 continue
 
             physician["distance_miles"] = round(distance, 1)
-            # FIX 1: Mark coordinate source so callers can distinguish
-            # address-level geocoding from ZIP centroid fallback.
             physician["_coord_source"] = (
                 "address" if physician.get("_geocoded") else "zip_centroid"
             )
             exact_total += 1
-            # FIX 2: Cap the display list but do NOT break out of the loop.
-            # Counting continues through all candidates so exact_total is accurate.
+
+            # Cap the display list but always keep counting.
             if len(shown) < cfg.MAX_DISPLAY:
                 shown.append(physician)
 
-    # exhausted is True only if we walked every candidate without hitting the
-    # display cap mid-chunk — which is now always the case since we removed
-    # the early break.
-    exhausted = True
-
-    shown.sort(key=lambda physician: physician.get("distance_miles", 9999))
-    return shown, exact_total, exhausted
+    shown.sort(key=lambda p: p.get("distance_miles", 9999))
+    return shown, exact_total
 
 
 @app.route("/api/search")
@@ -431,8 +436,20 @@ def search_physicians():
     search_city = sanitise(request.args.get("city", "") or "", 80)
     search_state = sanitise(request.args.get("state", "") or "", 2).upper()
 
-    if not zip_database.wait_for_ready(timeout=3.0):
-        logger.warning("ZIP DB not ready after 3s — proceeding with partial data")
+    # ── ZIP DB readiness check ────────────────────────────────────────────────
+    # In sync mode (Render) the DB is always ready here because initialize()
+    # blocked until it was done. The wait below is a safety net for the async
+    # path (local dev) or if something went wrong during sync load.
+    if not zip_database.wait_for_ready(timeout=cfg.ZIP_DB_WAIT):
+        logger.error(
+            "ZIP DB not ready after %.0fs — returning 503 to avoid silent zero results",
+            cfg.ZIP_DB_WAIT,
+        )
+        return _error(
+            "Search service is warming up — please retry in a few seconds.",
+            503,
+            "ZIP_DB_NOT_READY",
+        )
 
     try:
         tax_param_sets: list[dict] = []
@@ -447,8 +464,10 @@ def search_physicians():
         else:
             tax_param_sets = [{}]
 
-        logger.info("Running %d taxonomy queries | lat=%.4f lng=%.4f radius=%.0f",
-                    len(tax_param_sets), lat, lng, radius)
+        logger.info(
+            "Running %d taxonomy queries | lat=%.4f lng=%.4f radius=%.0f",
+            len(tax_param_sets), lat, lng, radius,
+        )
 
         zips_in_radius = zip_database.find_zips_in_radius(lat, lng, radius)
         logger.info("ZIPs in radius: %d", len(zips_in_radius))
@@ -490,26 +509,44 @@ def search_physicians():
             except Exception:
                 logger.debug("Parse error: %s", traceback.format_exc())
 
+        # ── Assign ZIP centroid coordinates ───────────────────────────────────
+        # These are the coarse coordinates used for the initial distance filter.
+        # If the ZIP DB returned nothing for a ZIP (shouldn't happen after the
+        # readiness check, but guards edge cases), fall back to the search center
+        # so the physician isn't silently dropped later.
         for p in physicians:
             if p.get("zip"):
-                p["lat"], p["lng"] = zip_database.get_zip_coords(p["zip"])
+                zip_lat, zip_lng = zip_database.get_zip_coords(p["zip"])
+                if zip_lat is not None and zip_lng is not None:
+                    p["lat"] = zip_lat
+                    p["lng"] = zip_lng
+                else:
+                    # Unknown ZIP — place at search center so it survives the
+                    # coarse filter and gets a chance at address-level geocoding.
+                    p["lat"] = lat
+                    p["lng"] = lng
+                    p["_coord_source"] = "search_center_fallback"
+                    logger.debug("Unknown ZIP %s — using search center coords", p.get("zip"))
 
+        # ── Coarse distance filter (ZIP centroid level) ───────────────────────
         coarse_matches: list[dict] = []
         for p in physicians:
             distance = _distance_from_search(lat, lng, p)
             if distance is None or distance > radius:
                 continue
-
             p["distance_miles"] = round(distance, 1)
             coarse_matches.append(p)
 
         coarse_matches.sort(key=lambda x: x.get("distance_miles", 9999))
 
-        shown, exact_total, exhausted = _refine_display_physicians(
+        # ── Refined filter (address-level geocoding) + accurate total count ───
+        shown, exact_total = _refine_display_physicians(
             coarse_matches, lat, lng, radius
         )
-        # FIX 3: exact_total is now always a full walk of all coarse_matches,
-        # so use it unconditionally instead of falling back to len(coarse_matches).
+
+        # exact_total is the true count of physicians within the radius after
+        # address-level geocoding. Use it unconditionally — the old code used
+        # len(coarse_matches) when the loop broke early, which was inflated.
         total = exact_total
 
         nppes.apply_coord_jitter(shown)
@@ -549,7 +586,11 @@ def capture_lead():
         "phone": sanitise(data.get("phone", ""), 30),
         "company": sanitise(data.get("company", ""), 120),
         "title": sanitise(data.get("title", ""), 80),
-        "search_context": data.get("search_context") if isinstance(data.get("search_context"), dict) else {},
+        "search_context": (
+            data.get("search_context")
+            if isinstance(data.get("search_context"), dict)
+            else {}
+        ),
         "created_at": datetime.utcnow().isoformat(),
         "source": "PhysicianLocator",
         "status": "New",
@@ -565,8 +606,10 @@ def capture_lead():
         )
         return _error("Could not save your request. Please try again.", 500, "LEAD_SAVE_FAILED")
 
-    logger.info("Lead captured | id=%s | sf=%s | file=%s | email=%s",
-                lead["id"], sf_ok, file_ok, email)
+    logger.info(
+        "Lead captured | id=%s | sf=%s | file=%s | email=%s",
+        lead["id"], sf_ok, file_ok, email,
+    )
     return jsonify({
         "success": True,
         "lead_id": lead["id"],
@@ -579,12 +622,26 @@ def capture_lead():
 # ─────────────────────────────────────────────
 
 def initialize_app():
-    """Initialize all background services."""
+    """
+    Initialize all background services.
+
+    ZIP DB loading strategy:
+      - On Render (IS_RENDER / ZIP_LOAD_SYNC=True): synchronous load.
+        The worker blocks here until the full 41k-entry ZIP DB is ready.
+        This adds ~1-2s to startup but guarantees no worker ever serves
+        a search request without a valid ZIP DB.
+      - Locally (ZIP_LOAD_SYNC=False): background thread as before.
+        Local dev restarts are fast and the 30s wait + 503 fallback
+        in search_physicians() protects against the unlikely race.
+    """
     missing_env = validate_configuration()
-    zip_database.initialize()
+    zip_database.initialize(background=not cfg.ZIP_LOAD_SYNC)
     taxonomy.initialize()
     rate_limiting.start_rate_limiter_purge()
-    logger.info("Backend initialized | missing_env=%s", missing_env)
+    logger.info(
+        "Backend initialized | zip_sync=%s | missing_env=%s",
+        cfg.ZIP_LOAD_SYNC, missing_env,
+    )
 
 
 initialize_app()
