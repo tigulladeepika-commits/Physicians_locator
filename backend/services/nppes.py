@@ -12,6 +12,10 @@ Fix v2.1.2:
     future successful geocode of the same address after a transient error.
   - No changes to parse_physician(), fetch(), fetch_with_retry(), or
     apply_coord_jitter().
+
+Fix v2.1.3:
+  - fetch(): replaced _fetch_cache.put() with _fetch_cache.set() to match
+    the LRUCache API (was raising AttributeError and breaking all NPPES lookups).
 """
 
 import concurrent.futures
@@ -68,7 +72,7 @@ def fetch(params: Dict) -> Tuple[List, int]:
         d = resp.json()
         results = d.get("results") or []
         total = int(d.get("result_count") or 0)
-        _fetch_cache.put(cache_key, (results, total))
+        _fetch_cache.set(cache_key, (results, total))  # Fix v2.1.3: was .put()
         return results, total
     except Timeout:
         logger.warning("NPPES timeout | params=%s", clean)
