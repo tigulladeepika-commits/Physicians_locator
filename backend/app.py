@@ -40,6 +40,7 @@ import time
 import traceback
 import uuid
 from datetime import datetime
+import concurrent.futures
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -482,21 +483,29 @@ def search_physicians():
                     seen_npis.add(npi)
                     all_raw.append(r)
 
+        # Collect all fetch tasks
+        fetch_tasks = []
         for tax_params in tax_param_sets:
             for z in zips_in_radius[:cfg.MAX_ZIP_QUERIES]:
-                rows, _ = nppes.fetch_with_retry({"postal_code": z, **tax_params})
-                add(rows)
+                fetch_tasks.append({"postal_code": z, **tax_params})
             if search_city and search_state:
-                rows, _ = nppes.fetch_with_retry(
-                    {"city": search_city.title(), "state": search_state, **tax_params}
-                )
+                fetch_tasks.append({"city": search_city.title(), "state": search_state, **tax_params})
+
+        # Execute fetches in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(nppes.fetch_with_retry, params) for params in fetch_tasks]
+            for future in concurrent.futures.as_completed(futures):
+                rows, _ = future.result()
                 add(rows)
 
         if not all_raw and search_state:
             logger.info("No ZIP/city results — state fallback")
-            for tax_params in tax_param_sets:
-                rows, _ = nppes.fetch_with_retry({"state": search_state, **tax_params})
-                add(rows)
+            state_tasks = [{"state": search_state, **tax_params} for tax_params in tax_param_sets]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                futures = [executor.submit(nppes.fetch_with_retry, params) for params in state_tasks]
+                for future in concurrent.futures.as_completed(futures):
+                    rows, _ = future.result()
+                    add(rows)
 
         logger.info("NPPES unique records: %d", len(all_raw))
 

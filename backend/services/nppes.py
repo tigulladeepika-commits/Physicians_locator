@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 NPPES_BASE_URL = "https://npiregistry.cms.hhs.gov/api/"
 
+# Cache for NPPES fetch results — stores (results, total) tuples.
+_fetch_cache = LRUCache(1000)  # Cache up to 1000 queries
+
 # Cache for geocoded addresses — only stores successful address-level results.
 _addr_cache = LRUCache(cfg.GEOCODE_CACHE_SIZE)
 
@@ -43,6 +46,12 @@ def fetch(params: Dict) -> Tuple[List, int]:
         Tuple of (results list, total count)
     """
     clean = {k: str(v).strip() for k, v in params.items() if v and str(v).strip()}
+    cache_key = tuple(sorted(clean.items()))
+    cached = _fetch_cache.get(cache_key)
+    if cached is not None:
+        logger.debug("NPPES cache hit for %s", clean)
+        return cached
+
     query = {
         "version": "2.1",
         "enumeration_type": "NPI-1",
@@ -55,7 +64,10 @@ def fetch(params: Dict) -> Tuple[List, int]:
         resp = http_client.get(NPPES_BASE_URL, params=query, timeout=cfg.REQUEST_TIMEOUT)
         resp.raise_for_status()
         d = resp.json()
-        return d.get("results") or [], int(d.get("result_count") or 0)
+        results = d.get("results") or []
+        total = int(d.get("result_count") or 0)
+        _fetch_cache.put(cache_key, (results, total))
+        return results, total
     except Timeout:
         logger.warning("NPPES timeout | params=%s", clean)
         return [], 0
