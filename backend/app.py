@@ -91,7 +91,7 @@ root_logger.setLevel(logging.INFO)
 root_logger.handlers.clear()
 root_logger.addHandler(_handler)
 
-logger = logging.getLogger("ClinTrial Navigator")
+logger = logging.getLogger("PhysicianLocator")
 
 
 # ─────────────────────────────────────────────

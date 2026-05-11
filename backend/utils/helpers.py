@@ -55,7 +55,7 @@ class LRUCache:
         """Set value in cache, evicting oldest if needed."""
         with self._lock:
             if key in self._cache:
-                self._cache.move_to_end(key)
+                del self._cache[key]  # Remove first
             self._cache[key] = value
             if len(self._cache) > self._max:
                 self._cache.popitem(last=False)

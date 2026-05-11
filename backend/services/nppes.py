@@ -14,7 +14,9 @@ Fix v2.1.2:
     apply_coord_jitter().
 """
 
+import concurrent.futures
 import logging
+import math
 import time
 from typing import Dict, List, Optional, Tuple
 
@@ -233,8 +235,6 @@ def batch_geocode_for_display(physicians: List[Dict]) -> None:
     Args:
         physicians: List of physician dicts to geocode
     """
-    import concurrent.futures
-
     def geocode_one(p: Dict) -> None:
         if not p.get("address_1"):
             p["_geocoded"] = False
@@ -261,8 +261,6 @@ def apply_coord_jitter(physicians: List[Dict]) -> None:
     Args:
         physicians: List of physician dicts to jitter
     """
-    import math
-
     seen: Dict[Tuple, int] = {}
     for p in physicians:
         lat, lng = p.get("lat"), p.get("lng")
