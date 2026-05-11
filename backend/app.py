@@ -100,10 +100,16 @@ logger = logging.getLogger("PhysicianLocator")
 
 app = Flask(__name__)
 
-_allowed_origins = [cfg.FRONTEND_URL] if cfg.FRONTEND_URL else []
+_allowed_origins = list(filter(None, [
+    cfg.FRONTEND_URL,
+    "https://physicians-locator-tigulladeepika12-9621s-projects.vercel.app",
+    "https://physicians-locator.vercel.app/",
+    "http://localhost:3000",
+    "http://localhost:5500",
+]))
 CORS(
     app,
-    origins=_allowed_origins or "*",
+    origins=_allowed_origins,
     methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "X-Request-ID"],
     max_age=600,
